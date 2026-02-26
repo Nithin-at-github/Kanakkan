@@ -1,7 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/ui/screens/root_screen.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const KanakkanApp());
+import 'providers/ledger_provider.dart';
+import 'providers/app_state_provider.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        /// Financial state
+        ChangeNotifierProvider(create: (_) => LedgerProvider()),
+
+        /// App auth / lock state
+        ChangeNotifierProvider(create: (_) => AppStateProvider()..initialize()),
+      ],
+      child: const KanakkanApp(),
+    ),
+  );
 }
 
 class KanakkanApp extends StatelessWidget {
@@ -12,7 +30,9 @@ class KanakkanApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Kanakkan',
-      home: Scaffold(body: Center(child: Text("Kanakkan Setup"))),
+
+      /// Root decides which screen to show
+      home: const RootScreen(),
     );
   }
 }

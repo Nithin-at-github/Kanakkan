@@ -1,29 +1,30 @@
-class Account {
-  final int? id;
-  final String name; // e.g., "Nithin" or "TP"
-  final String type; // e.g., "Bank" or "Cash"
-  final double balance;
+import 'package:kanakkan/domain/entities/account.dart';
 
-  Account({
-    this.id,
-    required this.name,
-    required this.type,
-    required this.balance,
+class AccountModel extends Account {
+  const AccountModel({
+    super.id,
+    required super.name,
+    required super.entityType,
+    required super.mediumType,
   });
 
-  // Convert Map (from SQLite) to Account object
-  factory Account.fromMap(Map<String, dynamic> map) => Account(
-    id: map['id'],
-    name: map['name'],
-    type: map['type'],
-    balance: map['balance'],
-  );
+  /// Convert DB map → Model
+  factory AccountModel.fromMap(Map<String, dynamic> map) {
+    return AccountModel(
+      id: map['id'],
+      name: map['name'],
+      entityType: map['entityType'],
+      mediumType: map['mediumType'],
+    );
+  }
 
-  // Convert Account object to Map (for SQLite)
-  Map<String, dynamic> toMap() => {
-    'id': id,
-    'name': name,
-    'type': type,
-    'balance': balance,
-  };
+  /// Convert Model → DB map
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'entityType': entityType,
+      'mediumType': mediumType,
+    };
+  }
 }
