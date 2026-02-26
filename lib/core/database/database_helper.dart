@@ -51,5 +51,16 @@ class DatabaseHelper {
     timestamp INTEGER NOT NULL
   )
   ''');
+
+    await db.execute('''
+  CREATE TABLE budgets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    categoryId INTEGER,
+    month INTEGER,
+    year INTEGER,
+    allocatedAmount REAL
+  )
+  ''');
+
   }
 }

@@ -15,6 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     Future.microtask(() {
+      if (!mounted) return;
       context.read<LedgerProvider>().loadAccounts();
     });
   }

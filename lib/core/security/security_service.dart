@@ -37,7 +37,7 @@ class SecurityService {
         persistAcrossBackgrounding: true,
         sensitiveTransaction: true,
       );
-    } catch (_) {
+    } catch (e) {
       return false;
     }
   }

@@ -42,4 +42,17 @@ class TransactionRepository {
 
     return inAmount - outAmount;
   }
+
+  Future<List<TransactionModel>> getTransactions({String? type}) async {
+    final db = await dbHelper.database;
+
+    final result = await db.query(
+      'transactions',
+      where: type != null ? 'type = ?' : null,
+      whereArgs: type != null ? [type] : null,
+      orderBy: 'timestamp DESC',
+    );
+
+    return result.map((e) => TransactionModel.fromMap(e)).toList();
+  }
 }

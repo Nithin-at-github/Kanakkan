@@ -17,4 +17,25 @@ class AccountRepository {
 
     return result.map((e) => AccountModel.fromMap(e)).toList();
   }
+
+  Future<void> updateAccount(AccountModel model) async {
+    final db = await dbHelper.database;
+
+    await db.update(
+      'accounts',
+      model.toMap(),
+      where: 'id = ?',
+      whereArgs: [model.id],
+    );
+  }
+
+  Future<void> deleteAccount(int id) async {
+    final db = await dbHelper.database;
+
+    await db.delete(
+      'accounts',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }

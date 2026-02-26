@@ -13,8 +13,9 @@ class AddTransactionScreen extends StatefulWidget {
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String transactionType = "expense";
 
-  final amountController = TextEditingController();
-  final noteController = TextEditingController();
+  final TextEditingController amountController = TextEditingController();
+
+  final TextEditingController noteController = TextEditingController();
 
   Account? fromAccount;
   Account? toAccount;
@@ -29,55 +30,100 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /// Transaction Type Selector
-            DropdownButton<String>(
-              value: transactionType,
-              items: const [
-                DropdownMenuItem(value: "income", child: Text("Income")),
-                DropdownMenuItem(value: "expense", child: Text("Expense")),
-                DropdownMenuItem(value: "transfer", child: Text("Transfer")),
+            /// TRANSACTION TYPE SELECTOR
+            ToggleButtons(
+              borderRadius: BorderRadius.circular(8),
+              isSelected: [
+                transactionType == "income",
+                transactionType == "expense",
+                transactionType == "transfer",
               ],
-              onChanged: (value) {
+              onPressed: (index) {
                 setState(() {
-                  transactionType = value!;
+                  transactionType = ["income", "expense", "transfer"][index];
                 });
               },
+              children: const [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text("Income"),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text("Expense"),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text("Transfer"),
+                ),
+              ],
             ),
 
+            const SizedBox(height: 20),
+
+            /// BIG AMOUNT INPUT
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Amount"),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              decoration: const InputDecoration(
+                hintText: "₹ 0.00",
+                border: InputBorder.none,
+              ),
             ),
 
-            /// FROM account
-            if (transactionType != "income")
-              _accountDropdown(
-                label: "From Account",
-                accounts: provider.accounts,
-                selected: fromAccount,
-                onChanged: (acc) => setState(() => fromAccount = acc),
-              ),
+            const SizedBox(height: 20),
 
-            /// TO account
-            if (transactionType != "expense")
-              _accountDropdown(
-                label: "To Account",
-                accounts: provider.accounts,
-                selected: toAccount,
-                onChanged: (acc) => setState(() => toAccount = acc),
-              ),
+            /// FROM ACCOUNT
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: transactionType != "income"
+                  ? _accountDropdown(
+                      label: "From Account",
+                      accounts: provider.accounts,
+                      selected: fromAccount,
+                      onChanged: (acc) => setState(() => fromAccount = acc),
+                    )
+                  : const SizedBox(),
+            ),
 
+            /// TO ACCOUNT
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: transactionType != "expense"
+                  ? _accountDropdown(
+                      label: "To Account",
+                      accounts: provider.accounts,
+                      selected: toAccount,
+                      onChanged: (acc) => setState(() => toAccount = acc),
+                    )
+                  : const SizedBox(),
+            ),
+
+            const SizedBox(height: 10),
+
+            /// NOTE FIELD
             TextField(
               controller: noteController,
               decoration: const InputDecoration(labelText: "Note"),
             ),
 
-            const SizedBox(height: 20),
+            const Spacer(),
 
-            ElevatedButton(
-              onPressed: () => _saveTransaction(context),
-              child: const Text("Save"),
+            /// SAVE BUTTON
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed: () => _saveTransaction(context),
+                child: const Text(
+                  "Save Transaction",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
             ),
           ],
         ),
@@ -85,15 +131,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  /// ACCOUNT DROPDOWN
   Widget _accountDropdown({
     required String label,
     required List<Account> accounts,
     required Account? selected,
     required Function(Account?) onChanged,
   }) {
-    return DropdownButton<Account>(
-      hint: Text(label),
-      value: selected,
+    return DropdownButtonFormField<Account>(
+      decoration: InputDecoration(labelText: label),
+      initialValue: selected,
       items: accounts.map((acc) {
         return DropdownMenuItem(value: acc, child: Text(acc.name));
       }).toList(),
@@ -101,26 +148,38 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  /// SAVE LOGIC
   void _saveTransaction(BuildContext context) {
     final provider = context.read<LedgerProvider>();
 
     final amount = double.tryParse(amountController.text);
 
-    if (amount == null) return;
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Enter valid amount")));
+      return;
+    }
 
     if (transactionType == "income") {
+      if (toAccount == null) return;
+
       provider.addIncome(
         amount: amount,
         toAccountId: toAccount!.id!,
         note: noteController.text,
       );
     } else if (transactionType == "expense") {
+      if (fromAccount == null) return;
+
       provider.addExpense(
         amount: amount,
         fromAccountId: fromAccount!.id!,
         note: noteController.text,
       );
     } else {
+      if (fromAccount == null || toAccount == null) return;
+
       provider.transferFunds(
         amount: amount,
         fromAccountId: fromAccount!.id!,

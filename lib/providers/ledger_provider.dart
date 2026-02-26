@@ -4,6 +4,7 @@ import 'package:kanakkan/data/repositories/account_repository.dart';
 import 'package:kanakkan/data/repositories/transaction_repository.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/data/models/account_model.dart';
+import 'package:kanakkan/domain/entities/transaction_entity.dart';
 
 class LedgerProvider extends ChangeNotifier {
   final AccountRepository _accountRepository = AccountRepository();
@@ -11,10 +12,14 @@ class LedgerProvider extends ChangeNotifier {
   final Map<int, double> _accountBalances = {};
 
   Map<int, double> get accountBalances => _accountBalances;
-
   List<Account> _accounts = [];
-
   List<Account> get accounts => _accounts;
+
+  List<TransactionEntity> _transactions = [];
+  List<TransactionEntity> get transactions => _transactions;
+
+  String? _currentFilter;
+  String? get currentFilter => _currentFilter;
 
   Future<void> calculateBalances() async {
     for (final account in _accounts) {
@@ -68,6 +73,7 @@ class LedgerProvider extends ChangeNotifier {
 
     await _transactionRepository.insertTransaction(transaction);
     await calculateBalances();
+    await loadTransactions(type: _currentFilter);
 
     notifyListeners();
   }
@@ -90,6 +96,7 @@ class LedgerProvider extends ChangeNotifier {
 
     await _transactionRepository.insertTransaction(transaction);
     await calculateBalances();
+    await loadTransactions(type: _currentFilter);
 
     notifyListeners();
   }
@@ -111,6 +118,41 @@ class LedgerProvider extends ChangeNotifier {
 
     await _transactionRepository.insertTransaction(transaction);
     await calculateBalances();
+
+    notifyListeners();
+  }
+
+  Future<void> loadTransactions({String? type}) async {
+    _currentFilter = type;
+    _transactions = await _transactionRepository.getTransactions(type: type);
+
+    notifyListeners();
+  }
+
+  Future<void> deleteAccount(int accountId) async {
+    await _accountRepository.deleteAccount(accountId);
+
+    _accountBalances.remove(accountId);
+
+    await loadAccounts();
+    await calculateBalances();
+
+    notifyListeners();
+  }
+
+  Future<void> updateAccountName(int accountId, String newName) async {
+    final account = _accounts.firstWhere((a) => a.id == accountId);
+
+    final updatedModel = AccountModel(
+      id: account.id,
+      name: newName,
+      entityType: account.entityType,
+      mediumType: account.mediumType,
+    );
+
+    await _accountRepository.updateAccount(updatedModel);
+
+    await loadAccounts();
 
     notifyListeners();
   }
