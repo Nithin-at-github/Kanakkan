@@ -38,7 +38,34 @@ class BudgetProvider extends ChangeNotifier {
     await loadBudgets();
   }
 
-  /// 🔥 Derived Calculations
+  Future<void> copyBudgetsFrom({
+    required int fromMonth,
+    required int fromYear,
+  }) async {
+    final previousBudgets = await _repository.getBudgetsForPeriod(
+      fromMonth,
+      fromYear,
+    );
+
+    for (final budget in previousBudgets) {
+      final newBudget = BudgetModel(
+        categoryId: budget.categoryId,
+        month: currentMonth,
+        year: currentYear,
+        allocatedAmount: budget.allocatedAmount,
+      );
+
+      await _repository.insertBudget(newBudget);
+    }
+
+    await loadBudgets();
+  }
+
+  Future<List<BudgetModel>> getBudgetsForMonth(int month, int year) {
+    return _repository.getBudgetsForPeriod(month, year);
+  }
+
+  /// Derived Calculations
 
   double getSpentForCategory(LedgerProvider ledger, int categoryId) {
     return ledger.transactions

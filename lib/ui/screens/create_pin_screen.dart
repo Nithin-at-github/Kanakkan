@@ -13,7 +13,6 @@ class CreatePinScreen extends StatefulWidget {
 
 class _CreatePinScreenState extends State<CreatePinScreen> {
   final TextEditingController _pinController = TextEditingController();
-
   final TextEditingController _confirmController = TextEditingController();
 
   final SecurityService _security = SecurityService();
@@ -25,12 +24,12 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
     final confirm = _confirmController.text.trim();
 
     if (pin.length != 4) {
-      _showMessage("PIN must be 4 digits");
+      _showMessage("PIN must be 4 digits", AppTheme.error);
       return;
     }
 
     if (pin != confirm) {
-      _showMessage("PINs do not match");
+      _showMessage("PINs do not match", AppTheme.error);
       return;
     }
 
@@ -45,81 +44,156 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
     context.read<AppStateProvider>().pinCreated();
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, Color colour) {
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: colour,
+        behavior: SnackBarBehavior.floating
+      )
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      counterText: "",
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: AppTheme.accent.withOpacity(.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Create Your PIN",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              /// PIN
-              TextField(
-                controller: _pinController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                textAlign: TextAlign.center,
-                maxLength: 4,
-                style: const TextStyle(fontSize: 24, letterSpacing: 6),
-                decoration: const InputDecoration(
-                  hintText: "Enter 4-digit PIN",
-                  counterText: "",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              /// Confirm PIN
-              TextField(
-                controller: _confirmController,
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                textAlign: TextAlign.center,
-                maxLength: 4,
-                style: const TextStyle(fontSize: 24, letterSpacing: 6),
-                decoration: const InputDecoration(
-                  hintText: "Confirm PIN",
-                  counterText: "",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _savePin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accent,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                /// ================= LOGO =================
+                const Text(
+                  "I-W-¡-³-",
+                  style: TextStyle(
+                    fontFamily: 'Ravivarma',
+                    fontSize: 64,
+                    color: AppTheme.accent,
                   ),
-                  child: _isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Save PIN"),
                 ),
-              ),
-            ],
+
+                const Text(
+                  "Secure your finances with a PIN",
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                ),
+
+                const SizedBox(height: 40),
+
+                /// ================= CARD =================
+                Container(
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 12,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      /// PIN
+                      TextField(
+                        controller: _pinController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        textAlign: TextAlign.center,
+                        maxLength: 4,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          letterSpacing: 5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: _inputDecoration("Enter 4-digit PIN"),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      /// CONFIRM
+                      TextField(
+                        controller: _confirmController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        textAlign: TextAlign.center,
+                        maxLength: 4,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          letterSpacing: 5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: _inputDecoration("Confirm PIN"),
+                      ),
+
+                      const SizedBox(height: 26),
+
+                      /// SAVE BUTTON
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _savePin,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accent,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Save PIN",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                /// subtle footer
+                const Text(
+                  "Your PIN stays only on this device",
+                  style: TextStyle(fontSize: 12, color: Colors.black45),
+                ),
+              ],
+            ),
           ),
         ),
       ),

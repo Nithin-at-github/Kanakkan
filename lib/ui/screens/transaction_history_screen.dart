@@ -56,7 +56,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                               ),
                               child: _transactionTile(tx),
                             );
-                          }).toList(),
+                          }),
                         ],
                       );
                     }).toList(),

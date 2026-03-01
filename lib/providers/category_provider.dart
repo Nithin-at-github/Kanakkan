@@ -14,6 +14,10 @@ class CategoryProvider extends ChangeNotifier {
   List<Category> get expenseCategories =>
       _categories.where((c) => c.type == "expense").toList();
 
+  Future<void> initialize() async {
+    await loadCategories();
+  }
+
   Future<void> loadCategories() async {
     _categories = await _repository.getAllCategories();
     notifyListeners();

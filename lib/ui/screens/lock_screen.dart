@@ -13,33 +13,26 @@ class LockScreen extends StatefulWidget {
 
 class _LockScreenState extends State<LockScreen> {
   final TextEditingController _pinController = TextEditingController();
-
   final SecurityService _security = SecurityService();
 
   bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-
-    Future.delayed(const Duration(milliseconds: 300), () => _tryBiometric());
-  }
-
-  /// Attempt biometric authentication
+  /// ================= BIOMETRIC =================
   Future<void> _tryBiometric() async {
     final success = await _security.authenticateBiometric();
 
     if (!mounted) return;
+
     if (success) {
       context.read<AppStateProvider>().unlockApp();
     }
   }
 
-  /// Verify PIN fallback
+  /// ================= VERIFY PIN =================
   Future<void> _verifyPin() async {
     setState(() => _isLoading = true);
 
-    final valid = await _security.verifyPin(_pinController.text);
+    final valid = await _security.verifyPin(_pinController.text.trim());
 
     setState(() => _isLoading = false);
 
@@ -54,71 +47,150 @@ class _LockScreenState extends State<LockScreen> {
     }
   }
 
+  InputDecoration _inputDecoration() {
+    return InputDecoration(
+      hintText: "••••",
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: AppTheme.accent.withOpacity(.4)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      /// Prevent back button bypass
       onWillPop: () async => false,
 
       child: Scaffold(
         backgroundColor: AppTheme.background,
-
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                /// Title
-                const Text(
-                  "Unlock Kanakkan",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  /// ================= LOGO =================
+                  const Text(
+                    "I-W-¡-³-",
+                    style: TextStyle(
+                      fontFamily: 'Ravivarma',
+                      fontSize: 64,
+                      color: AppTheme.accent,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 30),
-
-                /// PIN input
-                TextField(
-                  controller: _pinController,
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24, letterSpacing: 6),
-                  decoration: const InputDecoration(
-                    hintText: "••••",
-                    border: OutlineInputBorder(),
+                  const Text(
+                    "Unlock your finances",
+                    style: TextStyle(color: Colors.black54, fontSize: 14),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                /// Unlock button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyPin,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Unlock"),
+                  /// ================= CARD =================
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 12,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        /// PIN INPUT
+                        TextField(
+                          controller: _pinController,
+                          keyboardType: TextInputType.number,
+                          obscureText: true,
+                          textAlign: TextAlign.center,
+                          maxLength: 4,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            letterSpacing: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          decoration: _inputDecoration(),
+                          onSubmitted: (_) => _verifyPin(),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        /// UNLOCK BUTTON
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _verifyPin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accent,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Unlock",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        /// BIOMETRIC BUTTON
+                        TextButton.icon(
+                          onPressed: _tryBiometric,
+                          icon: const Icon(
+                            Icons.fingerprint,
+                            size: 26,
+                            color: AppTheme.accent,
+                          ),
+                          label: const Text(
+                            "Unlock with biometric",
+                            style: TextStyle(
+                              color: AppTheme.accent,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 28),
 
-                /// Manual biometric retry button
-                TextButton.icon(
-                  onPressed: _tryBiometric,
-                  icon: const Icon(Icons.fingerprint, color: AppTheme.accent),
-                  label: const Text(
-                    "Use biometric",
-                    style: TextStyle(color: AppTheme.accent),
+                  const Text(
+                    "Authentication keeps your financial data secure",
+                    style: TextStyle(fontSize: 12, color: Colors.black45),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

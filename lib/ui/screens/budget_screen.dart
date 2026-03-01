@@ -2,68 +2,343 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/providers/budget_provider.dart';
 import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/providers/navigation_provider.dart';
+import 'package:kanakkan/ui/widgets/budget_item_card.dart';
+import 'package:kanakkan/ui/widgets/copy_budget_dialog.dart';
+import 'package:kanakkan/ui/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
-class BudgetScreen extends StatelessWidget {
+class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
 
   @override
+  State<BudgetScreen> createState() => _BudgetScreenState();
+}
+
+class _BudgetScreenState extends State<BudgetScreen> {
+  late NavigationProvider _nav;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _nav = context.read<NavigationProvider>();
+      _nav.addListener(_onTabChanged);
+
+      /// initial load
+      _resetToCurrentMonth();
+    });
+
+    Future.microtask(() => context.read<BudgetProvider>().loadBudgets());
+  }
+
+  @override
+  void dispose() {
+    _nav.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_nav.currentIndex == 2 && _nav.previousIndex != 2) {
+      _resetToCurrentMonth();
+    }
+  }
+
+  void _resetToCurrentMonth() {
+    final budgetProvider = context.read<BudgetProvider>();
+    final ledger = context.read<LedgerProvider>();
+
+    final now = DateTime.now();
+
+    budgetProvider.currentMonth = now.month;
+    budgetProvider.currentYear = now.year;
+
+    budgetProvider.loadBudgets();
+
+    /// ⭐ IMPORTANT: initialize spending cache
+    ledger.rebuildMonthlyTotals(
+      month: budgetProvider.currentMonth,
+      year: budgetProvider.currentYear,
+    );
+  }
+
+  void _updateLedgerCache(BudgetProvider provider) {
+    context.read<LedgerProvider>().rebuildMonthlyTotals(
+      month: provider.currentMonth,
+      year: provider.currentYear,
+    );
+  }
+
+  // ================= MONTH FORMAT =================
+
+  String _formatMonth(BudgetProvider provider) {
+    final date = DateTime(provider.currentYear, provider.currentMonth);
+
+    return DateFormat("MMMM, yyyy").format(date);
+  }
+
+  void _previousMonth(BudgetProvider provider) {
+    setState(() {
+      provider.currentMonth--;
+
+      if (provider.currentMonth == 0) {
+        provider.currentMonth = 12;
+        provider.currentYear--;
+      }
+    });
+
+    provider.loadBudgets();
+    _updateLedgerCache(provider);
+  }
+
+  void _nextMonth(BudgetProvider provider) {
+    setState(() {
+      provider.currentMonth++;
+
+      if (provider.currentMonth == 13) {
+        provider.currentMonth = 1;
+        provider.currentYear++;
+      }
+    });
+
+    provider.loadBudgets();
+    _updateLedgerCache(provider);
+  }
+
+  // ================= BUILD =================
+  @override
   Widget build(BuildContext context) {
     final budgetProvider = context.watch<BudgetProvider>();
-    final ledger = context.watch<LedgerProvider>();
+    final ledgerProvider = context.watch<LedgerProvider>();
+
+    final totalBudget = budgetProvider.budgets.fold(
+      0.0,
+      (sum, b) => sum + b.allocatedAmount,
+    );
+
+    double totalSpent = 0;
+    for (final b in budgetProvider.budgets) {
+      totalSpent += budgetProvider.getSpentForCategory(
+        ledgerProvider,
+        b.categoryId,
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primary,
-        title: const Text(
-          "Monthly Budget",
-          style: TextStyle(color: AppTheme.accent),
-        ),
-      ),
-      body: ListView.builder(
-        itemCount: budgetProvider.budgets.length,
-        itemBuilder: (context, index) {
-          final budget = budgetProvider.budgets[index];
 
-          final spent = budgetProvider.getSpentForCategory(
-            ledger,
-            budget.categoryId,
-          );
-
-          final remaining = budget.allocatedAmount - spent;
-
-          final progress = spent / budget.allocatedAmount;
-
-          return Card(
-            margin: const EdgeInsets.all(12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
+      appBar: ReusableAppBar(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            /// ================= HEADER =================
+            Container(
+              decoration: const BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(15),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Category ID: ${budget.categoryId}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  const Text(
+                    "Budgets",
+                    style: TextStyle(
+                      color: AppTheme.accent,
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
 
-                  const SizedBox(height: 8),
+                  /// MONTH SELECTOR
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_left,
+                          color: AppTheme.accent,
+                        ),
+                        onPressed: () => _previousMonth(budgetProvider),
+                      ),
 
-                  LinearProgressIndicator(
-                    value: progress > 1 ? 1 : progress,
-                    backgroundColor: Colors.grey.shade200,
-                    color: remaining < 0 ? AppTheme.error : AppTheme.success,
+                      Text(
+                        _formatMonth(budgetProvider),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: AppTheme.accent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_right,
+                          color: AppTheme.accent,
+                        ),
+                        onPressed: () => _nextMonth(budgetProvider),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
 
-                  Text("₹$spent / ₹${budget.allocatedAmount}"),
-                  Text("Remaining: ₹$remaining"),
+                  /// SUMMARY
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _summaryColumn(
+                        "TOTAL BUDGET",
+                        totalBudget,
+                        AppTheme.accent,
+                      ),
+
+                      _summaryColumn("TOTAL SPENT", totalSpent, AppTheme.error),
+                    ],
+                  ),
                 ],
               ),
             ),
-          );
-        },
+
+            const SizedBox(height: 14),
+
+            /// ================= BUDGET LIST =================
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+
+              child: budgetProvider.budgets.isEmpty
+                  ? _emptyBudgets()
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: budgetProvider.budgets.length,
+                      itemBuilder: (_, i) {
+                        return BudgetItemCard(
+                          budget: budgetProvider.budgets[i],
+                        );
+                      },
+                    ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: InkWell(
+                  splashColor: AppTheme.accent.withOpacity(.15),
+                  highlightColor: Colors.transparent,
+                  borderRadius: BorderRadius.circular(28),
+                  onTap: _openCopyDialog,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withOpacity( .8),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: AppTheme.accent,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(
+                          Icons.copy_rounded,
+                          size: 20,
+                          color: AppTheme.primary,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          "Copy from previous months",
+                          style: TextStyle(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14.5,
+                            letterSpacing: .2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= HELPERS =================
+  Widget _summaryColumn(String title, double amount, Color color) {
+    return Column(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "₹${amount.toStringAsFixed(2)}",
+          style: TextStyle(
+            fontSize: 16,
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _emptyBudgets() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 40),
+      child: Center(
+        child: Text(
+          "No budgets created yet",
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.black54,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openCopyDialog() {
+    final budgetProvider = context.read<BudgetProvider>();
+
+    showDialog(
+      context: context,
+      builder: (_) => CopyBudgetDialog(
+        currentMonth: budgetProvider.currentMonth,
+        currentYear: budgetProvider.currentYear,
       ),
     );
   }

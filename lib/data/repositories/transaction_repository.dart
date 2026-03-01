@@ -55,4 +55,25 @@ class TransactionRepository {
 
     return result.map((e) => TransactionModel.fromMap(e)).toList();
   }
+
+  Future<void> deleteTransaction(int id) async {
+    final db = await dbHelper.database;
+
+    await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> updateTransaction(TransactionModel model) async {
+    final db = await dbHelper.database;
+
+    await db.update(
+      "transactions",
+      model.toMap(),
+      where: "id = ?",
+      whereArgs: [model.id],
+    );
+  }
 }

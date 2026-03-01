@@ -25,7 +25,7 @@ class BudgetModel extends BudgetEntity {
       categoryId: map["categoryId"],
       month: map["month"],
       year: map["year"],
-      allocatedAmount: map["allocatedAmount"],
+      allocatedAmount: (map["allocatedAmount"] as num).toDouble(),
     );
   }
 }
