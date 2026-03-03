@@ -4,17 +4,15 @@ class AccountModel extends Account {
   const AccountModel({
     super.id,
     required super.name,
-    required super.entityType,
-    required super.mediumType,
-  });
+    required double initialBalance,
+  }) : super(initialBalance: initialBalance);
 
   /// Convert DB map → Model
   factory AccountModel.fromMap(Map<String, dynamic> map) {
     return AccountModel(
       id: map['id'],
       name: map['name'],
-      entityType: map['entityType'],
-      mediumType: map['mediumType'],
+      initialBalance: (map['initialBalance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -23,8 +21,7 @@ class AccountModel extends Account {
     return {
       'id': id,
       'name': name,
-      'entityType': entityType,
-      'mediumType': mediumType,
+      'initialBalance': initialBalance,
     };
   }
 }

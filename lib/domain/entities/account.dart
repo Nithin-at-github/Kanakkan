@@ -1,13 +1,12 @@
 class Account {
   final int? id;
   final String name;
-  final String entityType; // ME / TP
-  final String mediumType; // BANK / CASH
+  /// starting money in the account when it is created
+  final double initialBalance;
 
   const Account({
     this.id,
     required this.name,
-    required this.entityType,
-    required this.mediumType,
+    required this.initialBalance,
   });
 }

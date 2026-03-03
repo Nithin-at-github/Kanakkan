@@ -8,8 +8,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Still version 1 (development phase)
-  static const int _dbVersion = 1;
+  // schema version; bump when making structural changes
+  static const int _dbVersion = 2;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -21,7 +21,16 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: _dbVersion, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: _dbVersion,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+      onOpen: (db) async {
+        // ensure foreign key support is active
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
+    );
   }
 
   // =====================================================
@@ -34,8 +43,7 @@ class DatabaseHelper {
       CREATE TABLE accounts(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
-        entityType TEXT NOT NULL,
-        mediumType TEXT NOT NULL
+        initialBalance REAL NOT NULL DEFAULT 0
       )
     ''');
 
@@ -59,7 +67,9 @@ class DatabaseHelper {
         toAccountId INTEGER,
         categoryId INTEGER,
         note TEXT,
-        timestamp INTEGER NOT NULL
+        timestamp INTEGER NOT NULL,
+        FOREIGN KEY(fromAccountId) REFERENCES accounts(id) ON DELETE SET NULL,
+        FOREIGN KEY(toAccountId)   REFERENCES accounts(id) ON DELETE SET NULL
       )
     ''');
 
@@ -71,7 +81,8 @@ class DatabaseHelper {
         month INTEGER NOT NULL,
         year INTEGER NOT NULL,
         allocatedAmount REAL NOT NULL,
-        UNIQUE(categoryId, month, year)
+        UNIQUE(categoryId, month, year),
+        FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE CASCADE
       )
     ''');
 
@@ -109,5 +120,77 @@ class DatabaseHelper {
       balance REAL NOT NULL DEFAULT 0
     )
     ''');
+  }
+
+  // handle migrations when schema version increases
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // migrate accounts table: drop old columns and add initialBalance
+      await db.execute('PRAGMA foreign_keys = OFF');
+
+      await db.execute('''
+        CREATE TABLE accounts_new(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          initialBalance REAL NOT NULL DEFAULT 0
+        )
+      ''');
+
+      await db.execute('''
+        INSERT INTO accounts_new(id, name)
+        SELECT id, name FROM accounts;
+      ''');
+
+      await db.execute('DROP TABLE accounts');
+      await db.execute('ALTER TABLE accounts_new RENAME TO accounts');
+
+      // migrate transactions table to add foreign key constraints
+      await db.execute('''
+        CREATE TABLE transactions_new(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          fromAccountId INTEGER,
+          toAccountId INTEGER,
+          categoryId INTEGER,
+          note TEXT,
+          timestamp INTEGER NOT NULL,
+          FOREIGN KEY(fromAccountId) REFERENCES accounts(id) ON DELETE SET NULL,
+          FOREIGN KEY(toAccountId)   REFERENCES accounts(id) ON DELETE SET NULL
+        )
+      ''');
+
+      await db.execute('''
+        INSERT INTO transactions_new(id, type, amount, fromAccountId, toAccountId, categoryId, note, timestamp)
+        SELECT id, type, amount, fromAccountId, toAccountId, categoryId, note, timestamp
+        FROM transactions;
+      ''');
+
+      await db.execute('DROP TABLE transactions');
+      await db.execute('ALTER TABLE transactions_new RENAME TO transactions');
+
+      // migrate budgets table to add foreign key
+      await db.execute('''
+        CREATE TABLE budgets_new(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          categoryId INTEGER NOT NULL,
+          month INTEGER NOT NULL,
+          year INTEGER NOT NULL,
+          allocatedAmount REAL NOT NULL,
+          UNIQUE(categoryId, month, year),
+          FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        INSERT INTO budgets_new(id, categoryId, month, year, allocatedAmount)
+        SELECT id, categoryId, month, year, allocatedAmount FROM budgets;
+      ''');
+
+      await db.execute('DROP TABLE budgets');
+      await db.execute('ALTER TABLE budgets_new RENAME TO budgets');
+
+      await db.execute('PRAGMA foreign_keys = ON');
+    }
   }
 }

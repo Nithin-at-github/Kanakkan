@@ -14,7 +14,8 @@ class BudgetItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /// ENVELOPE BALANCE (REAL MONEY)
+    
+    /// Wallet Balance (REAL MONEY)
     final balance = context.select<CategoryBalanceProvider, double>(
       (p) => p.getBalance(budget.categoryId),
     );
@@ -25,9 +26,6 @@ class BudgetItemCard extends StatelessWidget {
     final spent = context.select<LedgerProvider, double>(
       (ledger) => ledger.getMonthlySpent(budget.categoryId),
     );
-
-    /// available after spending
-    final available = balance - spent;
 
     /// progress shows how much of the allocated budget has been spent
     final progress = budget.allocatedAmount <= 0

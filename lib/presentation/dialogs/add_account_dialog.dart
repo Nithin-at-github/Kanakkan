@@ -7,8 +7,9 @@ import 'package:provider/provider.dart';
 class AddAccountDialog {
   static void show(BuildContext context) {
     final controller = TextEditingController();
-    String entityType = "Me";
-    String mediumType = "Cash";
+    final balanceController = TextEditingController(text: '0');
+    // String entityType = "Me";
+    // String mediumType = "Cash";
 
     showDialog(
       context: context,
@@ -47,6 +48,21 @@ class AddAccountDialog {
                     ),
                   ),
 
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: balanceController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: "Initial balance",
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 24),
 
                   /// ACTIONS
@@ -68,11 +84,11 @@ class AddAccountDialog {
                             minimumSize: const Size(double.infinity, 48),
                           ),
                           onPressed: () {
+                            final initial = double.tryParse(balanceController.text) ?? 0.0;
                             context.read<LedgerProvider>().addAccount(
                               Account(
                                 name: controller.text,
-                                entityType: entityType,
-                                mediumType: mediumType,
+                                initialBalance: initial,
                               ),
                             );
 

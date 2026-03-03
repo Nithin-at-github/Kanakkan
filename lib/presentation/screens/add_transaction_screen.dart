@@ -463,9 +463,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ...ledger.accounts.map((account) {
                 return _selectionTile(
                   title: account.name,
-                  icon: account.mediumType == "Bank"
-                      ? Icons.account_balance
-                      : Icons.payments,
+                  icon: Icons.account_balance,
                   onTap: () {
                     setState(() {
                       if (isFrom) {

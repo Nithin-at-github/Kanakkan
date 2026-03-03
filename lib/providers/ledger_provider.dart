@@ -78,11 +78,12 @@ class LedgerProvider extends ChangeNotifier {
   /// ================= BALANCE CALC =================
   Future<void> calculateBalances() async {
     for (final account in _accounts) {
-      final balance = await _transactionRepository.calculateAccountBalance(
+      final balanceFromTx = await _transactionRepository.calculateAccountBalance(
         account.id!,
       );
 
-      _accountBalances[account.id!] = balance;
+      // include the opening balance stored on the account itself
+      _accountBalances[account.id!] = balanceFromTx + account.initialBalance;
     }
 
     notifyListeners();
@@ -98,8 +99,7 @@ class LedgerProvider extends ChangeNotifier {
     final model = AccountModel(
       id: account.id,
       name: account.name,
-      entityType: account.entityType,
-      mediumType: account.mediumType,
+      initialBalance: account.initialBalance,
     );
 
     try {
@@ -238,14 +238,12 @@ class LedgerProvider extends ChangeNotifier {
   }
 
   /// ================= UPDATE =================
-  Future<void> updateAccountName(int accountId, String newName) async {
-    final account = _accounts.firstWhere((a) => a.id == accountId);
-
+  /// update both name and opening balance
+  Future<void> updateAccount(Account updated) async {
     final updatedModel = AccountModel(
-      id: account.id,
-      name: newName,
-      entityType: account.entityType,
-      mediumType: account.mediumType,
+      id: updated.id,
+      name: updated.name,
+      initialBalance: updated.initialBalance,
     );
 
     try {
@@ -258,6 +256,7 @@ class LedgerProvider extends ChangeNotifier {
     }
 
     await loadAccounts();
+    await calculateBalances();
   }
 
   Future<void> updateTransaction({

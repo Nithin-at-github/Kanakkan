@@ -244,6 +244,7 @@ class AccountsScreen extends StatelessWidget {
 
   void _editAccount(BuildContext context, Account account) {
     final controller = TextEditingController(text: account.name);
+    final balanceController = TextEditingController(text: account.initialBalance.toString());
 
     showDialog(
       context: context,
@@ -282,6 +283,21 @@ class AccountsScreen extends StatelessWidget {
                     ),
                   ),
 
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: balanceController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: "Initial balance",
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 24),
 
                   /// ACTIONS
@@ -303,10 +319,15 @@ class AccountsScreen extends StatelessWidget {
                             minimumSize: const Size(double.infinity, 48),
                           ),
                           onPressed: () {
-                            context.read<LedgerProvider>().updateAccountName(
-                              account.id!,
-                              controller.text,
-                            );
+                            final newName = controller.text;
+                            final newBalance = double.tryParse(balanceController.text) ?? 0.0;
+                            context.read<LedgerProvider>().updateAccount(
+                                  Account(
+                                    id: account.id,
+                                    name: newName,
+                                    initialBalance: newBalance,
+                                  ),
+                                );
                             Navigator.pop(context);
                           },
                           child: const Text("Save"),
