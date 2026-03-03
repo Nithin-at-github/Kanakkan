@@ -102,5 +102,12 @@ class DatabaseHelper {
       CREATE INDEX idx_budgets_period
       ON budgets(categoryId, month, year)
     ''');
+
+    await db.execute('''
+     CREATE TABLE category_balances(
+      categoryId INTEGER PRIMARY KEY,
+      balance REAL NOT NULL DEFAULT 0
+    )
+    ''');
   }
 }

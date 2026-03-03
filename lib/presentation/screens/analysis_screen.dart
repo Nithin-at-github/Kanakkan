@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/ui/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});

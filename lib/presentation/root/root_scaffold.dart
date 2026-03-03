@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/utils/smart_create_handler.dart';
 import 'package:kanakkan/providers/navigation_provider.dart';
-import 'package:kanakkan/ui/screens/accounts_screen.dart';
-import 'package:kanakkan/ui/screens/analysis_screen.dart';
-import 'package:kanakkan/ui/screens/budget_screen.dart';
-import 'package:kanakkan/ui/screens/categories_screen.dart';
-import 'package:kanakkan/ui/screens/dashboard_screen.dart';
-import 'package:kanakkan/ui/widgets/universal_create_sheet.dart';
+import 'package:kanakkan/presentation/screens/accounts_screen.dart';
+import 'package:kanakkan/presentation/screens/analysis_screen.dart';
+import 'package:kanakkan/presentation/screens/budget_screen.dart';
+import 'package:kanakkan/presentation/screens/categories_screen.dart';
+import 'package:kanakkan/presentation/screens/dashboard_screen.dart';
+import 'package:kanakkan/presentation/widgets/universal_create_sheet.dart';
 import 'package:provider/provider.dart';
 
 class RootScaffold extends StatelessWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/providers/app_state_provider.dart';
-import 'package:kanakkan/ui/root/root_scaffold.dart';
-import 'package:kanakkan/ui/screens/create_pin_screen.dart';
-import 'package:kanakkan/ui/screens/lock_screen.dart';
+import 'package:kanakkan/presentation/root/root_scaffold.dart';
+import 'package:kanakkan/presentation/screens/create_pin_screen.dart';
+import 'package:kanakkan/presentation/screens/lock_screen.dart';
 import 'package:provider/provider.dart';
 
 class RootScreen extends StatelessWidget {

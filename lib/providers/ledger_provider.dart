@@ -5,8 +5,19 @@ import 'package:kanakkan/data/repositories/transaction_repository.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/data/models/account_model.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
+import 'package:kanakkan/providers/category_balance_provider.dart';
+import 'package:sqflite/sqflite.dart';
 
 class LedgerProvider extends ChangeNotifier {
+  /// dependency that can change over time; the proxy provider will update this
+  CategoryBalanceProvider balanceProvider;
+
+  LedgerProvider(this.balanceProvider);
+
+  /// Called by the proxy provider when the balance provider instance changes.
+  void updateBalanceProvider(CategoryBalanceProvider newProvider) {
+    balanceProvider = newProvider;
+  }
   final AccountRepository _accountRepository = AccountRepository();
   final TransactionRepository _transactionRepository = TransactionRepository();
 
@@ -91,7 +102,15 @@ class LedgerProvider extends ChangeNotifier {
       mediumType: account.mediumType,
     );
 
-    await _accountRepository.insertAccount(model);
+    try {
+      await _accountRepository.insertAccount(model);
+    } on DatabaseException catch (e) {
+      // bubble up a friendlier error so the UI can show a message
+      if (e.toString().contains('UNIQUE')) {
+        throw Exception('An account with this name already exists');
+      }
+      rethrow;
+    }
 
     await loadAccounts();
     await calculateBalances();
@@ -117,6 +136,8 @@ class LedgerProvider extends ChangeNotifier {
 
     await _transactionRepository.insertTransaction(transaction);
 
+    await _applyBalanceEffect(transaction);
+
     await calculateBalances();
     await loadTransactions(type: _currentFilter);
   }
@@ -138,6 +159,8 @@ class LedgerProvider extends ChangeNotifier {
     );
 
     await _transactionRepository.insertTransaction(transaction);
+
+    await _applyBalanceEffect(transaction);
 
     await calculateBalances();
     await loadTransactions(type: _currentFilter);
@@ -203,6 +226,11 @@ class LedgerProvider extends ChangeNotifier {
   }
 
   Future<void> deleteTransaction(int id) async {
+    final tx = _transactions.firstWhere((t) => t.id == id);
+
+    /// rollback balance first
+    await _applyBalanceEffect(tx, reverse: true);
+
     await _transactionRepository.deleteTransaction(id);
 
     await loadTransactions(type: _currentFilter);
@@ -220,35 +248,59 @@ class LedgerProvider extends ChangeNotifier {
       mediumType: account.mediumType,
     );
 
-    await _accountRepository.updateAccount(updatedModel);
+    try {
+      await _accountRepository.updateAccount(updatedModel);
+    } on DatabaseException catch (e) {
+      if (e.toString().contains('UNIQUE')) {
+        throw Exception('An account with this name already exists');
+      }
+      rethrow;
+    }
 
     await loadAccounts();
   }
 
   Future<void> updateTransaction({
-    required int id,
-    required String type,
-    required double amount,
-    int? fromAccountId,
-    int? toAccountId,
-    int? categoryId,
-    String? note,
-    required int timestamp,
+    required TransactionEntity oldTx,
+    required TransactionEntity newTx,
   }) async {
+    /// undo previous balance effect
+    await _applyBalanceEffect(oldTx, reverse: true);
+
     final model = TransactionModel(
-      id: id,
-      type: type,
-      amount: amount,
-      fromAccountId: fromAccountId,
-      toAccountId: toAccountId,
-      categoryId: categoryId,
-      note: note,
-      timestamp: timestamp,
+      id: newTx.id,
+      type: newTx.type,
+      amount: newTx.amount,
+      fromAccountId: newTx.fromAccountId,
+      toAccountId: newTx.toAccountId,
+      categoryId: newTx.categoryId,
+      note: newTx.note,
+      timestamp: newTx.timestamp,
     );
 
     await _transactionRepository.updateTransaction(model);
 
+    /// apply new effect
+    await _applyBalanceEffect(newTx);
+
     await loadTransactions(type: _currentFilter);
     await calculateBalances();
+  }
+
+  Future<void> _applyBalanceEffect(
+    TransactionEntity tx, {
+    bool reverse = false,
+  }) async {
+    if (tx.categoryId == null) return;
+
+    final amount = reverse ? -tx.amount : tx.amount;
+
+    if (tx.type == "expense") {
+      await balanceProvider.spend(tx.categoryId!, amount);
+    }
+
+    if (tx.type == "income") {
+      await balanceProvider.allocate(tx.categoryId!, amount);
+    }
   }
 }

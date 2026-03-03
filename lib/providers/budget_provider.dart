@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/data/models/budget_model.dart';
 import 'package:kanakkan/data/repositories/budget_repository.dart';
 import 'package:kanakkan/domain/entities/budget_entity.dart';
+import 'package:kanakkan/providers/category_balance_provider.dart';
 import 'package:kanakkan/providers/ledger_provider.dart';
 
 class BudgetProvider extends ChangeNotifier {
   final BudgetRepository _repository = BudgetRepository();
+  // this value is provided by a proxy provider and may change over time
+  CategoryBalanceProvider balanceProvider;
+
+  BudgetProvider(this.balanceProvider);
+
+  /// update when proxy provider rebuilds
+  void updateBalanceProvider(CategoryBalanceProvider newProvider) {
+    balanceProvider = newProvider;
+  }
 
   List<BudgetEntity> _budgets = [];
   List<BudgetEntity> get budgets => _budgets;
@@ -15,6 +25,12 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgets() async {
     _budgets = await _repository.getBudgets(currentMonth, currentYear);
+
+    /// load envelope balances for visible categories
+    for (final budget in _budgets) {
+      await balanceProvider.loadBalance(budget.categoryId);
+    }
+
     notifyListeners();
   }
 

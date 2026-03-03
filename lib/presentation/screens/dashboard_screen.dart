@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kanakkan/providers/category_provider.dart';
 import 'package:kanakkan/providers/navigation_provider.dart';
-import 'package:kanakkan/ui/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/providers/ledger_provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/ui/screens/add_transaction_screen.dart';
+import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
 
 enum DateFilterMode { daily, weekly, monthly, yearly }

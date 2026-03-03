@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/ui/dialogs/add_account_dialog.dart';
-import 'package:kanakkan/ui/dialogs/add_category_dialog.dart';
-import 'package:kanakkan/ui/screens/add_transaction_screen.dart';
-import 'package:kanakkan/ui/widgets/set_budget_dialog.dart';
+import 'package:kanakkan/presentation/dialogs/add_account_dialog.dart';
+import 'package:kanakkan/presentation/dialogs/add_category_dialog.dart';
+import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
+import 'package:kanakkan/presentation/widgets/set_budget_dialog.dart';
 
 class SmartCreateHandler {
   /// Decides what FAB should do

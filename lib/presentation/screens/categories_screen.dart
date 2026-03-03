@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/ui/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/category.dart';

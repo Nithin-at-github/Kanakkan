@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/ui/screens/add_transaction_screen.dart';
+import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
 
 class GlobalActionSheet {
   static void show(BuildContext context) {

@@ -610,8 +610,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     /// ================= EDIT MODE =================
     if (isEditMode) {
-      await ledger.updateTransaction(
-        id: widget.transaction!.id!,
+      final oldTx = widget.transaction!;
+      final newTx = TransactionEntity(
+        id: oldTx.id,
         type: type.name,
         amount: amt,
         fromAccountId: type == TransactionType.expense
@@ -623,6 +624,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         categoryId: selectedCategory?.id,
         note: _noteController.text,
         timestamp: timestamp,
+      );
+
+      await ledger.updateTransaction(
+        oldTx: oldTx,
+        newTx: newTx,
       );
 
       Navigator.pop(context);
