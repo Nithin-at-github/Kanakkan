@@ -1,107 +1,173 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/core/utils/form_validation.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/providers/ledger_provider.dart';
 import 'package:provider/provider.dart';
 
 class AddAccountDialog {
   static void show(BuildContext context) {
-    final controller = TextEditingController();
+    final nameController = TextEditingController();
     final balanceController = TextEditingController(text: '0');
-    // String entityType = "Me";
-    // String mediumType = "Cash";
+
+    String? nameError;
+    String? balanceError;
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            backgroundColor: AppTheme.background,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "New Account",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: "Account name",
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  TextField(
-                    controller: balanceController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: "Initial balance",
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  /// ACTIONS
-                  Row(
+      builder: (_) => Consumer<LedgerProvider>(
+        builder: (context, ledger, _) {
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return Dialog(
+                backgroundColor: AppTheme.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Cancel"),
+                      const Text(
+                        "New Account",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
                         ),
                       ),
 
-                      const SizedBox(width: 12),
+                      const SizedBox(height: 20),
 
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accent,
-                            minimumSize: const Size(double.infinity, 48),
+                      /// ACCOUNT NAME
+                      TextField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: "Account name",
+                          errorText: nameError,
+                          filled: true,
+                          fillColor: AppTheme.background,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          onPressed: () {
-                            final initial = double.tryParse(balanceController.text) ?? 0.0;
-                            context.read<LedgerProvider>().addAccount(
-                              Account(
-                                name: controller.text,
-                                initialBalance: initial,
-                              ),
-                            );
-
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Add Account", style: TextStyle(fontSize: 13),),
                         ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      /// INITIAL BALANCE
+                      TextField(
+                        controller: balanceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d{0,2}'),
+                          ),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: "Initial balance",
+                          errorText: balanceError,
+                          filled: true,
+                          fillColor: AppTheme.background,
+                          prefixText: "₹ ",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+
+                      /// PROVIDER ERROR
+                      if (ledger.lastError != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            ledger.lastError!,
+                            style: const TextStyle(
+                              color: AppTheme.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      /// ACTION BUTTONS
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                ledger.clearError();
+                                Navigator.pop(context);
+                              },
+                              child: const Text("Cancel"),
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.accent,
+                                minimumSize: const Size(double.infinity, 48),
+                              ),
+                              onPressed: () async {
+                                ledger.clearError();
+
+                                final name = nameController.text.trim();
+                                final balanceText = balanceController.text;
+
+                                /// VALIDATION USING HELPER
+                                setState(() {
+                                  nameError = FormValidation.accountName(name);
+                                  balanceError = FormValidation.balance(
+                                    balanceText,
+                                  );
+                                });
+
+                                if (nameError != null || balanceError != null) {
+                                  return;
+                                }
+
+                                final balance =
+                                    double.tryParse(balanceText) ?? 0.0;
+
+                                /// CALL PROVIDER
+                                await context.read<LedgerProvider>().addAccount(
+                                  Account(name: name, initialBalance: balance),
+                                );
+
+                                /// CLOSE ONLY IF SUCCESS
+                                if (context.read<LedgerProvider>().lastError ==
+                                    null) {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: const Text(
+                                "Add Account",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),

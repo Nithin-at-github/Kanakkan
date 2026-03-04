@@ -56,22 +56,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       /// ACCOUNTS WILL BE RESOLVED AFTER BUILD
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final ledger = context.read<LedgerProvider>();
-
-        setState(() {
-          selectedAccount = ledger.accounts.firstWhere(
-            (a) =>
-                a.id ==
-                (tx.type == "income" ? tx.toAccountId : tx.fromAccountId),
-          );
-        });
-
         final categories = context.read<CategoryProvider>();
 
-        if (tx.categoryId != null) {
-          selectedCategory = categories.categories.firstWhere(
-            (c) => c.id == tx.categoryId,
+        setState(() {
+          selectedAccount = ledger.resolveAccount(
+            tx.type == "income" ? tx.toAccountId : tx.fromAccountId,
           );
-        }
+
+          selectedCategory = categories.resolveCategory(tx.categoryId);
+        });
       });
     }
   }

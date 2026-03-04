@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/utils/safe_iterable.dart';
 import 'package:kanakkan/data/models/transaction_model.dart';
 import 'package:kanakkan/data/repositories/account_repository.dart';
 import 'package:kanakkan/data/repositories/transaction_repository.dart';
@@ -9,15 +10,62 @@ import 'package:kanakkan/providers/category_balance_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 class LedgerProvider extends ChangeNotifier {
-  /// dependency that can change over time; the proxy provider will update this
   CategoryBalanceProvider balanceProvider;
 
   LedgerProvider(this.balanceProvider);
 
-  /// Called by the proxy provider when the balance provider instance changes.
+  /// ================= ERROR STATE =================
+  String? lastError;
+
+  void _setError(String message) {
+    lastError = message;
+    notifyListeners();
+  }
+
+  void clearError() {
+    lastError = null;
+  }
+
   void updateBalanceProvider(CategoryBalanceProvider newProvider) {
     balanceProvider = newProvider;
   }
+
+  /// ================= ACCOUNT RESOLVERS =================
+
+  String resolveAccountName(int? accountId) {
+    if (accountId == null) return "Not Found";
+
+    final account = accounts.firstWhereOrNull((a) => a.id == accountId);
+
+    return account?.name ?? "Deleted Account";
+  }
+
+  String resolvePrimaryAccountName(TransactionEntity tx) {
+    int? accountId;
+
+    switch (tx.type) {
+      case "income":
+        accountId = tx.toAccountId;
+        break;
+      case "expense":
+        accountId = tx.fromAccountId;
+        break;
+      case "transfer":
+        accountId = tx.fromAccountId;
+        break;
+      default:
+        return "-";
+    }
+
+    return resolveAccountName(accountId);
+  }
+
+  Account? resolveAccount(int? accountId) {
+    if (accountId == null) return null;
+    return accounts.firstWhereOrNull((a) => a.id == accountId);
+  }
+
+  /// ================= REPOSITORIES =================
   final AccountRepository _accountRepository = AccountRepository();
   final TransactionRepository _transactionRepository = TransactionRepository();
 
@@ -38,7 +86,6 @@ class LedgerProvider extends ChangeNotifier {
 
   /// ================= MONTHLY CACHE =================
   final Map<int, double> _monthlyCategoryTotals = {};
-
   int? _activeMonth;
   int? _activeYear;
 
@@ -46,7 +93,6 @@ class LedgerProvider extends ChangeNotifier {
     return _monthlyCategoryTotals[categoryId] ?? 0.0;
   }
 
-  /// Build aggregation cache
   void rebuildMonthlyTotals({required int month, required int year}) {
     _activeMonth = month;
     _activeYear = year;
@@ -76,14 +122,13 @@ class LedgerProvider extends ChangeNotifier {
   }
 
   /// ================= BALANCE CALC =================
+  /// Opening balance is now handled via transactions ONLY
   Future<void> calculateBalances() async {
     for (final account in _accounts) {
-      final balanceFromTx = await _transactionRepository.calculateAccountBalance(
-        account.id!,
-      );
+      final balanceFromTx = await _transactionRepository
+          .calculateAccountBalance(account.id!);
 
-      // include the opening balance stored on the account itself
-      _accountBalances[account.id!] = balanceFromTx + account.initialBalance;
+      _accountBalances[account.id!] = balanceFromTx;
     }
 
     notifyListeners();
@@ -96,6 +141,8 @@ class LedgerProvider extends ChangeNotifier {
   }
 
   Future<void> addAccount(Account account) async {
+    clearError();
+
     final model = AccountModel(
       id: account.id,
       name: account.name,
@@ -103,16 +150,63 @@ class LedgerProvider extends ChangeNotifier {
     );
 
     try {
-      await _accountRepository.insertAccount(model);
+      final insertedId = await _accountRepository.insertAccount(model);
+
+      final createdAccount = account.copyWith(id: insertedId);
+
+      await _createOpeningBalanceTransaction(createdAccount);
+
+      await loadAccounts();
+      await loadTransactions(type: _currentFilter);
+      await calculateBalances();
     } on DatabaseException catch (e) {
-      // bubble up a friendlier error so the UI can show a message
       if (e.toString().contains('UNIQUE')) {
-        throw Exception('An account with this name already exists');
+        _setError('An account with this name already exists');
+        return;
       }
-      rethrow;
+      _setError('Failed to create account');
+    } catch (_) {
+      _setError('Something went wrong');
     }
+  }
+
+  Future<void> updateAccount(Account updated) async {
+    clearError();
+
+    final updatedModel = AccountModel(
+      id: updated.id,
+      name: updated.name,
+      initialBalance: updated.initialBalance,
+    );
+
+    try {
+      await _accountRepository.updateAccount(updatedModel);
+
+      await _updateOpeningBalanceTransaction(updated);
+
+      await loadAccounts();
+      await loadTransactions(type: _currentFilter);
+      await calculateBalances();
+    } on DatabaseException catch (e) {
+      if (e.toString().contains('UNIQUE')) {
+        _setError('An account with this name already exists');
+        return;
+      }
+      _setError('Failed to update account');
+    } catch (_) {
+      _setError('Something went wrong');
+    }
+  }
+
+  Future<void> deleteAccount(int accountId) async {
+    await _removeOpeningBalance(accountId);
+
+    await _accountRepository.deleteAccount(accountId);
+
+    _accountBalances.remove(accountId);
 
     await loadAccounts();
+    await loadTransactions(type: _currentFilter);
     await calculateBalances();
   }
 
@@ -138,8 +232,8 @@ class LedgerProvider extends ChangeNotifier {
 
     await _applyBalanceEffect(transaction);
 
-    await calculateBalances();
     await loadTransactions(type: _currentFilter);
+    await calculateBalances();
   }
 
   Future<void> addExpense({
@@ -162,8 +256,8 @@ class LedgerProvider extends ChangeNotifier {
 
     await _applyBalanceEffect(transaction);
 
-    await calculateBalances();
     await loadTransactions(type: _currentFilter);
+    await calculateBalances();
   }
 
   Future<void> transferFunds({
@@ -178,7 +272,6 @@ class LedgerProvider extends ChangeNotifier {
       type: "expense",
       amount: amount,
       fromAccountId: fromAccountId,
-      toAccountId: null,
       categoryId: null,
       note: note ?? "Transfer",
       timestamp: timestamp,
@@ -187,7 +280,6 @@ class LedgerProvider extends ChangeNotifier {
     final credit = TransactionModel(
       type: "income",
       amount: amount,
-      fromAccountId: null,
       toAccountId: toAccountId,
       categoryId: null,
       note: note ?? "Transfer",
@@ -197,17 +289,16 @@ class LedgerProvider extends ChangeNotifier {
     await _transactionRepository.insertTransaction(debit);
     await _transactionRepository.insertTransaction(credit);
 
-    await calculateBalances();
     await loadTransactions(type: _currentFilter);
+    await calculateBalances();
   }
 
-  /// ================= LOAD TRANSACTIONS =================
+  /// ================= LOAD =================
   Future<void> loadTransactions({String? type}) async {
     _currentFilter = type;
 
     _transactions = await _transactionRepository.getTransactions(type: type);
 
-    /// rebuild cache automatically
     if (_activeMonth != null && _activeYear != null) {
       rebuildMonthlyTotals(month: _activeMonth!, year: _activeYear!);
     }
@@ -215,20 +306,10 @@ class LedgerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ================= DELETE =================
-  Future<void> deleteAccount(int accountId) async {
-    await _accountRepository.deleteAccount(accountId);
-
-    _accountBalances.remove(accountId);
-
-    await loadAccounts();
-    await calculateBalances();
-  }
-
+  /// ================= DELETE TRANSACTION =================
   Future<void> deleteTransaction(int id) async {
     final tx = _transactions.firstWhere((t) => t.id == id);
 
-    /// rollback balance first
     await _applyBalanceEffect(tx, reverse: true);
 
     await _transactionRepository.deleteTransaction(id);
@@ -237,33 +318,11 @@ class LedgerProvider extends ChangeNotifier {
     await calculateBalances();
   }
 
-  /// ================= UPDATE =================
-  /// update both name and opening balance
-  Future<void> updateAccount(Account updated) async {
-    final updatedModel = AccountModel(
-      id: updated.id,
-      name: updated.name,
-      initialBalance: updated.initialBalance,
-    );
-
-    try {
-      await _accountRepository.updateAccount(updatedModel);
-    } on DatabaseException catch (e) {
-      if (e.toString().contains('UNIQUE')) {
-        throw Exception('An account with this name already exists');
-      }
-      rethrow;
-    }
-
-    await loadAccounts();
-    await calculateBalances();
-  }
-
+  /// ================= UPDATE TRANSACTION =================
   Future<void> updateTransaction({
     required TransactionEntity oldTx,
     required TransactionEntity newTx,
   }) async {
-    /// undo previous balance effect
     await _applyBalanceEffect(oldTx, reverse: true);
 
     final model = TransactionModel(
@@ -279,13 +338,13 @@ class LedgerProvider extends ChangeNotifier {
 
     await _transactionRepository.updateTransaction(model);
 
-    /// apply new effect
     await _applyBalanceEffect(newTx);
 
     await loadTransactions(type: _currentFilter);
     await calculateBalances();
   }
 
+  /// ================= ENVELOPE EFFECT =================
   Future<void> _applyBalanceEffect(
     TransactionEntity tx, {
     bool reverse = false,
@@ -300,6 +359,48 @@ class LedgerProvider extends ChangeNotifier {
 
     if (tx.type == "income") {
       await balanceProvider.allocate(tx.categoryId!, amount);
+    }
+  }
+
+  /// ================= OPENING BALANCE =================
+  Future<void> _createOpeningBalanceTransaction(Account account) async {
+    if (account.initialBalance <= 0) return;
+
+    final model = TransactionModel(
+      type: "income",
+      amount: account.initialBalance,
+      fromAccountId: null,
+      toAccountId: account.id,
+      categoryId: null,
+      note: "Opening_Balance",
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await _transactionRepository.insertTransaction(model);
+  }
+
+  Future<void> _updateOpeningBalanceTransaction(Account account) async {
+    final openingTx = _transactions.firstWhereOrNull(
+      (tx) => tx.note == "Opening_Balance" && tx.toAccountId == account.id,
+    );
+
+    if (openingTx == null) {
+      await _createOpeningBalanceTransaction(account);
+      return;
+    }
+
+    final updatedTx = openingTx.copyWith(amount: account.initialBalance);
+
+    await updateTransaction(oldTx: openingTx, newTx: updatedTx);
+  }
+
+  Future<void> _removeOpeningBalance(int accountId) async {
+    final openingTx = _transactions.firstWhereOrNull(
+      (tx) => tx.note == "Opening_Balance" && tx.toAccountId == accountId,
+    );
+
+    if (openingTx != null) {
+      await _transactionRepository.deleteTransaction(openingTx.id!);
     }
   }
 }

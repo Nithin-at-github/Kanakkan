@@ -1,9 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/utils/safe_iterable.dart';
 import 'package:kanakkan/data/repositories/category_repository.dart';
 import 'package:kanakkan/domain/entities/category.dart';
+import 'package:kanakkan/domain/entities/transaction_entity.dart';
+import 'package:sqflite/sqflite.dart';
 
 class CategoryProvider extends ChangeNotifier {
   final CategoryRepository _repository = CategoryRepository();
+
+  String? lastError;
+
+  void _setError(String message) {
+    lastError = message;
+    notifyListeners();
+  }
+
+  void clearError() {
+    lastError = null;
+  }
+  
+  String resolveCategoryName(int? categoryId) {
+    final category = resolveCategory(categoryId);
+    return category?.name ?? "Deleted Category";
+  }
+
+  String resolveTransactionCategoryName(TransactionEntity tx) {
+    // Transfers don't have categories
+    if (tx.type == "transfer") {
+      return "Transfer";
+    }
+
+    if (tx.categoryId == null) {
+      return "Transfer";
+    }
+
+    final category = resolveCategory(tx.categoryId);
+
+    return category?.name ?? "Deleted Category";
+  }
 
   List<Category> _categories = [];
   List<Category> get categories => _categories;
@@ -13,6 +47,12 @@ class CategoryProvider extends ChangeNotifier {
 
   List<Category> get expenseCategories =>
       _categories.where((c) => c.type == "expense").toList();
+
+  Category? resolveCategory(int? categoryId) {
+    if (categoryId == null) return null;
+
+    return categories.firstWhereOrNull((c) => c.id == categoryId);
+  }
 
   Future<void> initialize() async {
     await loadCategories();
@@ -24,8 +64,21 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   Future<void> addCategory(Category category) async {
-    await _repository.insertCategory(category);
-    await loadCategories();
+    clearError();
+
+    try {
+      await _repository.insertCategory(category);
+      await loadCategories();
+    } on DatabaseException catch (e) {
+      if (e.toString().contains('UNIQUE')) {
+        _setError('Category already exists');
+        return;
+      }
+
+      _setError('Failed to create category');
+    } catch (_) {
+      _setError('Something went wrong');
+    }
   }
 
   Future<void> deleteCategory(int id) async {
@@ -34,7 +87,20 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   Future<void> updateCategory(int id, String newName) async {
-    await _repository.updateCategory(id, newName);
-    await loadCategories();
+    clearError();
+
+    try {
+      await _repository.updateCategory(id, newName);
+      await loadCategories();
+    } on DatabaseException catch (e) {
+      if (e.toString().contains('UNIQUE')) {
+        _setError('Category already exists');
+        return;
+      }
+
+      _setError('Failed to update category');
+    } catch (_) {
+      _setError('Something went wrong');
+    }
   }
 }

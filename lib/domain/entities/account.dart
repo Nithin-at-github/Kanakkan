@@ -9,4 +9,12 @@ class Account {
     required this.name,
     required this.initialBalance,
   });
+
+  Account copyWith({int? id, String? name, double? initialBalance}) {
+    return Account(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      initialBalance: initialBalance ?? this.initialBalance,
+    );
+  }
 }

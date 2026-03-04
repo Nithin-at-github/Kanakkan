@@ -4,7 +4,7 @@ import 'package:kanakkan/providers/budget_provider.dart';
 import 'package:kanakkan/providers/ledger_provider.dart';
 import 'package:kanakkan/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/widgets/budget_item_card.dart';
-import 'package:kanakkan/presentation/widgets/copy_budget_dialog.dart';
+import 'package:kanakkan/presentation/dialogs/copy_budget_dialog.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';

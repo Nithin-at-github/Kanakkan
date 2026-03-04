@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/core/utils/form_validation.dart';
 import 'package:kanakkan/domain/entities/budget_entity.dart';
 import 'package:kanakkan/providers/budget_provider.dart';
 import 'package:kanakkan/providers/category_provider.dart';
@@ -17,6 +19,7 @@ class SetBudgetDialog extends StatefulWidget {
 class _SetBudgetDialogState extends State<SetBudgetDialog> {
   int? selectedCategoryId;
   late TextEditingController amountController;
+  String? amountError;
 
   bool loading = false;
 
@@ -41,20 +44,30 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
 
   /// ================= SAVE =================
   Future<void> _saveBudget() async {
-    if (selectedCategoryId == null || amountController.text.isEmpty) {
-      return;
-    }
+    
+    setState(() {
+      amountError = FormValidation.budget(amountController.text);
+    });
+     /// stop if validation fails
+    if (amountError != null) return;
 
+    final amount = double.parse(amountController.text);
     setState(() => loading = true);
 
-    final amount = double.tryParse(amountController.text) ?? 0;
-
-    await context.read<BudgetProvider>().addBudget(
-      categoryId: selectedCategoryId!,
-      amount: amount,
-    );
-
-    if (mounted) Navigator.pop(context);
+    try {
+      await context.read<BudgetProvider>().addBudget(
+        categoryId: selectedCategoryId!,
+        amount: amount,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() {
+        amountError = "Failed to save budget";
+      });
+    } finally {
+      setState(() => loading = false);
+    }
   }
 
   /// ================= DELETE =================
@@ -90,7 +103,7 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoryProvider>();
-
+    
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -145,11 +158,17 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d{0,2}'),
+                    ),
+                  ],
                   autofocus: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: "Amount",
+                    errorText: amountError,
                     prefixText: "₹ ",
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
 

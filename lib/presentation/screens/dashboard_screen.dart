@@ -66,11 +66,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .where((e) => e.type == "income")
         .fold(0.0, (sum, e) => sum + e.amount);
 
-    final total = totalIncome - totalExpense;
-
     return Scaffold(
       backgroundColor: AppTheme.background,
-
       appBar: const ReusableAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -149,11 +146,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       _summaryColumn("EXPENSE", totalExpense, AppTheme.error),
                       _summaryColumn("INCOME", totalIncome, AppTheme.success),
-                      _summaryColumn(
-                        "BALANCE",
-                        total,
-                        total < 0 ? AppTheme.error : AppTheme.success,
-                      ),
+                      // _summaryColumn(
+                      //   "BALANCE",
+                      //   total,
+                      //   total < 0 ? AppTheme.error : AppTheme.success,
+                      // ),
                     ],
                   ),
                 ],
@@ -181,7 +178,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: filtered.isEmpty
                   ? _emptyTransactions()
                   : ListView.builder(
-                      shrinkWrap: true, // ⭐ CONTENT HEIGHT
+                      shrinkWrap: true, //  CONTENT HEIGHT
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: filtered.length,
                       itemBuilder: (_, i) {
@@ -194,17 +191,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                         final isIncome = tx.type == "income";
 
-                        final accountName = _getAccountName(
-                          ledger,
-                          tx.type == "income"
-                              ? tx.toAccountId
-                              : tx.fromAccountId,
+                        final accountName = ledger.resolvePrimaryAccountName(
+                          tx,
                         );
 
-                        final categoryName = _getCategoryName(
-                          categoryProvider,
-                          tx.categoryId,
-                        );
+                        final categoryName = categoryProvider.resolveTransactionCategoryName(tx);
 
                         final date = DateTime.fromMillisecondsSinceEpoch(
                           tx.timestamp,
@@ -312,26 +303,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
- String _getAccountName(LedgerProvider ledger, int? id) {
-    if (id == null) return "-";
-
-    try {
-      return ledger.accounts.firstWhere((a) => a.id == id).name;
-    } catch (_) {
-      return "-";
-    }
-  }
-
-  String _getCategoryName(CategoryProvider categories, int? id) {
-    if (id == null) return "-";
-
-    try {
-      return categories.categories.firstWhere((c) => c.id == id).name;
-    } catch (_) {
-      return "-";
-    }
-  }
-
   /// FILTER LOGIC
   List<TransactionEntity> _filterTransactions(List<TransactionEntity> all) {
     return all.where((tx) {
@@ -433,16 +404,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _summaryColumn(String title, double amount, Color color) {
     return Column(
       children: [
-        const Text("", style: TextStyle(fontSize: 12, color: Colors.white70)),
         Text(
           title,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
+          style: const TextStyle(fontSize: 14, color: Colors.white70),
         ),
         const SizedBox(height: 4),
         Text(
           "₹${amount.toStringAsFixed(2)}",
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 18,
             color: color,
             fontWeight: FontWeight.bold,
           ),
@@ -457,12 +427,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final isIncome = tx.type == "income";
 
-    final accountName = _getAccountName(
-      ledger,
-      isIncome ? tx.toAccountId : tx.fromAccountId,
-    );
+    final accountName = ledger.resolvePrimaryAccountName(tx);
 
-    final categoryName = _getCategoryName(categories, tx.categoryId);
+    final categoryName = categories.resolveTransactionCategoryName(tx);
 
     final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
 

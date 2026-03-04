@@ -244,12 +244,14 @@ class AccountsScreen extends StatelessWidget {
 
   void _editAccount(BuildContext context, Account account) {
     final controller = TextEditingController(text: account.name);
-    final balanceController = TextEditingController(text: account.initialBalance.toString());
+    final balanceController = TextEditingController(
+      text: account.initialBalance.toString(),
+    );
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) {
+      builder: (_) => Consumer<LedgerProvider>(
+        builder: (context, ledger, __) {
           return Dialog(
             backgroundColor: AppTheme.background,
             shape: RoundedRectangleBorder(
@@ -271,6 +273,7 @@ class AccountsScreen extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
+                  /// ACCOUNT NAME
                   TextField(
                     controller: controller,
                     decoration: InputDecoration(
@@ -285,9 +288,12 @@ class AccountsScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
+                  /// INITIAL BALANCE
                   TextField(
                     controller: balanceController,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: "Initial balance",
                       filled: true,
@@ -298,6 +304,26 @@ class AccountsScreen extends StatelessWidget {
                     ),
                   ),
 
+                  /// ERROR MESSAGE (NEW)
+                  if (ledger.lastError != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        ledger.lastError!,
+                        style: const TextStyle(
+                          color: AppTheme.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 24),
 
                   /// ACTIONS
@@ -305,7 +331,10 @@ class AccountsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            ledger.clearError();
+                            Navigator.pop(context);
+                          },
                           child: const Text("Cancel"),
                         ),
                       ),
@@ -318,17 +347,26 @@ class AccountsScreen extends StatelessWidget {
                             backgroundColor: AppTheme.accent,
                             minimumSize: const Size(double.infinity, 48),
                           ),
-                          onPressed: () {
-                            final newName = controller.text;
-                            final newBalance = double.tryParse(balanceController.text) ?? 0.0;
-                            context.read<LedgerProvider>().updateAccount(
-                                  Account(
-                                    id: account.id,
-                                    name: newName,
-                                    initialBalance: newBalance,
-                                  ),
-                                );
-                            Navigator.pop(context);
+                          onPressed: () async {
+                            ledger.clearError();
+
+                            final newName = controller.text.trim();
+                            final newBalance =
+                                double.tryParse(balanceController.text) ?? 0.0;
+
+                            await context.read<LedgerProvider>().updateAccount(
+                              Account(
+                                id: account.id,
+                                name: newName,
+                                initialBalance: newBalance,
+                              ),
+                            );
+
+                            /// close ONLY if success
+                            if (context.read<LedgerProvider>().lastError ==
+                                null) {
+                              Navigator.pop(context);
+                            }
                           },
                           child: const Text("Save"),
                         ),

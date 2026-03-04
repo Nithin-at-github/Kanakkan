@@ -18,4 +18,26 @@ class TransactionEntity {
     this.note,
     required this.timestamp,
   });
+
+  TransactionEntity copyWith({
+    int? id,
+    String? type,
+    double? amount,
+    int? fromAccountId,
+    int? toAccountId,
+    int? categoryId,
+    String? note,
+    int? timestamp,
+  }) {
+    return TransactionEntity(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      amount: amount ?? this.amount,
+      fromAccountId: fromAccountId ?? this.fromAccountId,
+      toAccountId: toAccountId ?? this.toAccountId,
+      categoryId: categoryId ?? this.categoryId,
+      note: note ?? this.note,
+      timestamp: timestamp ?? this.timestamp,
+    );
+  }
 }

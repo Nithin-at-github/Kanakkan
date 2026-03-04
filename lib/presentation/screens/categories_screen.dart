@@ -212,8 +212,8 @@ class CategoriesScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) {
+      builder: (_) => Consumer<CategoryProvider>(
+        builder: (context, provider, __) {
           return Dialog(
             backgroundColor: AppTheme.background,
             shape: RoundedRectangleBorder(
@@ -249,6 +249,26 @@ class CategoriesScreen extends StatelessWidget {
                     ),
                   ),
 
+                  /// ERROR MESSAGE (NEW)
+                  if (provider.lastError != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        provider.lastError!,
+                        style: const TextStyle(
+                          color: AppTheme.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 24),
 
                   /// ACTIONS
@@ -256,7 +276,10 @@ class CategoriesScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () {
+                            provider.clearError();
+                            Navigator.pop(context);
+                          },
                           child: const Text("Cancel"),
                         ),
                       ),
@@ -268,12 +291,21 @@ class CategoriesScreen extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.accent,
                           ),
-                          onPressed: () {
-                            context.read<CategoryProvider>().updateCategory(
-                              category.id!,
-                              controller.text,
-                            );
-                            Navigator.pop(context);
+                          onPressed: () async {
+                            provider.clearError();
+
+                            await context
+                                .read<CategoryProvider>()
+                                .updateCategory(
+                                  category.id!,
+                                  controller.text.trim(),
+                                );
+
+                            /// close ONLY if success
+                            if (context.read<CategoryProvider>().lastError ==
+                                null) {
+                              Navigator.pop(context);
+                            }
                           },
                           child: const Text("Save"),
                         ),
