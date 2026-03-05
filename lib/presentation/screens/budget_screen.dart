@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/providers/budget_provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
-import 'package:kanakkan/providers/navigation_provider.dart';
+import 'package:kanakkan/presentation/providers/budget_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/widgets/budget_item_card.dart';
 import 'package:kanakkan/presentation/dialogs/copy_budget_dialog.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
@@ -57,7 +57,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     budgetProvider.loadBudgets();
 
-    /// ⭐ IMPORTANT: initialize spending cache
+    /// IMPORTANT: initialize spending cache
     ledger.rebuildMonthlyTotals(
       month: budgetProvider.currentMonth,
       year: budgetProvider.currentYear,

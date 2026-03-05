@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:kanakkan/providers/category_provider.dart';
-import 'package:kanakkan/providers/navigation_provider.dart';
+import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
+import 'package:kanakkan/data/models/salary_trigger.dart';
+import 'package:kanakkan/presentation/dialogs/salary_split_dialog.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
@@ -23,13 +26,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DateTime selectedDate = DateTime.now();
   late NavigationProvider _nav;
 
+  void _openSalarySplitDialog(SalaryTrigger trigger) {
+    final salaryCategoryId = context
+        .read<CategoryProvider>()
+        .categories
+        .firstWhere((c) => c.name.toLowerCase() == "salary")
+        .id!;
+
+    showDialog(
+      context: context,
+      builder: (_) => SalarySplitDialog(
+        salaryAmount: trigger.amount,
+        salaryCategoryId: salaryCategoryId,
+        salaryTransactionId: trigger.transactionId,
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
 
+    final ledger = context.read<LedgerProvider>();
+
+    ledger.salaryIncomeTrigger.addListener(() {
+      final trigger = ledger.consumeSalaryTrigger();
+
+      if (trigger != null) {
+        _openSalarySplitDialog(trigger);
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _nav = context.read<NavigationProvider>();
-
       _nav.addListener(_onTabChanged);
     });
   }
@@ -541,14 +570,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     icon: Icons.delete,
                     color: AppTheme.error,
                     onTap: () async {
+                      final deleteType = await ledger.getDeleteType(tx);
+
+                      bool confirm;
+
+                      switch (deleteType) {
+                        case TransactionDeleteType.salaryDistributed:
+                          confirm = await ConfirmDeleteDialog.show(
+                            context: context,
+                            title: "Delete Salary",
+                            message:
+                                "This salary has been distributed to wallets.\n\n"
+                                "Deleting it will revert those allocations.",
+                          );
+                          break;
+
+                        case TransactionDeleteType.normal:
+                          confirm = await ConfirmDeleteDialog.show(
+                            context: context,
+                            title: "Delete Transaction",
+                            message: "This action cannot be undone.",
+                          );
+                      }
+
+                      if (!confirm) return;
+
                       await ledger.deleteTransaction(tx.id!);
+
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Transaction deleted")),
+                          const SnackBar(
+                            content: Text("Transaction deleted"),
+                            backgroundColor: AppTheme.error,
+                            behavior: SnackBarBehavior.floating,
+                            duration: Duration(seconds: 1),
+                          ),
                         );
                       }
+                      if (!mounted) return;
                       Navigator.pop(context);
-                    },
+                    }
                   ),
                 ],
               ),

@@ -1,4 +1,4 @@
-import 'package:kanakkan/core/database/database_helper.dart';
+import 'package:kanakkan/data/database/database_helper.dart';
 import 'package:kanakkan/data/models/transaction_model.dart';
 
 class TransactionRepository {

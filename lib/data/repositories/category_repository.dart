@@ -1,13 +1,14 @@
-import 'package:kanakkan/core/database/database_helper.dart';
+import 'package:kanakkan/data/database/database_helper.dart';
 import 'package:kanakkan/data/models/category_model.dart';
 import 'package:kanakkan/domain/entities/category.dart';
+import 'package:sqflite/sqflite.dart';
 
 class CategoryRepository {
   // use the named constructor (e.g. singleton) provided by DatabaseHelper
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   /// Insert Category
-  Future<void> insertCategory(Category category) async {
+  Future<int> insertCategory(Category category) async {
     final db = await _dbHelper.database;
 
     final model = CategoryModel(
@@ -16,7 +17,13 @@ class CategoryRepository {
       type: category.type,
     );
 
-    await db.insert("categories", model.toMap());
+    final id = await db.insert(
+      "categories",
+      model.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.abort,
+    );
+
+    return id;
   }
 
   /// Get All Categories

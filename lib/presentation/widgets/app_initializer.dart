@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/providers/category_provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
-import 'package:kanakkan/presentation/root/root_screen.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/screens/root/root_screen.dart';
 import 'package:provider/provider.dart';
 
 class AppInitializer extends StatefulWidget {

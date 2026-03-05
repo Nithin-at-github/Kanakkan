@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
+import 'package:kanakkan/presentation/dialogs/move_wallet_dialog.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/category.dart';
-import 'package:kanakkan/providers/category_provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -24,11 +27,27 @@ class CategoriesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: ReusableAppBar(),
+      appBar: ReusableAppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.swap_horiz,
+              color: AppTheme.accent,
+              size: 35,
+            ),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => const MoveWalletDialog(),
+              );
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           /// ================= HEADER =================
-          _header(totalIncome, totalExpense),
+          _header(context, totalIncome, totalExpense),
 
           /// ================= LIST =================
           Expanded(
@@ -49,7 +68,7 @@ class CategoriesScreen extends StatelessWidget {
                   AppTheme.error,
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 60),
               ],
             ),
           ),
@@ -60,7 +79,7 @@ class CategoriesScreen extends StatelessWidget {
 
   // ================= HEADER =================
 
-  Widget _header(double income, double expense) {
+  Widget _header(BuildContext context, double income, double expense) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
@@ -173,6 +192,7 @@ class CategoriesScreen extends StatelessWidget {
 
   Widget _categoryTile(BuildContext context, Category category, Color accent) {
     final provider = context.read<CategoryProvider>();
+    final balances = context.watch<CategoryBalanceProvider>();
 
     return ListTile(
       leading: CircleAvatar(
@@ -188,18 +208,56 @@ class CategoriesScreen extends StatelessWidget {
         category.name,
         style: const TextStyle(fontWeight: FontWeight.w500),
       ),
-      trailing: PopupMenuButton<String>(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onSelected: (value) {
-          if (value == "edit") {
-            _editDialog(context, category);
-          } else {
-            provider.deleteCategory(category.id!);
-          }
-        },
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: "edit", child: Text("Edit")),
-          PopupMenuItem(value: "delete", child: Text("Delete")),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Wallet ₹${balances.getBalance(category.id!).toStringAsFixed(0)}",
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          PopupMenuButton<String>(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            onSelected: (value) async {
+              if (value == "edit") {
+                _editDialog(context, category);
+              } else {
+                final confirm = await ConfirmDeleteDialog.show(
+                  context: context,
+                  title: "Delete Category",
+                  message: "This will remove the category permanently.",
+                );
+
+                if (!confirm) return;
+
+                await provider.deleteCategory(category.id!);
+
+                if (provider.lastError != null) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(provider.lastError!),
+                        backgroundColor: AppTheme.error,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: "edit", child: Text("Edit")),
+              PopupMenuItem(value: "delete", child: Text("Delete")),
+            ],
+          ),
         ],
       ),
     );

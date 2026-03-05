@@ -11,7 +11,7 @@ class CategoryBalanceModel extends CategoryBalance {
   factory CategoryBalanceModel.fromMap(Map<String, dynamic> map) {
     return CategoryBalanceModel(
       categoryId: map["categoryId"],
-      balance: map["balance"],
+      balance: (map["balance"] as num).toDouble(),
     );
   }
 }

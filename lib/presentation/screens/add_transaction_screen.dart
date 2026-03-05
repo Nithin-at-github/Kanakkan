@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
-import 'package:kanakkan/providers/category_provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 
@@ -85,29 +85,40 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _topBar(),
+            /// SCROLLABLE SECTION
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  children: [
+                    _topBar(),
 
-            const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-            _typeSelector(),
+                    _typeSelector(),
 
-            const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-            _dateTimeRow(),
+                    _dateTimeRow(),
 
-            _accountCategorySection(ledger, categories),
+                    _accountCategorySection(ledger, categories),
 
-            const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-            _notesSection(),
+                    _notesSection(),
 
-            const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-            _amountDisplay(),
+                    _amountDisplay(),
 
-            const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
 
-            Expanded(child: _buildKeypad()),
+            /// KEYPAD FIXED AT BOTTOM
+            SizedBox(height: 285, child: _buildKeypad()),
           ],
         ),
       ),

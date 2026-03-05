@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/security/security_service.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/providers/app_state_provider.dart';
+import 'package:kanakkan/presentation/providers/app_state_provider.dart';
 import 'package:provider/provider.dart';
 
 class CreatePinScreen extends StatefulWidget {
@@ -51,7 +51,8 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: colour,
-        behavior: SnackBarBehavior.floating
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
       )
     );
   }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/data/models/budget_model.dart';
-import 'package:kanakkan/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/providers/budget_provider.dart';
+import 'package:kanakkan/presentation/providers/budget_provider.dart';
 
 class CopyBudgetDialog extends StatefulWidget {
   final int currentMonth;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/budget_entity.dart';
-import 'package:kanakkan/providers/category_balance_provider.dart';
-import 'package:kanakkan/providers/category_provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/dialogs/set_budget_dialog.dart';
 import 'package:provider/provider.dart';
 

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/utils/form_validation.dart';
 import 'package:kanakkan/domain/entities/account.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:provider/provider.dart';
 
 class AddAccountDialog {

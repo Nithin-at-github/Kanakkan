@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/security/security_service.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/providers/app_state_provider.dart';
+import 'package:kanakkan/presentation/providers/app_state_provider.dart';
 import 'package:provider/provider.dart';
 
 class LockScreen extends StatefulWidget {
@@ -43,7 +43,11 @@ class _LockScreenState extends State<LockScreen> {
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid PIN")));
+      ).showSnackBar(const SnackBar(content: Text("Invalid PIN"),
+        backgroundColor: AppTheme.error,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ));
     }
   }
 

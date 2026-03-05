@@ -1,18 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/safe_iterable.dart';
+import 'package:kanakkan/data/models/salary_trigger.dart';
 import 'package:kanakkan/data/models/transaction_model.dart';
 import 'package:kanakkan/data/repositories/account_repository.dart';
+import 'package:kanakkan/data/repositories/salary_allocation_repository.dart';
 import 'package:kanakkan/data/repositories/transaction_repository.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/data/models/account_model.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
-import 'package:kanakkan/providers/category_balance_provider.dart';
+import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
+enum TransactionDeleteType { normal, salaryDistributed }
 
 class LedgerProvider extends ChangeNotifier {
   CategoryBalanceProvider balanceProvider;
+  CategoryProvider categoryProvider = CategoryProvider();
 
-  LedgerProvider(this.balanceProvider);
+  /// Trigger for salary income dialog
+  final ValueNotifier<SalaryTrigger?> salaryIncomeTrigger = ValueNotifier(null);
+
+  LedgerProvider(this.categoryProvider, this.balanceProvider);
+
+  int? get salaryCategoryId {
+    final salary = categoryProvider.categories.firstWhereOrNull(
+      (c) => c.name.toLowerCase() == "salary",
+    );
+
+    return salary?.id;
+  }
+
+  final SalaryAllocationRepository _salaryAllocationRepository = SalaryAllocationRepository();
 
   /// ================= ERROR STATE =================
   String? lastError;
@@ -24,6 +43,14 @@ class LedgerProvider extends ChangeNotifier {
 
   void clearError() {
     lastError = null;
+  }
+
+  void updateDependencies(
+    CategoryProvider newCategoryProvider,
+    CategoryBalanceProvider newBalanceProvider,
+  ) {
+    categoryProvider = newCategoryProvider;
+    balanceProvider = newBalanceProvider;
   }
 
   void updateBalanceProvider(CategoryBalanceProvider newProvider) {
@@ -63,6 +90,12 @@ class LedgerProvider extends ChangeNotifier {
   Account? resolveAccount(int? accountId) {
     if (accountId == null) return null;
     return accounts.firstWhereOrNull((a) => a.id == accountId);
+  }
+
+  SalaryTrigger? consumeSalaryTrigger() {
+    final trigger = salaryIncomeTrigger.value;
+    salaryIncomeTrigger.value = null;
+    return trigger;
   }
 
   /// ================= REPOSITORIES =================
@@ -228,12 +261,29 @@ class LedgerProvider extends ChangeNotifier {
       timestamp: DateTime.now().millisecondsSinceEpoch,
     );
 
-    await _transactionRepository.insertTransaction(transaction);
+    final id = await _transactionRepository.insertTransaction(transaction);
 
     await _applyBalanceEffect(transaction);
 
-    await loadTransactions(type: _currentFilter);
     await calculateBalances();
+    await loadTransactions(type: _currentFilter);
+
+    /// Trigger salary split
+    if (_isSalaryCategory(categoryId)) {
+      salaryIncomeTrigger.value = SalaryTrigger(
+        transactionId: id,
+        amount: amount,
+      );
+    }
+  }
+
+  bool _isSalaryCategory(int? categoryId) {
+    if (categoryId == null) return false;
+
+    final category = categoryProvider.resolveCategory(categoryId);
+    if (category == null) return false;
+
+    return category.name.toLowerCase() == "salary";
   }
 
   Future<void> addExpense({
@@ -309,13 +359,45 @@ class LedgerProvider extends ChangeNotifier {
   /// ================= DELETE TRANSACTION =================
   Future<void> deleteTransaction(int id) async {
     final tx = _transactions.firstWhere((t) => t.id == id);
+    final allocationRepo = SalaryAllocationRepository();
 
+    final allocations = await allocationRepo.getAllocations(tx.id!);
+    if (allocations.isNotEmpty) {
+      for (final row in allocations) {
+        final categoryId = row["categoryId"];
+        final amount = row["amount"];
+
+        await balanceProvider.spend(categoryId, amount);
+        await balanceProvider.allocate(tx.categoryId!, amount);
+      }
+
+      await allocationRepo.deleteAllocations(tx.id!);
+    }
+    
     await _applyBalanceEffect(tx, reverse: true);
-
     await _transactionRepository.deleteTransaction(id);
 
     await loadTransactions(type: _currentFilter);
     await calculateBalances();
+  }
+
+  Future<TransactionDeleteType> getDeleteType(TransactionEntity tx) async {
+
+    final salaryId = salaryCategoryId;
+
+    /// not salary
+    if (salaryId == null || tx.type != "income" || tx.categoryId != salaryId) {
+      return TransactionDeleteType.normal;
+    }
+
+    /// check if salary has allocations
+    final allocations = await _salaryAllocationRepository.getAllocations(tx.id!);
+
+    if (allocations.isEmpty) {
+      return TransactionDeleteType.normal;
+    }
+
+    return TransactionDeleteType.salaryDistributed;
   }
 
   /// ================= UPDATE TRANSACTION =================
@@ -344,7 +426,7 @@ class LedgerProvider extends ChangeNotifier {
     await calculateBalances();
   }
 
-  /// ================= ENVELOPE EFFECT =================
+  /// ================= WALLET EFFECT =================
   Future<void> _applyBalanceEffect(
     TransactionEntity tx, {
     bool reverse = false,

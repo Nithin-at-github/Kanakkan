@@ -1,49 +1,71 @@
-import 'package:kanakkan/core/database/database_helper.dart';
+import 'package:kanakkan/data/database/database_helper.dart';
+import 'package:sqflite/sqflite.dart';
+import '../models/category_balance_model.dart';
 
 class CategoryBalanceRepository {
   final dbHelper = DatabaseHelper.instance;
 
-  /// get balance
+  /// ================= LOAD ALL =================
+  Future<List<CategoryBalanceModel>> getAllBalances() async {
+    final db = await dbHelper.database;
+
+    final result = await db.query("category_balances");
+
+    return result.map((e) => CategoryBalanceModel.fromMap(e)).toList();
+  }
+
+  /// ================= GET ONE =================
   Future<double> getBalance(int categoryId) async {
     final db = await dbHelper.database;
 
     final result = await db.query(
       "category_balances",
-      where: "categoryId=?",
+      where: "categoryId = ?",
       whereArgs: [categoryId],
     );
 
     if (result.isEmpty) return 0;
 
-    return result.first["balance"] as double;
+    return (result.first["balance"] as num).toDouble();
   }
 
-  /// increase balance (allocation)
+  /// ================= ALLOCATE =================
   Future<void> addToBalance(int categoryId, double amount) async {
     final db = await dbHelper.database;
 
     await db.rawInsert(
       '''
-      INSERT INTO category_balances(categoryId, balance)
-      VALUES(?, ?)
-      ON CONFLICT(categoryId)
-      DO UPDATE SET balance = balance + excluded.balance
-    ''',
-      [categoryId, amount],
+INSERT INTO category_balances(categoryId, balance)
+VALUES(?, ?)
+ON CONFLICT(categoryId)
+DO UPDATE SET balance = balance + ?
+''',
+      [categoryId, amount, amount],
     );
   }
 
-  /// decrease balance (spending)
+  /// ================= SPEND =================
   Future<void> subtractFromBalance(int categoryId, double amount) async {
     final db = await dbHelper.database;
 
-    await db.rawUpdate(
+    await db.rawInsert(
       '''
-      UPDATE category_balances
-      SET balance = balance - ?
-      WHERE categoryId = ?
-      ''',
-      [amount, categoryId],
+INSERT INTO category_balances(categoryId, balance)
+VALUES(?, ?)
+ON CONFLICT(categoryId)
+DO UPDATE SET balance = balance - ?
+''',
+      [categoryId, -amount, amount],
     );
+  }
+
+  /// ================= SET =================
+  Future<void> setBalance(int categoryId, double balance) async {
+    final db = await dbHelper.database;
+
+    await db.insert("category_balances", {
+      "categoryId": categoryId,
+      "balance": balance,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 }

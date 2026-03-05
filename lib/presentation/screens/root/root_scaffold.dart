@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/utils/smart_create_handler.dart';
-import 'package:kanakkan/providers/navigation_provider.dart';
+import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/screens/accounts_screen.dart';
 import 'package:kanakkan/presentation/screens/analysis_screen.dart';
 import 'package:kanakkan/presentation/screens/budget_screen.dart';

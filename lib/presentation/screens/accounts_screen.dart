@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/domain/entities/account.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -29,128 +30,132 @@ class AccountsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: ReusableAppBar(),
-      body: Column(
-        children: [
-          /// TOP HEADER
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-            decoration: const BoxDecoration(
-              color: AppTheme.primary,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  "Accounts",
-                  style: TextStyle(
-                    color: AppTheme.accent,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            /// TOP HEADER
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              decoration: const BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(15),
                 ),
-
-                const SizedBox(height: 10),
-
-                Text(
-                  "Total Balance - ₹${totalBalance.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    color: AppTheme.accent,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _summaryColumn(
-                      "EXPENSE SO FAR",
-                      totalExpense,
-                      AppTheme.error,
-                    ),
-                    _summaryColumn(
-                      "INCOME SO FAR",
-                      totalIncome,
-                      AppTheme.success,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          /// WHITE CONTENT CONTAINER
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
-            padding: const EdgeInsets.only(top: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // ⭐ IMPORTANT
-              children: [
-                if (accounts.isEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(
-                      child: Text(
-                        "No accounts added",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Accounts",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
-                        ),
-                      ),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    "Accounts",
+                    style: TextStyle(
+                      color: AppTheme.accent,
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 10),
-                  ListView.builder(
-                    shrinkWrap: true, // ⭐ IMPORTANT
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: accounts.length,
-                    itemBuilder: (context, index) {
-                      final acc = accounts[index];
-                      final balance = provider.accountBalances[acc.id] ?? 0.0;
 
-                      return _accountTile(context, acc, balance);
-                    },
+                  Text(
+                    "Total Balance → ₹${totalBalance.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      color: AppTheme.accent,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _summaryColumn(
+                        "EXPENSE SO FAR",
+                        totalExpense,
+                        AppTheme.error,
+                      ),
+                      _summaryColumn(
+                        "INCOME SO FAR",
+                        totalIncome,
+                        AppTheme.success,
+                      ),
+                    ],
+                  ),
                 ],
-              ],
+              ),
             ),
-          )
-        ],
+
+            const SizedBox(height: 20),
+
+            /// WHITE CONTENT CONTAINER
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.only(top: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // ⭐ IMPORTANT
+                children: [
+                  if (accounts.isEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Text(
+                          "No accounts added",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Accounts",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+                    ListView.builder(
+                      shrinkWrap: true, // IMPORTANT
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: accounts.length,
+                      itemBuilder: (context, index) {
+                        final acc = accounts[index];
+                        final balance = provider.accountBalances[acc.id] ?? 0.0;
+
+                        return _accountTile(context, acc, balance);
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -188,7 +193,7 @@ class AccountsScreen extends StatelessWidget {
 
                 /// BALANCE
                 Text(
-                  "Balance - ₹${balance.toStringAsFixed(2)}",
+                  "Balance → ₹${balance.toStringAsFixed(2)}",
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -205,11 +210,26 @@ class AccountsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             icon: const Icon(Icons.more_vert, color: AppTheme.primary),
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == "edit") {
                 _editAccount(context, acc);
               } else if (value == "delete") {
+                final confirm = await ConfirmDeleteDialog.show(
+                  context: context,
+                  title: "Delete Account",
+                  message:
+                      "All related transactions will remain but account will be removed.",
+                );
+                if (!confirm) return;
                 provider.deleteAccount(acc.id!);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Account deleted"),
+                    backgroundColor: AppTheme.error,
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
               }
             },
             itemBuilder: (_) => const [
@@ -220,7 +240,7 @@ class AccountsScreen extends StatelessWidget {
         ],
       ),
     );
-  } 
+  }
 
   Widget _summaryColumn(String title, double amount, Color color) {
     return Column(

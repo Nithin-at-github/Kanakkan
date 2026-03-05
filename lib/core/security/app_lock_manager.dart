@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/providers/app_state_provider.dart';
+import 'package:kanakkan/presentation/providers/app_state_provider.dart';
 import 'package:provider/provider.dart';
 
 class AppLockManager extends WidgetsBindingObserver {

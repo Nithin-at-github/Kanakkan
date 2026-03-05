@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/safe_iterable.dart';
+import 'package:kanakkan/data/repositories/category_balance_repository.dart';
 import 'package:kanakkan/data/repositories/category_repository.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
@@ -7,6 +8,8 @@ import 'package:sqflite/sqflite.dart';
 
 class CategoryProvider extends ChangeNotifier {
   final CategoryRepository _repository = CategoryRepository();
+  final CategoryBalanceRepository categoryBalanceRepository =
+      CategoryBalanceRepository();
 
   String? lastError;
 
@@ -18,7 +21,7 @@ class CategoryProvider extends ChangeNotifier {
   void clearError() {
     lastError = null;
   }
-  
+
   String resolveCategoryName(int? categoryId) {
     final category = resolveCategory(categoryId);
     return category?.name ?? "Deleted Category";
@@ -47,11 +50,21 @@ class CategoryProvider extends ChangeNotifier {
 
   List<Category> get expenseCategories =>
       _categories.where((c) => c.type == "expense").toList();
+  
+  List<Category> get splitCategories =>
+    _categories.where((c) => c.name.toLowerCase() != "salary").toList();
 
   Category? resolveCategory(int? categoryId) {
     if (categoryId == null) return null;
 
     return categories.firstWhereOrNull((c) => c.id == categoryId);
+  }
+
+  int? getSalaryCategoryId() {
+    final salaryCategory = categories.firstWhereOrNull(
+      (c) => c.name.toLowerCase() == "salary",
+    );
+    return salaryCategory?.id;
   }
 
   Future<void> initialize() async {
@@ -67,7 +80,10 @@ class CategoryProvider extends ChangeNotifier {
     clearError();
 
     try {
-      await _repository.insertCategory(category);
+      final id = await _repository.insertCategory(category);
+
+      await categoryBalanceRepository.setBalance(id, 0);
+
       await loadCategories();
     } on DatabaseException catch (e) {
       if (e.toString().contains('UNIQUE')) {
@@ -82,6 +98,13 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   Future<void> deleteCategory(int id) async {
+    final balance = await categoryBalanceRepository.getBalance(id);
+
+    if (balance != 0) {
+      _setError("Category still has wallet balance");
+      return;
+    }
+
     await _repository.deleteCategory(id);
     await loadCategories();
   }

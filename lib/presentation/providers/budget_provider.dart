@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/data/models/budget_model.dart';
 import 'package:kanakkan/data/repositories/budget_repository.dart';
 import 'package:kanakkan/domain/entities/budget_entity.dart';
-import 'package:kanakkan/providers/category_balance_provider.dart';
-import 'package:kanakkan/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 
 class BudgetProvider extends ChangeNotifier {
   final BudgetRepository _repository = BudgetRepository();
@@ -28,7 +28,7 @@ class BudgetProvider extends ChangeNotifier {
 
     /// load envelope balances for visible categories
     for (final budget in _budgets) {
-      await balanceProvider.loadBalance(budget.categoryId);
+      await balanceProvider.getBalance(budget.categoryId);
     }
 
     notifyListeners();

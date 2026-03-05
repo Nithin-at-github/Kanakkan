@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/utils/form_validation.dart';
+import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/domain/entities/budget_entity.dart';
-import 'package:kanakkan/providers/budget_provider.dart';
-import 'package:kanakkan/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/budget_provider.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 
 class SetBudgetDialog extends StatefulWidget {
@@ -72,28 +73,24 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
 
   /// ================= DELETE =================
   Future<void> _confirmDelete() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await ConfirmDeleteDialog.show(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Delete Budget"),
-        content: const Text("This action cannot be undone."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: "Delete Budget",
+      message: "This action cannot be undone.",
     );
 
-    if (confirm != true) return;
+    if (!confirm) return;
 
     await context.read<BudgetProvider>().deleteBudget(
       widget.existingBudget!.id!,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Budget deleted"),
+        backgroundColor: AppTheme.error,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
+      ),
     );
 
     if (mounted) Navigator.pop(context);
