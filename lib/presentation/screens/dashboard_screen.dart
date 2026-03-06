@@ -455,11 +455,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final categories = context.read<CategoryProvider>();
 
     final isIncome = tx.type == "income";
+    final isTransfer = tx.transferGroupId != null;
 
     final accountName = ledger.resolvePrimaryAccountName(tx);
-
     final categoryName = categories.resolveTransactionCategoryName(tx);
-
     final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
 
     showModalBottomSheet(
@@ -473,7 +472,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: AppTheme.background,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -515,7 +513,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: isIncome ? AppTheme.success : AppTheme.error,
+                  color: isTransfer
+                      ? AppTheme.accent
+                      : isIncome
+                      ? AppTheme.success
+                      : AppTheme.error,
                 ),
               ),
 
@@ -528,14 +530,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: (isIncome ? AppTheme.success : AppTheme.error)
-                      .withOpacity(0.15),
+                  color:
+                      (isTransfer
+                              ? AppTheme.accent
+                              : isIncome
+                              ? AppTheme.success
+                              : AppTheme.error)
+                          .withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isIncome ? "INCOME" : "EXPENSE",
+                  isTransfer
+                      ? "TRANSFER"
+                      : isIncome
+                      ? "INCOME"
+                      : "EXPENSE",
                   style: TextStyle(
-                    color: isIncome ? AppTheme.success : AppTheme.error,
+                    color: isTransfer
+                        ? AppTheme.accent
+                        : isIncome
+                        ? AppTheme.success
+                        : AppTheme.error,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -560,9 +575,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _iconActionButton(
                     icon: Icons.edit,
                     color: AppTheme.accent,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _editTransaction(tx);
+                    onTap: () async {
+                      Navigator.pop(context); // close detail sheet first
+
+                      TransactionEntity? paired;
+                      if (isTransfer) {
+                        // Fetch the paired leg before opening edit screen.
+                        // Shows a brief loader if the lookup is slow.
+                        paired = await ledger.getPairedTransferLeg(tx);
+                      }
+
+                      if (!mounted) return;
+                      _editTransaction(tx, pairedTransaction: paired);
                     },
                   ),
 
@@ -600,7 +624,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Transaction deleted"),
+                            content: Text("Transaction deleted", style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                             backgroundColor: AppTheme.error,
                             behavior: SnackBarBehavior.floating,
                             duration: Duration(seconds: 1),
@@ -609,7 +637,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
                       if (!mounted) return;
                       Navigator.pop(context);
-                    }
+                    },
                   ),
                 ],
               ),
@@ -619,6 +647,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         );
       },
+    );
+  }
+
+  // Update your _editTransaction method signature to accept the paired leg:
+  void _editTransaction(
+    TransactionEntity tx, {
+    TransactionEntity? pairedTransaction,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddTransactionScreen(
+          transaction: tx,
+          pairedTransaction: pairedTransaction,
+        ),
+      ),
     );
   }
 
@@ -662,12 +706,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
-  void _editTransaction(TransactionEntity tx) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => AddTransactionScreen(transaction: tx)),
-    );
-  }
-
 }

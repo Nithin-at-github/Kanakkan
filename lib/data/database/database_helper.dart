@@ -7,7 +7,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  static const int _dbVersion = 2;
+  // Bumped to 3 for transferGroupId migration
+  static const int _dbVersion = 3;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -72,6 +73,7 @@ class DatabaseHelper {
         categoryId INTEGER,
         note TEXT,
         timestamp INTEGER NOT NULL,
+        transferGroupId TEXT,
         FOREIGN KEY(fromAccountId) REFERENCES accounts(id) ON DELETE SET NULL,
         FOREIGN KEY(toAccountId) REFERENCES accounts(id) ON DELETE SET NULL
       )
@@ -148,6 +150,12 @@ class DatabaseHelper {
       CREATE INDEX idx_salary_allocations_tx
       ON salary_allocations(salaryTransactionId)
     ''');
+
+    // Index for fast paired-leg lookup during transfer edits
+    await db.execute('''
+      CREATE INDEX idx_transactions_transfer_group
+      ON transactions(transferGroupId)
+    ''');
   }
 
   // =====================================================
@@ -158,9 +166,7 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute("PRAGMA foreign_keys = OFF");
 
-      // ---------------------------
-      // ACCOUNTS MIGRATION
-      // ---------------------------
+      // ACCOUNTS
       await db.execute('''
         CREATE TABLE accounts_new(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,18 +174,13 @@ class DatabaseHelper {
           initialBalance REAL NOT NULL DEFAULT 0
         )
       ''');
-
-      await db.execute('''
-        INSERT INTO accounts_new(id,name)
-        SELECT id,name FROM accounts
-      ''');
-
+      await db.execute(
+        'INSERT INTO accounts_new(id,name) SELECT id,name FROM accounts',
+      );
       await db.execute("DROP TABLE accounts");
       await db.execute("ALTER TABLE accounts_new RENAME TO accounts");
 
-      // ---------------------------
-      // TRANSACTIONS MIGRATION
-      // ---------------------------
+      // TRANSACTIONS
       await db.execute('''
         CREATE TABLE transactions_new(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -194,18 +195,13 @@ class DatabaseHelper {
           FOREIGN KEY(toAccountId) REFERENCES accounts(id) ON DELETE SET NULL
         )
       ''');
-
-      await db.execute('''
-        INSERT INTO transactions_new
-        SELECT * FROM transactions
-      ''');
-
+      await db.execute(
+        'INSERT INTO transactions_new SELECT * FROM transactions',
+      );
       await db.execute("DROP TABLE transactions");
       await db.execute("ALTER TABLE transactions_new RENAME TO transactions");
 
-      // ---------------------------
-      // BUDGETS MIGRATION
-      // ---------------------------
+      // BUDGETS
       await db.execute('''
         CREATE TABLE budgets_new(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -217,21 +213,27 @@ class DatabaseHelper {
           FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE CASCADE
         )
       ''');
-
-      await db.execute('''
-        INSERT INTO budgets_new
-        SELECT * FROM budgets
-      ''');
-
+      await db.execute('INSERT INTO budgets_new SELECT * FROM budgets');
       await db.execute("DROP TABLE budgets");
       await db.execute("ALTER TABLE budgets_new RENAME TO budgets");
 
-      // ---------------------------
-      // WALLET TABLES
-      // ---------------------------
       await _createWalletTables(db);
-
       await db.execute("PRAGMA foreign_keys = ON");
+    }
+
+    if (oldVersion < 3) {
+      // Add transferGroupId to existing transactions table.
+      // NULL for all existing rows — only new transfers will have it populated.
+      // ALTER TABLE ADD COLUMN is safe in SQLite and doesn't require a table rebuild.
+      await db.execute('''
+        ALTER TABLE transactions ADD COLUMN transferGroupId TEXT
+      ''');
+
+      // Add index for fast paired-leg lookup
+      await db.execute('''
+        CREATE INDEX idx_transactions_transfer_group
+        ON transactions(transferGroupId)
+      ''');
     }
   }
 }

@@ -238,12 +238,31 @@ class CategoriesScreen extends StatelessWidget {
                 if (!confirm) return;
 
                 await provider.deleteCategory(category.id!);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Category deleted",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    backgroundColor: AppTheme.error,
+                    behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
 
                 if (provider.lastError != null) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(provider.lastError!),
+                        content: Text(provider.lastError!,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                         backgroundColor: AppTheme.error,
                         behavior: SnackBarBehavior.floating,
                         duration: Duration(seconds: 1),

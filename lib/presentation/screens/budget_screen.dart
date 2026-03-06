@@ -131,6 +131,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
       appBar: ReusableAppBar(),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 60), // clears the FAB
         child: Column(
           children: [
             /// ================= HEADER =================

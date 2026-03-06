@@ -43,7 +43,9 @@ class _LockScreenState extends State<LockScreen> {
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid PIN"),
+      ).showSnackBar(const SnackBar(content: Text("Invalid PIN",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
         backgroundColor: AppTheme.error,
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 1),

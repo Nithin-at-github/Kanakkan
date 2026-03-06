@@ -11,6 +11,7 @@ import 'package:kanakkan/domain/entities/transaction_entity.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 
 enum TransactionDeleteType { normal, salaryDistributed }
 
@@ -316,28 +317,89 @@ class LedgerProvider extends ChangeNotifier {
     required int toAccountId,
     String? note,
   }) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    // Generate a shared group ID so both legs can be found later
+    final groupId = const Uuid().v4();
 
-    final debit = TransactionModel(
+    final expenseLeg = TransactionModel(
       type: "expense",
       amount: amount,
       fromAccountId: fromAccountId,
-      categoryId: null,
-      note: note ?? "Transfer",
-      timestamp: timestamp,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      note: note,
+      transferGroupId: groupId,
     );
 
-    final credit = TransactionModel(
+    final incomeLeg = TransactionModel(
       type: "income",
       amount: amount,
       toAccountId: toAccountId,
-      categoryId: null,
-      note: note ?? "Transfer",
-      timestamp: timestamp,
+      timestamp: DateTime.now().millisecondsSinceEpoch,
+      note: note,
+      transferGroupId: groupId,
     );
 
-    await _transactionRepository.insertTransaction(debit);
-    await _transactionRepository.insertTransaction(credit);
+    await _transactionRepository.insertTransaction(expenseLeg);
+    await _transactionRepository.insertTransaction(incomeLeg);
+    await loadTransactions(type: _currentFilter);
+    await calculateBalances();
+  }
+
+  /// Fetches the paired leg of a transfer by groupId.
+  /// Returns null if the transaction is not a transfer or has no group.
+  Future<TransactionEntity?> getPairedTransferLeg(TransactionEntity tx) async {
+    if (tx.transferGroupId == null) return null;
+
+    final legs = await _transactionRepository.getTransactionsByGroupId(
+      tx.transferGroupId!,
+    );
+
+    // Return the leg that isn't the one we already have
+    return legs.firstWhereOrNull((leg) => leg.id != tx.id);
+  }
+
+  /// Updates both legs of a transfer atomically.
+  /// [oldExpense] and [oldIncome] are the original legs (for balance reversal).
+  Future<void> updateTransfer({
+    required TransactionEntity oldExpense,
+    required TransactionEntity oldIncome,
+    required double amount,
+    required int fromAccountId,
+    required int toAccountId,
+    required int timestamp,
+    String? note,
+  }) async {
+    // Reverse balance effect of both original legs
+    await _applyBalanceEffect(oldExpense, reverse: true);
+    await _applyBalanceEffect(oldIncome, reverse: true);
+
+    final newExpense = TransactionModel(
+      id: oldExpense.id,
+      type: "expense",
+      amount: amount,
+      fromAccountId: fromAccountId,
+      timestamp: timestamp,
+      note: note,
+      transferGroupId: oldExpense.transferGroupId,
+    );
+
+    final newIncome = TransactionModel(
+      id: oldIncome.id,
+      type: "income",
+      amount: amount,
+      toAccountId: toAccountId,
+      timestamp: timestamp,
+      note: note,
+      transferGroupId: oldIncome.transferGroupId,
+    );
+
+    await _transactionRepository.updateTransferLegs(
+      expenseLeg: newExpense,
+      incomeLeg: newIncome,
+    );
+
+    // Apply balance effect of both new legs
+    await _applyBalanceEffect(newExpense);
+    await _applyBalanceEffect(newIncome);
 
     await loadTransactions(type: _currentFilter);
     await calculateBalances();
@@ -358,24 +420,21 @@ class LedgerProvider extends ChangeNotifier {
 
   /// ================= DELETE TRANSACTION =================
   Future<void> deleteTransaction(int id) async {
-    final tx = _transactions.firstWhere((t) => t.id == id);
-    final allocationRepo = SalaryAllocationRepository();
+    final tx = _transactions.firstWhereOrNull((t) => t.id == id);
 
-    final allocations = await allocationRepo.getAllocations(tx.id!);
-    if (allocations.isNotEmpty) {
-      for (final row in allocations) {
-        final categoryId = row["categoryId"];
-        final amount = row["amount"];
-
-        await balanceProvider.spend(categoryId, amount);
-        await balanceProvider.allocate(tx.categoryId!, amount);
+    if (tx?.transferGroupId != null) {
+      // Delete both legs by group ID
+      final legs = await _transactionRepository.getTransactionsByGroupId(
+        tx!.transferGroupId!,
+      );
+      for (final leg in legs) {
+        await _applyBalanceEffect(leg, reverse: true);
+        await _transactionRepository.deleteTransaction(leg.id!);
       }
-
-      await allocationRepo.deleteAllocations(tx.id!);
+    } else {
+      if (tx != null) await _applyBalanceEffect(tx, reverse: true);
+      await _transactionRepository.deleteTransaction(id);
     }
-    
-    await _applyBalanceEffect(tx, reverse: true);
-    await _transactionRepository.deleteTransaction(id);
 
     await loadTransactions(type: _currentFilter);
     await calculateBalances();

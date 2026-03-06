@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/app_state_provider.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 import 'package:kanakkan/presentation/screens/create_pin_screen.dart';
@@ -14,7 +15,24 @@ class RootScreen extends StatelessWidget {
 
     switch (appState.status) {
       case AppLockStatus.loading:
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "I-W-¡-³-",
+                  style: TextStyle(
+                    fontFamily: 'Ravivarma',
+                    fontSize: 74,
+                    color: AppTheme.accent,
+                  ),
+                ),
+                CircularProgressIndicator(),
+              ],
+            ),
+          ),
+        );
 
       case AppLockStatus.noPin:
         return const CreatePinScreen();

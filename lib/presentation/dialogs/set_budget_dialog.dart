@@ -86,7 +86,9 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
     );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text("Budget deleted"),
+        content: Text("Budget deleted",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: AppTheme.error,
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 1),

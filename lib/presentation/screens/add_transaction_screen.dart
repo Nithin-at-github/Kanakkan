@@ -21,7 +21,15 @@ enum TransactionType { income, expense, transfer }
 class AddTransactionScreen extends StatefulWidget {
   final TransactionEntity? transaction;
 
-  const AddTransactionScreen({super.key, this.transaction});
+  /// The paired leg of a transfer. Only provided when editing a transfer —
+  /// null for income/expense edits and all create flows.
+  final TransactionEntity? pairedTransaction;
+
+  const AddTransactionScreen({
+    super.key,
+    this.transaction,
+    this.pairedTransaction,
+  });
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -30,7 +38,6 @@ class AddTransactionScreen extends StatefulWidget {
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TransactionType _type = TransactionType.expense;
 
-  // FIX 1: Track ALL focus nodes (including dynamically added ones) for proper disposal
   final List<FocusNode> _amountFocusNodes = [];
   final List<FocusNode> _noteFocusNodes = [];
 
@@ -42,17 +49,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   String _amount = "0";
 
-  // FIX 2: Cache totalAmount — recompute only when items change, not on every build
   double _cachedTotalAmount = 0;
 
   DateTime _selectedDateTime = DateTime.now();
 
   final TextEditingController _noteController = TextEditingController();
 
-  // FIX 3: Store items as final list to avoid accidental reassignment
   final List<BulkTransactionItem> _items = [BulkTransactionItem()];
 
   bool get _isEditMode => widget.transaction != null;
+  bool get _isTransferEdit => _isEditMode && widget.pairedTransaction != null;
 
   @override
   void initState() {
@@ -67,21 +73,37 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _amount = tx.amount.toString();
       _selectedDateTime = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       _noteController.text = tx.note ?? "";
-      _type = tx.type == "income"
-          ? TransactionType.income
-          : TransactionType.expense;
 
-      // FIX 4: Resolve edit-mode state in postFrameCallback only once
+      if (_isTransferEdit) {
+        // Lock to transfer — regardless of which leg the user tapped
+        _type = TransactionType.transfer;
+      } else {
+        _type = tx.type == "income"
+            ? TransactionType.income
+            : TransactionType.expense;
+      }
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return; // Guard against unmounted widget
+        if (!mounted) return;
         final ledger = context.read<LedgerProvider>();
         final categories = context.read<CategoryProvider>();
 
         setState(() {
-          _selectedAccount = ledger.resolveAccount(
-            tx.type == "income" ? tx.toAccountId : tx.fromAccountId,
-          );
-          _selectedCategory = categories.resolveCategory(tx.categoryId);
+          if (_isTransferEdit) {
+            // Identify legs by type — safe regardless of which leg was tapped
+            final paired = widget.pairedTransaction!;
+            final expenseLeg = tx.type == "expense" ? tx : paired;
+            final incomeLeg = tx.type == "income" ? tx : paired;
+
+            _selectedAccount = ledger.resolveAccount(expenseLeg.fromAccountId);
+            _selectedToAccount = ledger.resolveAccount(incomeLeg.toAccountId);
+            _selectedCategory = null; // transfers have no category
+          } else {
+            _selectedAccount = ledger.resolveAccount(
+              tx.type == "income" ? tx.toAccountId : tx.fromAccountId,
+            );
+            _selectedCategory = categories.resolveCategory(tx.categoryId);
+          }
         });
       });
     }
@@ -89,13 +111,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
-    // FIX 5: Dispose ALL dynamically created FocusNodes, not just the initial ones
     for (final node in _amountFocusNodes) node.dispose();
     for (final node in _noteFocusNodes) node.dispose();
-
-    // FIX 6: Dispose TextEditingController (was missing entirely before)
     _noteController.dispose();
-
     super.dispose();
   }
 
@@ -109,8 +127,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // FIX 7: Use context.watch only for data that should trigger rebuilds.
-    // Use context.read inside callbacks (not build) for one-shot reads.
     final categoriesProvider = context.watch<CategoryProvider>();
 
     final categories = _type == TransactionType.income
@@ -133,29 +149,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         onSave: _saveTransaction,
                       )
                     else
-                      // FIX 8: Use const SizedBox where possible
                       const SizedBox(height: 45),
 
-                    _modeSelector(),
+                    // Hide mode selector in edit mode — bulk edit not supported
+                    if (!_isEditMode) _modeSelector(),
 
                     const SizedBox(height: 10),
 
                     TransactionTypeSelector(
                       type: _type,
                       multiMode: _multiMode,
-                      onTypeChanged: (t) {
-                        setState(() {
-                          _type = t;
-                          _selectedCategory = null;
-                        });
-                      },
+                      // Lock type in transfer edit — switching type on a paired
+                      // transfer would leave an orphaned leg in the DB
+                      onTypeChanged: _isTransferEdit
+                          ? null
+                          : (t) {
+                              setState(() {
+                                _type = t;
+                                _selectedCategory = null;
+                              });
+                            },
                     ),
 
                     const SizedBox(height: 10),
 
                     _dateTimeRow(),
 
-                    // FIX 9: Read ledger inside callback only, pass account lists directly
                     AccountCategorySection(
                       type: _type,
                       selectedAccount: _selectedAccount,
@@ -175,17 +194,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         items: _items,
                         amountFocusNodes: _amountFocusNodes,
                         noteFocusNodes: _noteFocusNodes,
-                        // FIX 10: Use cached total instead of recomputing on every build
                         total: _cachedTotalAmount,
                         onAmountChanged: (index, value) {
                           _items[index].amount = double.tryParse(value) ?? 0;
                           _ensureExtraRow(index);
-                          // Recompute only when data changes
                           setState(_recomputeTotal);
                         },
                         onNoteChanged: (index, value) {
                           _items[index].note = value;
-                          // No setState needed — note changes don't affect UI total
                         },
                         onSubmitNote: (index) {
                           _ensureExtraRow(index);
@@ -210,7 +226,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     if (!_multiMode) ...[
                       _notesSection(),
                       const SizedBox(height: 12),
-                      // FIX 11: Isolate amount display to reduce rebuild scope
                       _AmountDisplay(amount: _amount),
                     ],
                   ],
@@ -221,9 +236,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             if (!_multiMode)
               SizedBox(
                 height: 285,
-                // FIX 12: TransactionKeypad should be const if it has no changing props
                 child: TransactionKeypad(onKeyTap: _onKeyTap),
-                // Note: if TransactionKeypad can't be const, keep it as-is
               ),
           ],
         ),
@@ -234,24 +247,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ================= MODE SELECTOR =================
 
   Widget _modeSelector() {
-    // FIX 13: Extract repeated ChoiceChip styling into a helper to avoid duplication
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildModeChip(
           label: "Single Entry",
           selected: !_multiMode,
-          onSelected: () {
-            setState(() => _multiMode = false);
-          },
+          onSelected: () => setState(() => _multiMode = false),
         ),
         const SizedBox(width: 10),
         _buildModeChip(
           label: "Multiple Entry",
           selected: _multiMode,
-          onSelected: () {
-            setState(() => _multiMode = true);
-          },
+          onSelected: () => setState(() => _multiMode = true),
         ),
       ],
     );
@@ -321,10 +329,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         controller: _noteController,
         maxLines: 2,
         style: const TextStyle(color: Colors.white),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: "Add notes",
-          hintStyle: TextStyle(color: Colors.white54),
-          border: OutlineInputBorder(),
+          hintStyle: const TextStyle(color: Colors.white54),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.4)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       ),
     );
@@ -359,10 +374,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ================= SAVE BULK =================
 
   Future<void> _saveBulkTransactions() async {
-    // FIX 14: Read provider once before async gap, not inside loop
-    final ledger = context.read<LedgerProvider>();
+    // ── Validation ──────────────────────────────────────────
+    if (_selectedAccount == null) {
+      _showSnackbar("Please select an account", isError: true);
+      return;
+    }
 
-    final validItems = _items.where((item) => item.amount > 0);
+    if (_type != TransactionType.transfer && _selectedCategory == null) {
+      _showSnackbar("Please select a category", isError: true);
+      return;
+    }
+
+    final validItems = _items.where((item) => item.amount > 0).toList();
+
+    if (validItems.isEmpty) {
+      _showSnackbar("Enter at least one amount", isError: true);
+      return;
+    }
+    // ────────────────────────────────────────────────────────
+
+    final ledger = context.read<LedgerProvider>();
 
     for (final item in validItems) {
       if (_type == TransactionType.expense) {
@@ -382,38 +413,93 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    _showSnackbar(
+      "${validItems.length} transaction${validItems.length > 1 ? 's' : ''} saved",
+      isError: false,
+    );
+    Navigator.pop(context);
+  }
+
+  void _showSnackbar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message,
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: isError ? AppTheme.error : AppTheme.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   // ================= SAVE SINGLE =================
 
-  void _saveTransaction() async {
-    final ledger = context.read<LedgerProvider>();
+  Future<void> _saveTransaction() async {
+    // ── Validation ──────────────────────────────────────────
     final amt = double.tryParse(_amount) ?? 0;
-    if (amt <= 0) return;
+
+    if (amt <= 0) {
+      _showSnackbar("Enter a valid amount", isError: true);
+      return;
+    }
+
+    if (_selectedAccount == null) {
+      _showSnackbar("Please select an account", isError: true);
+      return;
+    }
+
+    if (_type == TransactionType.transfer && _selectedToAccount == null) {
+      _showSnackbar("Please select a destination account", isError: true);
+      return;
+    }
+
+    if (_type == TransactionType.transfer &&
+        _selectedAccount!.id == _selectedToAccount!.id) {
+      _showSnackbar("From and To accounts must be different", isError: true);
+      return;
+    }
+    // ────────────────────────────────────────────────────────
+
+    final ledger = context.read<LedgerProvider>();
 
     if (_isEditMode) {
-      // Edit mode: update the existing transaction in-place.
-      // Pass the original as oldTx (for balance reversal) and build newTx from current form state.
-      await ledger.updateTransaction(
-        oldTx: widget.transaction!,
-        newTx: TransactionEntity(
-          id: widget.transaction!.id,
-          type: _type == TransactionType.income ? "income" : "expense",
+      if (_isTransferEdit) {
+        final tx = widget.transaction!;
+        final paired = widget.pairedTransaction!;
+        final expenseLeg = tx.type == "expense" ? tx : paired;
+        final incomeLeg = tx.type == "income" ? tx : paired;
+
+        await ledger.updateTransfer(
+          oldExpense: expenseLeg,
+          oldIncome: incomeLeg,
           amount: amt,
-          fromAccountId: _type == TransactionType.income
-              ? null
-              : _selectedAccount?.id,
-          toAccountId: _type == TransactionType.income
-              ? _selectedAccount?.id
-              : null,
-          categoryId: _selectedCategory?.id,
-          note: _noteController.text,
+          fromAccountId: _selectedAccount!.id!,
+          toAccountId: _selectedToAccount!.id!,
           timestamp: _selectedDateTime.millisecondsSinceEpoch,
-        ),
-      );
+          note: _noteController.text,
+        );
+      } else {
+        await ledger.updateTransaction(
+          oldTx: widget.transaction!,
+          newTx: TransactionEntity(
+            id: widget.transaction!.id,
+            type: _type == TransactionType.income ? "income" : "expense",
+            amount: amt,
+            fromAccountId: _type == TransactionType.income
+                ? null
+                : _selectedAccount?.id,
+            toAccountId: _type == TransactionType.income
+                ? _selectedAccount?.id
+                : null,
+            categoryId: _selectedCategory?.id,
+            note: _noteController.text,
+            timestamp: _selectedDateTime.millisecondsSinceEpoch,
+          ),
+        );
+      }
     } else {
-      // Create mode: add a new transaction
       if (_type == TransactionType.income) {
         await ledger.addIncome(
           amount: amt,
@@ -438,7 +524,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   // ================= PICKERS =================
@@ -486,8 +573,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ================= ACCOUNT SELECT =================
 
   void _selectAccount(LedgerProvider ledger, bool isFrom) {
-    // FIX 15: Pre-snapshot the accounts list before opening sheet —
-    // avoids holding a stale provider reference inside the builder closure
     final accounts = ledger.accounts;
 
     showModalBottomSheet(
@@ -521,8 +606,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   const SizedBox(height: 16),
                   Expanded(
                     child: ListView.builder(
-                      // FIX 16: Use ListView.builder instead of .map().toList()
-                      // for lazy rendering of large lists
                       controller: scrollController,
                       itemCount: accounts.length,
                       itemBuilder: (context, index) {
@@ -553,10 +636,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  // ================= CATEGORY SELECT =================
+
   void _selectCategory(List<Category> categories) {
     final searchController = TextEditingController();
-    // FIX 17: Initialize filtered list once outside StatefulBuilder,
-    // not on every modal rebuild
     List<Category> filtered = List.from(categories);
 
     showModalBottomSheet(
@@ -566,8 +649,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            // FIX 18: Compute income/expense split inside setModalState only,
-            // not on the outer build pass
             final incomeCategories = filtered
                 .where((c) => c.type == "income")
                 .toList();
@@ -647,8 +728,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           children: [
                             if (expenseCategories.isNotEmpty) ...[
                               _sectionTitle("Expense"),
-                              // FIX 19: Use spread with pre-computed lists instead
-                              // of chained .map() calls inside build
                               for (final c in expenseCategories)
                                 _selectionTile(
                                   title: c.name,
@@ -697,6 +776,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  // ================= SHARED WIDGETS =================
+
   Widget _sheetHandle() {
     return Container(
       width: 40,
@@ -737,8 +818,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 }
 
-// FIX 20: Extract AmountDisplay into its own StatelessWidget.
-// Now only this widget rebuilds on keypad taps, not the entire screen.
+// Isolated widget — only rebuilds on keypad taps, not the entire screen
 class _AmountDisplay extends StatelessWidget {
   final String amount;
 

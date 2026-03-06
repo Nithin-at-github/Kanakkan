@@ -10,6 +10,7 @@ class TransactionModel extends TransactionEntity {
     super.categoryId,
     super.note,
     required super.timestamp,
+    super.transferGroupId,
   });
 
   factory TransactionModel.fromMap(Map<String, dynamic> map) {
@@ -22,6 +23,7 @@ class TransactionModel extends TransactionEntity {
       categoryId: map['categoryId'],
       note: map['note'],
       timestamp: map['timestamp'],
+      transferGroupId: map['transferGroupId'],
     );
   }
 
@@ -35,6 +37,7 @@ class TransactionModel extends TransactionEntity {
       'categoryId': categoryId,
       'note': note,
       'timestamp': timestamp,
+      'transferGroupId': transferGroupId,
     };
   }
 }

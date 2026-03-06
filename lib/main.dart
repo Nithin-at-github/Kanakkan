@@ -17,7 +17,6 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
 
         /// ---------------- CATEGORY ----------------
@@ -35,7 +34,7 @@ void main() async {
           },
         ),
 
-         // ---------------- SALARY ALLOCATION ----------------
+        // ---------------- SALARY ALLOCATION ----------------
         ChangeNotifierProvider(
           create: (_) {
             final provider = SalaryAllocationProvider();
@@ -70,6 +69,7 @@ void main() async {
             return previous;
           },
         ),
+
         /// App auth / lock state
         ChangeNotifierProvider(create: (_) => AppStateProvider()..initialize()),
       ],
@@ -83,11 +83,29 @@ class KanakkanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return MaterialApp(
       theme: ThemeData(
-        scaffoldBackgroundColor: AppTheme.background,
-        // canvasColor: AppTheme.background,
+        scaffoldBackgroundColor: AppTheme.primary,
+        canvasColor: Colors.white,
+        // Explicit dialog background — overrides whatever surface resolves to
+        dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
+        colorScheme: ColorScheme.light(
+          surface: AppTheme.primary,
+          primary: AppTheme.primary,
+          // Dialogs and popups (including PopupMenuButton) use these surface variants
+          surfaceContainer: Colors.white,
+          surfaceContainerHigh: Colors.white,
+          surfaceContainerHighest: Colors.white,
+          onSurface: Colors.black87, // default text color on dialogs/popups
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+        ),
+        // Covers PopupMenuButton (three-dot menu) background
+        popupMenuTheme: const PopupMenuThemeData(color: Colors.white),
       ),
+      
       debugShowCheckedModeBanner: false,
       title: 'Kanakkan',
 

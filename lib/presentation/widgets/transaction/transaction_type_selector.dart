@@ -5,7 +5,8 @@ import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
 class TransactionTypeSelector extends StatelessWidget {
   final TransactionType type;
   final bool multiMode;
-  final Function(TransactionType) onTypeChanged;
+  // Nullable — pass null to lock the selector (e.g. during transfer edit)
+  final Function(TransactionType)? onTypeChanged;
 
   const TransactionTypeSelector({
     super.key,
@@ -16,23 +17,27 @@ class TransactionTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locked = onTypeChanged == null;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _typeButton("INCOME", TransactionType.income),
+        _typeButton("INCOME", TransactionType.income, locked),
         _divider(),
-        _typeButton("EXPENSE", TransactionType.expense),
+        _typeButton("EXPENSE", TransactionType.expense, locked),
         if (!multiMode) _divider(),
-        if (!multiMode) _typeButton("TRANSFER", TransactionType.transfer),
+        if (!multiMode)
+          _typeButton("TRANSFER", TransactionType.transfer, locked),
       ],
     );
   }
 
-  Widget _typeButton(String label, TransactionType t) {
+  Widget _typeButton(String label, TransactionType t, bool locked) {
     final selected = type == t;
 
     return GestureDetector(
-      onTap: () => onTypeChanged(t),
+      // No-op when locked — prevents orphaned transfer legs
+      onTap: locked ? null : () => onTypeChanged!(t),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -46,7 +51,12 @@ class TransactionTypeSelector extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? AppTheme.accent : Colors.white54,
+            // Dim all unselected labels further when locked to signal disabled state
+            color: selected
+                ? AppTheme.accent
+                : locked
+                ? Colors.white24
+                : Colors.white54,
             fontWeight: FontWeight.bold,
           ),
         ),

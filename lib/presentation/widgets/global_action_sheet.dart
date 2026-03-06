@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/utils/app_router.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
 
@@ -30,8 +31,8 @@ class GlobalActionSheet {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddTransactionScreen(),
+                    AppPageRoute(
+                      page: const AddTransactionScreen(),
                     ),
                   );
                 },

@@ -227,7 +227,12 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Money moved successfully!"),
+            content: Text("Money moved successfully!",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 2),
