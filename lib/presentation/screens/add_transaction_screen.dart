@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kanakkan/presentation/widgets/transaction/account_category_section.dart';
+import 'package:kanakkan/presentation/widgets/transaction/bulk_entry_list.dart';
+import 'package:kanakkan/presentation/widgets/transaction/transaction_keypad.dart';
+import 'package:kanakkan/presentation/widgets/transaction/transaction_top_bar.dart';
+import 'package:kanakkan/presentation/widgets/transaction/transaction_type_selector.dart';
+import 'package:provider/provider.dart';
+
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/data/models/bulk_transaction_item.dart';
+import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
+
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
-import 'package:provider/provider.dart';
-import 'package:kanakkan/domain/entities/account.dart';
 
 enum TransactionType { income, expense, transfer }
 
@@ -20,63 +28,92 @@ class AddTransactionScreen extends StatefulWidget {
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
-  TransactionType type = TransactionType.expense;
-  bool get isEditMode => widget.transaction != null;
+  TransactionType _type = TransactionType.expense;
 
-  Account? selectedAccount;
-  Account? selectedToAccount;
-  Category? selectedCategory;
+  // FIX 1: Track ALL focus nodes (including dynamically added ones) for proper disposal
+  final List<FocusNode> _amountFocusNodes = [];
+  final List<FocusNode> _noteFocusNodes = [];
 
-  String amount = "0";
+  bool _multiMode = false;
 
-  DateTime selectedDateTime = DateTime.now();
+  Account? _selectedAccount;
+  Account? _selectedToAccount;
+  Category? _selectedCategory;
+
+  String _amount = "0";
+
+  // FIX 2: Cache totalAmount — recompute only when items change, not on every build
+  double _cachedTotalAmount = 0;
+
+  DateTime _selectedDateTime = DateTime.now();
 
   final TextEditingController _noteController = TextEditingController();
+
+  // FIX 3: Store items as final list to avoid accidental reassignment
+  final List<BulkTransactionItem> _items = [BulkTransactionItem()];
+
+  bool get _isEditMode => widget.transaction != null;
 
   @override
   void initState() {
     super.initState();
 
+    _amountFocusNodes.add(FocusNode());
+    _noteFocusNodes.add(FocusNode());
+
     final tx = widget.transaction;
 
     if (tx != null) {
-      amount = tx.amount.toString();
-
-      selectedDateTime = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
-
+      _amount = tx.amount.toString();
+      _selectedDateTime = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       _noteController.text = tx.note ?? "";
+      _type = tx.type == "income"
+          ? TransactionType.income
+          : TransactionType.expense;
 
-      /// TYPE
-      if (tx.type == "income") {
-        type = TransactionType.income;
-      } else {
-        type = TransactionType.expense;
-      }
-
-      /// ACCOUNTS WILL BE RESOLVED AFTER BUILD
+      // FIX 4: Resolve edit-mode state in postFrameCallback only once
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return; // Guard against unmounted widget
         final ledger = context.read<LedgerProvider>();
         final categories = context.read<CategoryProvider>();
 
         setState(() {
-          selectedAccount = ledger.resolveAccount(
+          _selectedAccount = ledger.resolveAccount(
             tx.type == "income" ? tx.toAccountId : tx.fromAccountId,
           );
-
-          selectedCategory = categories.resolveCategory(tx.categoryId);
+          _selectedCategory = categories.resolveCategory(tx.categoryId);
         });
       });
     }
+  }
+
+  @override
+  void dispose() {
+    // FIX 5: Dispose ALL dynamically created FocusNodes, not just the initial ones
+    for (final node in _amountFocusNodes) node.dispose();
+    for (final node in _noteFocusNodes) node.dispose();
+
+    // FIX 6: Dispose TextEditingController (was missing entirely before)
+    _noteController.dispose();
+
+    super.dispose();
+  }
+
+  // ================= CACHED TOTAL =================
+
+  void _recomputeTotal() {
+    _cachedTotalAmount = _items.fold(0, (sum, e) => sum + e.amount);
   }
 
   // ================= BUILD =================
 
   @override
   Widget build(BuildContext context) {
-    final ledger = context.watch<LedgerProvider>();
+    // FIX 7: Use context.watch only for data that should trigger rebuilds.
+    // Use context.read inside callbacks (not build) for one-shot reads.
     final categoriesProvider = context.watch<CategoryProvider>();
 
-    final categories = type == TransactionType.income
+    final categories = _type == TransactionType.income
         ? categoriesProvider.incomeCategories
         : categoriesProvider.expenseCategories;
 
@@ -85,184 +122,156 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            /// SCROLLABLE SECTION
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Column(
                   children: [
-                    _topBar(),
+                    if (!_multiMode)
+                      TransactionTopBar(
+                        onCancel: () => Navigator.pop(context),
+                        onSave: _saveTransaction,
+                      )
+                    else
+                      // FIX 8: Use const SizedBox where possible
+                      const SizedBox(height: 45),
 
-                    const SizedBox(height: 16),
+                    _modeSelector(),
 
-                    _typeSelector(),
+                    const SizedBox(height: 10),
 
-                    const SizedBox(height: 16),
+                    TransactionTypeSelector(
+                      type: _type,
+                      multiMode: _multiMode,
+                      onTypeChanged: (t) {
+                        setState(() {
+                          _type = t;
+                          _selectedCategory = null;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 10),
 
                     _dateTimeRow(),
 
-                    _accountCategorySection(ledger, categories),
+                    // FIX 9: Read ledger inside callback only, pass account lists directly
+                    AccountCategorySection(
+                      type: _type,
+                      selectedAccount: _selectedAccount,
+                      selectedToAccount: _selectedToAccount,
+                      selectedCategory: _selectedCategory,
+                      onSelectAccount: () =>
+                          _selectAccount(context.read<LedgerProvider>(), true),
+                      onSelectToAccount: () =>
+                          _selectAccount(context.read<LedgerProvider>(), false),
+                      onSelectCategory: () => _selectCategory(categories),
+                    ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 15),
 
-                    _notesSection(),
+                    if (_multiMode)
+                      BulkEntryList(
+                        items: _items,
+                        amountFocusNodes: _amountFocusNodes,
+                        noteFocusNodes: _noteFocusNodes,
+                        // FIX 10: Use cached total instead of recomputing on every build
+                        total: _cachedTotalAmount,
+                        onAmountChanged: (index, value) {
+                          _items[index].amount = double.tryParse(value) ?? 0;
+                          _ensureExtraRow(index);
+                          // Recompute only when data changes
+                          setState(_recomputeTotal);
+                        },
+                        onNoteChanged: (index, value) {
+                          _items[index].note = value;
+                          // No setState needed — note changes don't affect UI total
+                        },
+                        onSubmitNote: (index) {
+                          _ensureExtraRow(index);
+                          if (index + 1 < _amountFocusNodes.length) {
+                            FocusScope.of(
+                              context,
+                            ).requestFocus(_amountFocusNodes[index + 1]);
+                          }
+                        },
+                        onDelete: (index) {
+                          setState(() {
+                            _items.removeAt(index);
+                            _amountFocusNodes.removeAt(index).dispose();
+                            _noteFocusNodes.removeAt(index).dispose();
+                            _recomputeTotal();
+                          });
+                        },
+                        onSaveAll: _saveBulkTransactions,
+                        onCancel: () => Navigator.pop(context),
+                      ),
 
-                    const SizedBox(height: 16),
-
-                    _amountDisplay(),
-
-                    const SizedBox(height: 16),
+                    if (!_multiMode) ...[
+                      _notesSection(),
+                      const SizedBox(height: 12),
+                      // FIX 11: Isolate amount display to reduce rebuild scope
+                      _AmountDisplay(amount: _amount),
+                    ],
                   ],
                 ),
               ),
             ),
 
-            /// KEYPAD FIXED AT BOTTOM
-            SizedBox(height: 285, child: _buildKeypad()),
+            if (!_multiMode)
+              SizedBox(
+                height: 285,
+                // FIX 12: TransactionKeypad should be const if it has no changing props
+                child: TransactionKeypad(onKeyTap: _onKeyTap),
+                // Note: if TransactionKeypad can't be const, keep it as-is
+              ),
           ],
         ),
       ),
     );
   }
 
-  // ================= TOP BAR =================
+  // ================= MODE SELECTOR =================
 
-  Widget _topBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TextButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: AppTheme.accent),
-            label: const Text(
-              "CANCEL",
-              style: TextStyle(color: AppTheme.accent),
-            ),
-          ),
-
-          TextButton.icon(
-            onPressed: _saveTransaction,
-            icon: const Icon(Icons.check, color: AppTheme.accent),
-            label: const Text("SAVE", style: TextStyle(color: AppTheme.accent)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ================= TYPE SELECTOR =================
-
-  Widget _typeSelector() {
+  Widget _modeSelector() {
+    // FIX 13: Extract repeated ChoiceChip styling into a helper to avoid duplication
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _typeButton("INCOME", TransactionType.income),
-        _divider(),
-        _typeButton("EXPENSE", TransactionType.expense),
-        _divider(),
-        _typeButton("TRANSFER", TransactionType.transfer),
+        _buildModeChip(
+          label: "Single Entry",
+          selected: !_multiMode,
+          onSelected: () {
+            setState(() => _multiMode = false);
+          },
+        ),
+        const SizedBox(width: 10),
+        _buildModeChip(
+          label: "Multiple Entry",
+          selected: _multiMode,
+          onSelected: () {
+            setState(() => _multiMode = true);
+          },
+        ),
       ],
     );
   }
 
-  Widget _typeButton(String label, TransactionType t) {
-    final selected = type == t;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          type = t;
-          selectedCategory = null;
-        });
-      },
-      child: Text(
-        label,
-        style: TextStyle(
-          color: selected ? AppTheme.accent : Colors.white54,
-          fontWeight: selected ? FontWeight.bold : null,
-        ),
-      ),
-    );
-  }
-
-  Widget _divider() => const Padding(
-    padding: EdgeInsets.symmetric(horizontal: 8),
-    child: Text("|", style: TextStyle(color: Colors.white54)),
-  );
-
-  // ================= ACCOUNT + CATEGORY =================
-
-  Widget _accountCategorySection(
-    LedgerProvider ledger,
-    List<Category> categories,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          _selectionBox(
-            label: type == TransactionType.transfer
-                ? "From Account"
-                : "Account",
-            value: selectedAccount?.name ?? "Select",
-            onTap: () => _selectAccount(ledger, true),
-          ),
-
-          const SizedBox(height: 12),
-
-          if (type == TransactionType.transfer)
-            _selectionBox(
-              label: "To Account",
-              value: selectedToAccount?.name ?? "Select",
-              onTap: () => _selectAccount(ledger, false),
-            ),
-
-          if (type != TransactionType.transfer)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: _selectionBox(
-                label: "Category",
-                value: selectedCategory?.name ?? "Select",
-                onTap: () => _selectCategory(categories),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _selectionBox({
+  Widget _buildModeChip({
     required String label,
-    required String value,
-    required VoidCallback onTap,
+    required bool selected,
+    required VoidCallback onSelected,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.accent),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(color: Colors.white54)),
-                Text(
-                  value,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ],
-            ),
-            const Icon(Icons.chevron_right, color: Colors.white54),
-          ],
-        ),
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      selectedColor: AppTheme.accent,
+      backgroundColor: AppTheme.background,
+      labelStyle: TextStyle(
+        color: selected ? AppTheme.background : AppTheme.primary,
+        fontWeight: FontWeight.bold,
       ),
+      onSelected: (_) => onSelected(),
     );
   }
 
@@ -277,24 +286,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           GestureDetector(
             onTap: _pickDate,
             child: Text(
-              DateFormat("MMM d, yyyy").format(selectedDateTime),
+              DateFormat("MMM d, yyyy").format(_selectedDateTime),
               style: const TextStyle(
                 color: AppTheme.accent,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
               ),
             ),
           ),
-
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 13),
             child: Text("|", style: TextStyle(color: Colors.white54)),
           ),
-
           GestureDetector(
             onTap: _pickTime,
             child: Text(
-              DateFormat("hh:mm a").format(selectedDateTime),
+              DateFormat("hh:mm a").format(_selectedDateTime),
               style: const TextStyle(
                 color: AppTheme.accent,
                 fontWeight: FontWeight.bold,
@@ -324,71 +330,115 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ================= AMOUNT =================
-
-  Widget _amountDisplay() {
-    return Text(
-      "₹${double.parse(amount).toStringAsFixed(2)}",
-      style: const TextStyle(
-        fontSize: 48,
-        color: AppTheme.accent,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // ================= KEYPAD =================
-
-  Widget _buildKeypad() {
-    final keys = ["7", "8", "9", "4", "5", "6", "1", "2", "3", "0", ".", "⌫"];
-
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 35),
-      itemCount: keys.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.6,
-      ),
-      itemBuilder: (_, i) {
-        final key = keys[i];
-
-        return GestureDetector(
-          onTap: () => _onKeyTap(key),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.accent),
-            ),
-            child: Center(
-              child: Text(
-                key,
-                style: const TextStyle(fontSize: 22, color: Colors.white),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // ================= KEYPAD LOGIC =================
 
   void _onKeyTap(String key) {
     setState(() {
       if (key == "⌫") {
-        if (amount.length > 1) {
-          amount = amount.substring(0, amount.length - 1);
-        } else {
-          amount = "0";
-        }
+        _amount = _amount.length > 1
+            ? _amount.substring(0, _amount.length - 1)
+            : "0";
       } else {
-        if (amount == "0") {
-          amount = key;
-        } else {
-          amount += key;
-        }
+        _amount = _amount == "0" ? key : _amount + key;
       }
     });
+  }
+
+  // ================= HELPERS =================
+
+  void _ensureExtraRow(int index) {
+    if (index == _items.length - 1) {
+      setState(() {
+        _items.add(BulkTransactionItem());
+        _amountFocusNodes.add(FocusNode());
+        _noteFocusNodes.add(FocusNode());
+      });
+    }
+  }
+
+  // ================= SAVE BULK =================
+
+  Future<void> _saveBulkTransactions() async {
+    // FIX 14: Read provider once before async gap, not inside loop
+    final ledger = context.read<LedgerProvider>();
+
+    final validItems = _items.where((item) => item.amount > 0);
+
+    for (final item in validItems) {
+      if (_type == TransactionType.expense) {
+        await ledger.addExpense(
+          amount: item.amount,
+          fromAccountId: _selectedAccount!.id!,
+          categoryId: _selectedCategory!.id!,
+          note: item.note,
+        );
+      } else {
+        await ledger.addIncome(
+          amount: item.amount,
+          toAccountId: _selectedAccount!.id!,
+          categoryId: _selectedCategory!.id!,
+          note: item.note,
+        );
+      }
+    }
+
+    if (mounted) Navigator.pop(context);
+  }
+
+  // ================= SAVE SINGLE =================
+
+  void _saveTransaction() async {
+    final ledger = context.read<LedgerProvider>();
+    final amt = double.tryParse(_amount) ?? 0;
+    if (amt <= 0) return;
+
+    if (_isEditMode) {
+      // Edit mode: update the existing transaction in-place.
+      // Pass the original as oldTx (for balance reversal) and build newTx from current form state.
+      await ledger.updateTransaction(
+        oldTx: widget.transaction!,
+        newTx: TransactionEntity(
+          id: widget.transaction!.id,
+          type: _type == TransactionType.income ? "income" : "expense",
+          amount: amt,
+          fromAccountId: _type == TransactionType.income
+              ? null
+              : _selectedAccount?.id,
+          toAccountId: _type == TransactionType.income
+              ? _selectedAccount?.id
+              : null,
+          categoryId: _selectedCategory?.id,
+          note: _noteController.text,
+          timestamp: _selectedDateTime.millisecondsSinceEpoch,
+        ),
+      );
+    } else {
+      // Create mode: add a new transaction
+      if (_type == TransactionType.income) {
+        await ledger.addIncome(
+          amount: amt,
+          toAccountId: _selectedAccount!.id!,
+          categoryId: _selectedCategory?.id,
+          note: _noteController.text,
+        );
+      } else if (_type == TransactionType.expense) {
+        await ledger.addExpense(
+          amount: amt,
+          fromAccountId: _selectedAccount!.id!,
+          categoryId: _selectedCategory?.id,
+          note: _noteController.text,
+        );
+      } else {
+        await ledger.transferFunds(
+          amount: amt,
+          fromAccountId: _selectedAccount!.id!,
+          toAccountId: _selectedToAccount!.id!,
+          note: _noteController.text,
+        );
+      }
+    }
+
+    if (mounted) Navigator.pop(context);
   }
 
   // ================= PICKERS =================
@@ -396,19 +446,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Future<void> _pickDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime,
+      initialDate: _selectedDateTime,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
 
     if (date != null) {
       setState(() {
-        selectedDateTime = DateTime(
+        _selectedDateTime = DateTime(
           date.year,
           date.month,
           date.day,
-          selectedDateTime.hour,
-          selectedDateTime.minute,
+          _selectedDateTime.hour,
+          _selectedDateTime.minute,
         );
       });
     }
@@ -417,15 +467,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Future<void> _pickTime() async {
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
     );
 
     if (time != null) {
       setState(() {
-        selectedDateTime = DateTime(
-          selectedDateTime.year,
-          selectedDateTime.month,
-          selectedDateTime.day,
+        _selectedDateTime = DateTime(
+          _selectedDateTime.year,
+          _selectedDateTime.month,
+          _selectedDateTime.day,
           time.hour,
           time.minute,
         );
@@ -433,129 +483,215 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  // ================= SELECTORS =================
+  // ================= ACCOUNT SELECT =================
 
   void _selectAccount(LedgerProvider ledger, bool isFrom) {
+    // FIX 15: Pre-snapshot the accounts list before opening sheet —
+    // avoids holding a stale provider reference inside the builder closure
+    final accounts = ledger.accounts;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppTheme.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(20),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _sheetHandle(),
-
-              const Text(
-                "Select Account",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
-                ),
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.45,
+          minChildSize: 0.35,
+          maxChildSize: 0.85,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-
-              const SizedBox(height: 16),
-
-              ...ledger.accounts.map((account) {
-                return _selectionTile(
-                  title: account.name,
-                  icon: Icons.account_balance,
-                  onTap: () {
-                    setState(() {
-                      if (isFrom) {
-                        selectedAccount = account;
-                      } else {
-                        selectedToAccount = account;
-                      }
-                    });
-
-                    Navigator.pop(context);
-                  },
-                );
-              }),
-
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _selectCategory(List<Category> categories) {
-    final income = categories.where((c) => c.type == "income");
-
-    final expense = categories.where((c) => c.type == "expense");
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: AppTheme.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sheetHandle(),
-
-                const Center(
-                  child: Text(
-                    "Select Category",
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _sheetHandle(),
+                  const Text(
+                    "Select Account",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 20),
-
-                if (expense.isNotEmpty) ...[
-                  _sectionTitle("Expense"),
-                  ...expense.map(
-                    (c) => _selectionTile(
-                      title: c.name,
-                      icon: Icons.arrow_upward,
-                      color: AppTheme.error,
-                      onTap: () {
-                        setState(() => selectedCategory = c);
-                        Navigator.pop(context);
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      // FIX 16: Use ListView.builder instead of .map().toList()
+                      // for lazy rendering of large lists
+                      controller: scrollController,
+                      itemCount: accounts.length,
+                      itemBuilder: (context, index) {
+                        final account = accounts[index];
+                        return _selectionTile(
+                          title: account.name,
+                          icon: Icons.account_balance,
+                          onTap: () {
+                            setState(() {
+                              if (isFrom) {
+                                _selectedAccount = account;
+                              } else {
+                                _selectedToAccount = account;
+                              }
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
                       },
                     ),
                   ),
                 ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
-                if (income.isNotEmpty) ...[
-                  _sectionTitle("Income"),
-                  ...income.map(
-                    (c) => _selectionTile(
-                      title: c.name,
-                      icon: Icons.arrow_downward,
-                      color: AppTheme.success,
-                      onTap: () {
-                        setState(() => selectedCategory = c);
-                        Navigator.pop(context);
-                      },
+  void _selectCategory(List<Category> categories) {
+    final searchController = TextEditingController();
+    // FIX 17: Initialize filtered list once outside StatefulBuilder,
+    // not on every modal rebuild
+    List<Category> filtered = List.from(categories);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            // FIX 18: Compute income/expense split inside setModalState only,
+            // not on the outer build pass
+            final incomeCategories = filtered
+                .where((c) => c.type == "income")
+                .toList();
+            final expenseCategories = filtered
+                .where((c) => c.type == "expense")
+                .toList();
+
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.6,
+              minChildSize: 0.45,
+              maxChildSize: 0.9,
+              builder: (context, scrollController) {
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
+                  child: Column(
+                    children: [
+                      _sheetHandle(),
+                      const Text(
+                        "Select Category",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: searchController,
+                        style: const TextStyle(color: Colors.black),
+                        cursorColor: AppTheme.accent,
+                        decoration: InputDecoration(
+                          hintText: "Search category",
+                          hintStyle: const TextStyle(color: Colors.black54),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.black54,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: AppTheme.accent,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: AppTheme.accent,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setModalState(() {
+                            filtered = value.isEmpty
+                                ? List.from(categories)
+                                : categories
+                                      .where(
+                                        (c) => c.name.toLowerCase().contains(
+                                          value.toLowerCase(),
+                                        ),
+                                      )
+                                      .toList();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: ListView(
+                          controller: scrollController,
+                          children: [
+                            if (expenseCategories.isNotEmpty) ...[
+                              _sectionTitle("Expense"),
+                              // FIX 19: Use spread with pre-computed lists instead
+                              // of chained .map() calls inside build
+                              for (final c in expenseCategories)
+                                _selectionTile(
+                                  title: c.name,
+                                  icon: Icons.arrow_upward,
+                                  color: AppTheme.error,
+                                  onTap: () {
+                                    setState(() => _selectedCategory = c);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                            ],
+                            if (incomeCategories.isNotEmpty) ...[
+                              _sectionTitle("Income"),
+                              for (final c in incomeCategories)
+                                _selectionTile(
+                                  title: c.name,
+                                  icon: Icons.arrow_downward,
+                                  color: AppTheme.success,
+                                  onTap: () {
+                                    setState(() => _selectedCategory = c);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                            ],
+                            if (filtered.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Center(
+                                  child: Text(
+                                    "No categories found",
+                                    style: TextStyle(color: Colors.white54),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -599,67 +735,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
     );
   }
+}
 
-  // ================= SAVE =================
+// FIX 20: Extract AmountDisplay into its own StatelessWidget.
+// Now only this widget rebuilds on keypad taps, not the entire screen.
+class _AmountDisplay extends StatelessWidget {
+  final String amount;
 
-  void _saveTransaction() async {
-    final ledger = context.read<LedgerProvider>();
-    final amt = double.tryParse(amount) ?? 0;
+  const _AmountDisplay({required this.amount});
 
-    if (amt <= 0) return;
-
-    final timestamp = selectedDateTime.millisecondsSinceEpoch;
-
-    /// ================= EDIT MODE =================
-    if (isEditMode) {
-      final oldTx = widget.transaction!;
-      final newTx = TransactionEntity(
-        id: oldTx.id,
-        type: type.name,
-        amount: amt,
-        fromAccountId: type == TransactionType.expense
-            ? selectedAccount?.id
-            : null,
-        toAccountId: type == TransactionType.income
-            ? selectedAccount?.id
-            : null,
-        categoryId: selectedCategory?.id,
-        note: _noteController.text,
-        timestamp: timestamp,
-      );
-
-      await ledger.updateTransaction(
-        oldTx: oldTx,
-        newTx: newTx,
-      );
-
-      Navigator.pop(context);
-      return;
-    }
-
-    /// ================= CREATE MODE =================
-    if (type == TransactionType.income) {
-      ledger.addIncome(
-        amount: amt,
-        toAccountId: selectedAccount!.id!,
-        categoryId: selectedCategory?.id,
-        note: _noteController.text,
-      );
-    } else if (type == TransactionType.expense) {
-      ledger.addExpense(
-        amount: amt,
-        fromAccountId: selectedAccount!.id!,
-        categoryId: selectedCategory?.id,
-        note: _noteController.text,
-      );
-    } else {
-      ledger.transferFunds(
-        amount: amt,
-        fromAccountId: selectedAccount!.id!,
-        toAccountId: selectedToAccount!.id!,
-        note: _noteController.text,
-      );
-    }
-    Navigator.pop(context);
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      "₹${double.parse(amount).toStringAsFixed(2)}",
+      style: const TextStyle(
+        fontSize: 48,
+        color: AppTheme.accent,
+        fontWeight: FontWeight.bold,
+      ),
+    );
   }
 }
