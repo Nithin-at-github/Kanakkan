@@ -47,9 +47,9 @@ dependencies:
 
 flutter_native_splash:
   color: "#2D2438"
-  image: assets/images/kanakkan_splash.png
+  image: assets/images/kanakkan_splash.jpg
   android_12:
-    image: assets/images/kanakkan_splash.png
+    image: assets/images/kanakkan_splash.jpg
     icon_background_color: "#2D2438" # Force the icon background
     color: "#2D2438"                # Force the screen background
   # Try adding this to force the light theme even if the phone is in dark mode

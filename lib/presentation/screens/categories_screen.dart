@@ -164,7 +164,7 @@ class CategoriesScreen extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1),
+            const Divider(height: 1, color: AppTheme.accent,),
             if (categories.isEmpty) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),

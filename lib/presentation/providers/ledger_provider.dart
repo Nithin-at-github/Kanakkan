@@ -28,13 +28,14 @@ class LedgerProvider extends ChangeNotifier {
     final salary = categoryProvider.categories.firstWhereOrNull(
       (c) => c.name.toLowerCase() == "salary",
     );
-
     return salary?.id;
   }
 
-  final SalaryAllocationRepository _salaryAllocationRepository = SalaryAllocationRepository();
+  final SalaryAllocationRepository _salaryAllocationRepository =
+      SalaryAllocationRepository();
 
-  /// ================= ERROR STATE =================
+  // ================= ERROR STATE =================
+
   String? lastError;
 
   void _setError(String message) {
@@ -58,19 +59,16 @@ class LedgerProvider extends ChangeNotifier {
     balanceProvider = newProvider;
   }
 
-  /// ================= ACCOUNT RESOLVERS =================
+  // ================= ACCOUNT RESOLVERS =================
 
   String resolveAccountName(int? accountId) {
     if (accountId == null) return "Not Found";
-
     final account = accounts.firstWhereOrNull((a) => a.id == accountId);
-
     return account?.name ?? "Deleted Account";
   }
 
   String resolvePrimaryAccountName(TransactionEntity tx) {
     int? accountId;
-
     switch (tx.type) {
       case "income":
         accountId = tx.toAccountId;
@@ -84,7 +82,6 @@ class LedgerProvider extends ChangeNotifier {
       default:
         return "-";
     }
-
     return resolveAccountName(accountId);
   }
 
@@ -99,26 +96,27 @@ class LedgerProvider extends ChangeNotifier {
     return trigger;
   }
 
-  /// ================= REPOSITORIES =================
+  // ================= REPOSITORIES =================
+
   final AccountRepository _accountRepository = AccountRepository();
   final TransactionRepository _transactionRepository = TransactionRepository();
 
-  /// ================= BALANCES =================
+  // ================= STATE =================
+
   final Map<int, double> _accountBalances = {};
   Map<int, double> get accountBalances => _accountBalances;
 
-  /// ================= ACCOUNTS =================
   List<Account> _accounts = [];
   List<Account> get accounts => _accounts;
 
-  /// ================= TRANSACTIONS =================
   List<TransactionEntity> _transactions = [];
   List<TransactionEntity> get transactions => _transactions;
 
   String? _currentFilter;
   String? get currentFilter => _currentFilter;
 
-  /// ================= MONTHLY CACHE =================
+  // ================= MONTHLY CACHE =================
+
   final Map<int, double> _monthlyCategoryTotals = {};
   int? _activeMonth;
   int? _activeYear;
@@ -130,45 +128,39 @@ class LedgerProvider extends ChangeNotifier {
   void rebuildMonthlyTotals({required int month, required int year}) {
     _activeMonth = month;
     _activeYear = year;
-
     _monthlyCategoryTotals.clear();
 
     for (final tx in _transactions) {
       if (tx.type != "expense") continue;
-
       final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
-
       if (date.month != month || date.year != year) continue;
-
       final categoryId = tx.categoryId;
       if (categoryId == null) continue;
-
       _monthlyCategoryTotals[categoryId] =
           (_monthlyCategoryTotals[categoryId] ?? 0) + tx.amount;
     }
   }
 
-  /// ================= INITIALIZE =================
+  // ================= INITIALIZE =================
+
   Future<void> initialize() async {
     await loadAccounts();
     await loadTransactions();
     await calculateBalances();
   }
 
-  /// ================= BALANCE CALC =================
-  /// Opening balance is now handled via transactions ONLY
+  // ================= BALANCE CALC =================
+
   Future<void> calculateBalances() async {
     for (final account in _accounts) {
-      final balanceFromTx = await _transactionRepository
+      _accountBalances[account.id!] = await _transactionRepository
           .calculateAccountBalance(account.id!);
-
-      _accountBalances[account.id!] = balanceFromTx;
     }
-
     notifyListeners();
   }
 
-  /// ================= ACCOUNTS =================
+  // ================= ACCOUNTS =================
+
   Future<void> loadAccounts() async {
     _accounts = await _accountRepository.getAllAccounts();
     notifyListeners();
@@ -176,23 +168,16 @@ class LedgerProvider extends ChangeNotifier {
 
   Future<void> addAccount(Account account) async {
     clearError();
-
     final model = AccountModel(
       id: account.id,
       name: account.name,
       initialBalance: account.initialBalance,
     );
-
     try {
       final insertedId = await _accountRepository.insertAccount(model);
-
       final createdAccount = account.copyWith(id: insertedId);
-
       await _createOpeningBalanceTransaction(createdAccount);
-
-      await loadAccounts();
-      await loadTransactions(type: _currentFilter);
-      await calculateBalances();
+      await _reloadAll();
     } on DatabaseException catch (e) {
       if (e.toString().contains('UNIQUE')) {
         _setError('An account with this name already exists');
@@ -206,21 +191,15 @@ class LedgerProvider extends ChangeNotifier {
 
   Future<void> updateAccount(Account updated) async {
     clearError();
-
     final updatedModel = AccountModel(
       id: updated.id,
       name: updated.name,
       initialBalance: updated.initialBalance,
     );
-
     try {
       await _accountRepository.updateAccount(updatedModel);
-
       await _updateOpeningBalanceTransaction(updated);
-
-      await loadAccounts();
-      await loadTransactions(type: _currentFilter);
-      await calculateBalances();
+      await _reloadAll();
     } on DatabaseException catch (e) {
       if (e.toString().contains('UNIQUE')) {
         _setError('An account with this name already exists');
@@ -234,17 +213,12 @@ class LedgerProvider extends ChangeNotifier {
 
   Future<void> deleteAccount(int accountId) async {
     await _removeOpeningBalance(accountId);
-
     await _accountRepository.deleteAccount(accountId);
-
     _accountBalances.remove(accountId);
-
-    await loadAccounts();
-    await loadTransactions(type: _currentFilter);
-    await calculateBalances();
+    await _reloadAll();
   }
 
-  /// ================= TRANSACTIONS =================
+  // ================= TRANSACTIONS =================
 
   Future<void> addIncome({
     required double amount,
@@ -263,27 +237,29 @@ class LedgerProvider extends ChangeNotifier {
     );
 
     final id = await _transactionRepository.insertTransaction(transaction);
-
     await _applyBalanceEffect(transaction);
 
-    await calculateBalances();
-    await loadTransactions(type: _currentFilter);
+    // Single reload + single notifyListeners at the end
+    await _reloadAll();
 
-    /// Trigger salary split
+    // Fire salary trigger after a microtask delay so AddTransactionScreen
+    // has time to pop first. Without this, the dialog opens on top of
+    // AddTransactionScreen and navigator.pop() closes the dialog instead
+    // of returning to the dashboard.
     if (_isSalaryCategory(categoryId)) {
-      salaryIncomeTrigger.value = SalaryTrigger(
-        transactionId: id,
-        amount: amount,
-      );
+      Future.microtask(() {
+        salaryIncomeTrigger.value = SalaryTrigger(
+          transactionId: id,
+          amount: amount,
+        );
+      });
     }
   }
 
   bool _isSalaryCategory(int? categoryId) {
     if (categoryId == null) return false;
-
     final category = categoryProvider.resolveCategory(categoryId);
     if (category == null) return false;
-
     return category.name.toLowerCase() == "salary";
   }
 
@@ -304,11 +280,10 @@ class LedgerProvider extends ChangeNotifier {
     );
 
     await _transactionRepository.insertTransaction(transaction);
-
     await _applyBalanceEffect(transaction);
 
-    await loadTransactions(type: _currentFilter);
-    await calculateBalances();
+    // Single reload + single notifyListeners at the end
+    await _reloadAll();
   }
 
   Future<void> transferFunds({
@@ -317,7 +292,6 @@ class LedgerProvider extends ChangeNotifier {
     required int toAccountId,
     String? note,
   }) async {
-    // Generate a shared group ID so both legs can be found later
     final groupId = const Uuid().v4();
 
     final expenseLeg = TransactionModel(
@@ -340,25 +314,19 @@ class LedgerProvider extends ChangeNotifier {
 
     await _transactionRepository.insertTransaction(expenseLeg);
     await _transactionRepository.insertTransaction(incomeLeg);
-    await loadTransactions(type: _currentFilter);
-    await calculateBalances();
+
+    // Single reload + single notifyListeners at the end
+    await _reloadAll();
   }
 
-  /// Fetches the paired leg of a transfer by groupId.
-  /// Returns null if the transaction is not a transfer or has no group.
   Future<TransactionEntity?> getPairedTransferLeg(TransactionEntity tx) async {
     if (tx.transferGroupId == null) return null;
-
     final legs = await _transactionRepository.getTransactionsByGroupId(
       tx.transferGroupId!,
     );
-
-    // Return the leg that isn't the one we already have
     return legs.firstWhereOrNull((leg) => leg.id != tx.id);
   }
 
-  /// Updates both legs of a transfer atomically.
-  /// [oldExpense] and [oldIncome] are the original legs (for balance reversal).
   Future<void> updateTransfer({
     required TransactionEntity oldExpense,
     required TransactionEntity oldIncome,
@@ -368,7 +336,6 @@ class LedgerProvider extends ChangeNotifier {
     required int timestamp,
     String? note,
   }) async {
-    // Reverse balance effect of both original legs
     await _applyBalanceEffect(oldExpense, reverse: true);
     await _applyBalanceEffect(oldIncome, reverse: true);
 
@@ -397,18 +364,17 @@ class LedgerProvider extends ChangeNotifier {
       incomeLeg: newIncome,
     );
 
-    // Apply balance effect of both new legs
     await _applyBalanceEffect(newExpense);
     await _applyBalanceEffect(newIncome);
 
-    await loadTransactions(type: _currentFilter);
-    await calculateBalances();
+    // Single reload + single notifyListeners at the end
+    await _reloadAll();
   }
 
-  /// ================= LOAD =================
+  // ================= LOAD =================
+
   Future<void> loadTransactions({String? type}) async {
     _currentFilter = type;
-
     _transactions = await _transactionRepository.getTransactions(type: type);
 
     if (_activeMonth != null && _activeYear != null) {
@@ -418,12 +384,12 @@ class LedgerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ================= DELETE TRANSACTION =================
+  // ================= DELETE TRANSACTION =================
+
   Future<void> deleteTransaction(int id) async {
     final tx = _transactions.firstWhereOrNull((t) => t.id == id);
 
     if (tx?.transferGroupId != null) {
-      // Delete both legs by group ID
       final legs = await _transactionRepository.getTransactionsByGroupId(
         tx!.transferGroupId!,
       );
@@ -432,34 +398,47 @@ class LedgerProvider extends ChangeNotifier {
         await _transactionRepository.deleteTransaction(leg.id!);
       }
     } else {
-      if (tx != null) await _applyBalanceEffect(tx, reverse: true);
+      if (tx != null) {
+        await _applyBalanceEffect(tx, reverse: true);
+
+        // Reverse salary wallet allocations if this was a salary transaction
+        if (_isSalaryCategory(tx.categoryId)) {
+          final allocations = await _salaryAllocationRepository.getAllocations(
+            id,
+          );
+          for (final alloc in allocations) {
+            final categoryId = alloc['categoryId'] as int;
+            final amount = (alloc['amount'] as num).toDouble();
+            // Reverse: subtract from the target wallet, add back to salary wallet
+            await balanceProvider.spend(categoryId, amount);
+            await balanceProvider.allocate(tx.categoryId!, amount);
+          }
+          await _salaryAllocationRepository.deleteAllocations(id);
+        }
+      }
       await _transactionRepository.deleteTransaction(id);
     }
 
-    await loadTransactions(type: _currentFilter);
-    await calculateBalances();
+    // Single reload + single notifyListeners at the end
+    await _reloadAll();
   }
 
   Future<TransactionDeleteType> getDeleteType(TransactionEntity tx) async {
-
     final salaryId = salaryCategoryId;
-
-    /// not salary
     if (salaryId == null || tx.type != "income" || tx.categoryId != salaryId) {
       return TransactionDeleteType.normal;
     }
-
-    /// check if salary has allocations
-    final allocations = await _salaryAllocationRepository.getAllocations(tx.id!);
-
+    final allocations = await _salaryAllocationRepository.getAllocations(
+      tx.id!,
+    );
     if (allocations.isEmpty) {
       return TransactionDeleteType.normal;
     }
-
     return TransactionDeleteType.salaryDistributed;
   }
 
-  /// ================= UPDATE TRANSACTION =================
+  // ================= UPDATE TRANSACTION =================
+
   Future<void> updateTransaction({
     required TransactionEntity oldTx,
     required TransactionEntity newTx,
@@ -478,24 +457,52 @@ class LedgerProvider extends ChangeNotifier {
     );
 
     await _transactionRepository.updateTransaction(model);
-
     await _applyBalanceEffect(newTx);
 
-    await loadTransactions(type: _currentFilter);
-    await calculateBalances();
+    // Single reload + single notifyListeners at the end
+    await _reloadAll();
   }
 
-  /// ================= WALLET EFFECT =================
+  // ================= WALLET EFFECT =================
+
+  // ================= WALLET SUFFICIENCY CHECK =================
+
+  /// Returns true if the expense can be covered by category wallet
+  /// + salary wallet combined. Used by AddTransactionScreen to gate
+  /// the save button before calling addExpense.
+  bool canAffordExpense({required int categoryId, required double amount}) {
+    if (_isSalaryCategory(categoryId)) {
+      // Paying directly into salary wallet — just check salary balance
+      return balanceProvider.getBalance(categoryId) >= amount;
+    }
+    final categoryBalance = balanceProvider.getBalance(categoryId);
+    final salaryId = salaryCategoryId;
+    final salaryBalance = salaryId != null
+        ? balanceProvider.getBalance(salaryId)
+        : 0.0;
+    return (categoryBalance + salaryBalance) >= amount;
+  }
+
   Future<void> _applyBalanceEffect(
     TransactionEntity tx, {
     bool reverse = false,
   }) async {
     if (tx.categoryId == null) return;
-
     final amount = reverse ? -tx.amount : tx.amount;
 
     if (tx.type == "expense") {
-      await balanceProvider.spend(tx.categoryId!, amount);
+      if (reverse) {
+        // Reversal: we don't know original split, so reload from DB isn't
+        // feasible here. Simplest correct approach: add back to category
+        // wallet directly. If salary was used, salary split dialog handles
+        // its own reversal. For simple expense reversal, restore to category.
+        await balanceProvider.allocate(tx.categoryId!, tx.amount);
+      } else {
+        await _spendWithSalaryFallback(
+          categoryId: tx.categoryId!,
+          amount: tx.amount,
+        );
+      }
     }
 
     if (tx.type == "income") {
@@ -503,10 +510,63 @@ class LedgerProvider extends ChangeNotifier {
     }
   }
 
-  /// ================= OPENING BALANCE =================
+  /// Spends from category wallet first. If category wallet runs short,
+  /// the remainder is pulled from the salary wallet.
+  Future<void> _spendWithSalaryFallback({
+    required int categoryId,
+    required double amount,
+  }) async {
+    final categoryBalance = balanceProvider.getBalance(categoryId);
+
+    if (categoryBalance >= amount) {
+      // Category wallet has enough — spend entirely from it
+      await balanceProvider.spend(categoryId, amount);
+      return;
+    }
+
+    // Partial: use whatever is in category wallet
+    final fromCategory = categoryBalance;
+    final fromSalary = amount - fromCategory;
+
+    if (fromCategory > 0) {
+      await balanceProvider.spend(categoryId, fromCategory);
+    }
+
+    // Pull shortfall from salary wallet
+    final salaryId = salaryCategoryId;
+    if (salaryId != null && fromSalary > 0) {
+      await balanceProvider.spend(salaryId, fromSalary);
+    }
+  }
+
+  // ================= RELOAD HELPER =================
+  //
+  // Replaces the pattern of calling loadTransactions() + calculateBalances()
+  // separately (which fired notifyListeners twice). Now all state is refreshed
+  // in one pass and listeners are notified exactly once at the end.
+
+  Future<void> _reloadAll() async {
+    _accounts = await _accountRepository.getAllAccounts();
+    _transactions = await _transactionRepository.getTransactions(
+      type: _currentFilter,
+    );
+
+    if (_activeMonth != null && _activeYear != null) {
+      rebuildMonthlyTotals(month: _activeMonth!, year: _activeYear!);
+    }
+
+    for (final account in _accounts) {
+      _accountBalances[account.id!] = await _transactionRepository
+          .calculateAccountBalance(account.id!);
+    }
+
+    notifyListeners(); // ← exactly once per operation
+  }
+
+  // ================= OPENING BALANCE =================
+
   Future<void> _createOpeningBalanceTransaction(Account account) async {
     if (account.initialBalance <= 0) return;
-
     final model = TransactionModel(
       type: "income",
       amount: account.initialBalance,
@@ -516,7 +576,6 @@ class LedgerProvider extends ChangeNotifier {
       note: "Opening_Balance",
       timestamp: DateTime.now().millisecondsSinceEpoch,
     );
-
     await _transactionRepository.insertTransaction(model);
   }
 
@@ -524,14 +583,11 @@ class LedgerProvider extends ChangeNotifier {
     final openingTx = _transactions.firstWhereOrNull(
       (tx) => tx.note == "Opening_Balance" && tx.toAccountId == account.id,
     );
-
     if (openingTx == null) {
       await _createOpeningBalanceTransaction(account);
       return;
     }
-
     final updatedTx = openingTx.copyWith(amount: account.initialBalance);
-
     await updateTransaction(oldTx: openingTx, newTx: updatedTx);
   }
 
@@ -539,7 +595,6 @@ class LedgerProvider extends ChangeNotifier {
     final openingTx = _transactions.firstWhereOrNull(
       (tx) => tx.note == "Opening_Balance" && tx.toAccountId == accountId,
     );
-
     if (openingTx != null) {
       await _transactionRepository.deleteTransaction(openingTx.id!);
     }

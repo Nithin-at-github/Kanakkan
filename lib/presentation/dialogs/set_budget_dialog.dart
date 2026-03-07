@@ -1,127 +1,203 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/core/utils/form_validation.dart';
 import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/domain/entities/budget_entity.dart';
 import 'package:kanakkan/presentation/providers/budget_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 
-class SetBudgetDialog extends StatefulWidget {
-  final BudgetEntity? existingBudget;
-
-  const SetBudgetDialog({super.key, this.existingBudget});
-
-  @override
-  State<SetBudgetDialog> createState() => _SetBudgetDialogState();
+Future<void> showSetBudgetDialog(
+  BuildContext context, {
+  BudgetEntity? existingBudget,
+}) {
+  return showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (ctx) => _SetBudgetDialog(existingBudget: existingBudget),
+  );
 }
 
-class _SetBudgetDialogState extends State<SetBudgetDialog> {
-  int? selectedCategoryId;
-  late TextEditingController amountController;
-  String? amountError;
+class _SetBudgetDialog extends StatefulWidget {
+  final BudgetEntity? existingBudget;
+  const _SetBudgetDialog({this.existingBudget});
 
-  bool loading = false;
+  @override
+  State<_SetBudgetDialog> createState() => _SetBudgetDialogState();
+}
+
+class _SetBudgetDialogState extends State<_SetBudgetDialog> {
+  int? _selectedCategoryId;
+  late TextEditingController _amountController;
+  String? _categoryError;
+  String? _amountError;
+  bool _loading = false;
+
+  bool get _isEdit => widget.existingBudget != null;
 
   @override
   void initState() {
     super.initState();
-
-    selectedCategoryId = widget.existingBudget?.categoryId;
-
-    amountController = TextEditingController(
-      text: widget.existingBudget != null
+    _selectedCategoryId = widget.existingBudget?.categoryId;
+    _amountController = TextEditingController(
+      text: _isEdit
           ? widget.existingBudget!.allocatedAmount.toStringAsFixed(0)
-          : "",
+          : '',
     );
   }
 
   @override
   void dispose() {
-    amountController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
-  /// ================= SAVE =================
-  Future<void> _saveBudget() async {
-    
+  bool _validate(BudgetProvider budgetProvider) {
+    String? categoryErr;
+    String? amountErr;
+
+    if (_selectedCategoryId == null) {
+      categoryErr = 'Please select a category';
+    }
+
+    final text = _amountController.text.trim();
+    if (text.isEmpty) {
+      amountErr = 'Amount is required';
+    } else {
+      final amount = double.tryParse(text);
+      if (amount == null) {
+        amountErr = 'Enter a valid amount';
+      } else if (amount <= 0) {
+        amountErr = 'Amount must be greater than 0';
+      } else if (amount > 1000000) {
+        amountErr = 'Amount seems too large — please check';
+      }
+    }
+
+    if (!_isEdit && categoryErr == null && _selectedCategoryId != null) {
+      final alreadyExists = budgetProvider.budgets.any(
+        (b) => b.categoryId == _selectedCategoryId,
+      );
+      if (alreadyExists) {
+        categoryErr = 'A budget for this category already exists this month';
+      }
+    }
+
     setState(() {
-      amountError = FormValidation.budget(amountController.text);
+      _categoryError = categoryErr;
+      _amountError = amountErr;
     });
-     /// stop if validation fails
-    if (amountError != null) return;
+    return categoryErr == null && amountErr == null;
+  }
 
-    final amount = double.parse(amountController.text);
-    setState(() => loading = true);
+  Future<void> _saveBudget() async {
+    if (_loading) return;
+    final budgetProvider = context.read<BudgetProvider>();
+    if (!_validate(budgetProvider)) return;
 
+    setState(() => _loading = true);
     try {
-      await context.read<BudgetProvider>().addBudget(
-        categoryId: selectedCategoryId!,
-        amount: amount,
+      await budgetProvider.addBudget(
+        categoryId: _selectedCategoryId!,
+        amount: double.parse(_amountController.text.trim()),
       );
       if (!mounted) return;
       Navigator.pop(context);
-    } catch (e) {
-      setState(() {
-        amountError = "Failed to save budget";
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEdit ? 'Budget updated' : 'Budget created',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: AppTheme.success,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (_) {
+      setState(() => _amountError = 'Failed to save budget. Please try again.');
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  /// ================= DELETE =================
   Future<void> _confirmDelete() async {
+    if (widget.existingBudget?.id == null) return;
+
     final confirm = await ConfirmDeleteDialog.show(
       context: context,
-      title: "Delete Budget",
-      message: "This action cannot be undone.",
+      title: 'Delete Budget',
+      message: 'This action cannot be undone.',
     );
+    if (!confirm || !mounted) return;
 
-    if (!confirm) return;
-
-    await context.read<BudgetProvider>().deleteBudget(
-      widget.existingBudget!.id!,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Budget deleted",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+    try {
+      await context.read<BudgetProvider>().deleteBudget(
+        widget.existingBudget!.id!,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Budget deleted',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
         ),
-        backgroundColor: AppTheme.error,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 1),
-      ),
-    );
-
-    if (mounted) Navigator.pop(context);
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to delete budget. Please try again.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
-  /// ================= UI =================
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<CategoryProvider>();
-    
+    final budgetProvider = context.watch<BudgetProvider>();
+
+    final usedCategoryIds = _isEdit
+        ? <int>{}
+        : budgetProvider.budgets.map((b) => b.categoryId).toSet();
+
+    // Key insight: give the dialog an EXPLICIT width and let content
+    // flow naturally — no IntrinsicHeight, no mainAxisSize.min fighting
+    // unbounded constraints from the dialog surface.
     return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: AppTheme.background,
-            borderRadius: BorderRadius.circular(20),
+      backgroundColor: AppTheme.background,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: SizedBox(
+        // Explicit fixed width — dialog knows its size before painting
+        width: double.infinity,
+        // Explicit max height — scroll if content overflows, never intrinsic
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
           ),
           child: SingleChildScrollView(
+            // SingleChildScrollView gives Column a bounded height context
+            // so Flutter never needs to measure intrinsic dropdown height
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              // crossAxisAlignment stretch works fine here — width is known
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                /// TITLE
+                // Title
                 Text(
-                  widget.existingBudget == null
-                      ? "Set Monthly Budget"
-                      : "Edit Budget",
+                  _isEdit ? 'Edit Budget' : 'Set Monthly Budget',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -129,33 +205,52 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
                   ),
                 ),
 
-                const SizedBox(height: 22),
+                const SizedBox(height: 20),
 
-                /// CATEGORY
+                // Category dropdown
+                // Inside SingleChildScrollView, dropdown measures itself
+                // correctly without needing intrinsic height pass
                 DropdownButtonFormField<int>(
-                  value: selectedCategoryId,
-                  decoration: const InputDecoration(
-                    labelText: "Category",
-                    border: OutlineInputBorder(),
+                  value: _selectedCategoryId,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    border: const OutlineInputBorder(),
+                    errorText: _categoryError,
                   ),
-                  items: categories.categories
-                      .map(
-                        (c) =>
-                            DropdownMenuItem(value: c.id, child: Text(c.name)),
-                      )
-                      .toList(),
-                  onChanged: widget.existingBudget != null
+                  items: categories.categories.map((c) {
+                    final isUsed = usedCategoryIds.contains(c.id);
+                    return DropdownMenuItem(
+                      value: c.id,
+                      enabled: !isUsed,
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(c.name)),
+                          if (isUsed)
+                            const Text(
+                              '• set',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.black38,
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: _isEdit
                       ? null
-                      : (value) {
-                          setState(() => selectedCategoryId = value);
-                        },
+                      : (value) => setState(() {
+                          _selectedCategoryId = value;
+                          _categoryError = null;
+                        }),
                 ),
 
                 const SizedBox(height: 18),
 
-                /// AMOUNT
+                // Amount
                 TextField(
-                  controller: amountController,
+                  controller: _amountController,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(
@@ -163,89 +258,28 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
                     ),
                   ],
                   autofocus: true,
+                  onChanged: (_) {
+                    if (_amountError != null) {
+                      setState(() => _amountError = null);
+                    }
+                  },
                   decoration: InputDecoration(
-                    labelText: "Amount",
-                    errorText: amountError,
-                    prefixText: "₹ ",
+                    labelText: 'Amount',
+                    errorText: _amountError,
+                    prefixText: '₹ ',
                     border: const OutlineInputBorder(),
                   ),
                 ),
 
-                const SizedBox(height: 26),
-
-                /// ================= ACTION BUTTONS =================
-                Row(
-                  children: [
-                    /// CANCEL
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(
-                            color: AppTheme.accent.withOpacity(.5),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: const Text(
-                          "Cancel",
-                          style: TextStyle(
-                            color: AppTheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    /// SAVE
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: loading ? null : _saveBudget,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: loading
-                            ? const SizedBox(
-                                height: 18,
-                                width: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                "Save",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                /// ================= DANGER ZONE =================
-                if (widget.existingBudget != null) ...[
-                  const SizedBox(height: 30),
-
+                // Danger zone
+                if (_isEdit) ...[
+                  const SizedBox(height: 24),
                   Divider(color: Colors.red.withOpacity(.3)),
-
-                  const SizedBox(height: 10),
-
                   TextButton.icon(
-                    onPressed: _confirmDelete,
+                    onPressed: _loading ? null : _confirmDelete,
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
                     label: const Text(
-                      "Delete this budget",
+                      'Delete this budget',
                       style: TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.w600,
@@ -253,6 +287,67 @@ class _SetBudgetDialogState extends State<SetBudgetDialog> {
                     ),
                   ),
                 ],
+
+                const SizedBox(height: 24),
+
+                // Actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 20,
+                        ),
+                        side: BorderSide(
+                          color: AppTheme.accent.withOpacity(.5),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _loading ? null : _saveBudget,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accent,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 20,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: _loading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Save',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

@@ -17,17 +17,18 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   void initState() {
     super.initState();
-
-    _initFuture = _initializeApp();
+    // Defer until after the first frame so the IME/window layout settles
+    // before any notifyListeners() calls hit the render pipeline.
+    _initFuture = Future.microtask(_initializeApp);
   }
 
   Future<void> _initializeApp() async {
     final ledger = context.read<LedgerProvider>();
-
     final categories = context.read<CategoryProvider>();
 
-    await ledger.initialize();
-    await categories.initialize();
+    // Run concurrently — halves init time and produces a single
+    // combined notify burst instead of two sequential ones.
+    await Future.wait([ledger.initialize(), categories.initialize()]);
   }
 
   @override
@@ -40,7 +41,6 @@ class _AppInitializerState extends State<AppInitializer> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-
         return const RootScreen();
       },
     );

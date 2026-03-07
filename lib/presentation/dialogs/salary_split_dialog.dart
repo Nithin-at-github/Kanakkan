@@ -28,11 +28,9 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
 
   double get allocatedTotal {
     double sum = 0;
-
     for (final c in controllers.values) {
       sum += double.tryParse(c.text) ?? 0;
     }
-
     return sum;
   }
 
@@ -41,9 +39,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
   @override
   void initState() {
     super.initState();
-
     final categories = context.read<CategoryProvider>().splitCategories;
-
     for (final c in categories) {
       controllers[c.id!] = TextEditingController(text: "0");
     }
@@ -54,7 +50,6 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
     for (final c in controllers.values) {
       c.dispose();
     }
-
     super.dispose();
   }
 
@@ -73,7 +68,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              /// HEADER
+              // HEADER
               Column(
                 children: [
                   const Text(
@@ -84,9 +79,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                       color: AppTheme.primary,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     "₹${widget.salaryAmount.toStringAsFixed(0)}",
                     style: const TextStyle(
@@ -98,7 +91,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                 ],
               ),
 
-              /// TEMPLATE BUTTON
+              // TEMPLATE BUTTON
               if (allocationProvider.template.isNotEmpty)
                 Align(
                   alignment: Alignment.centerRight,
@@ -111,11 +104,11 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
 
               const SizedBox(height: 10),
 
-              /// CATEGORY LIST
+              // CATEGORY LIST
               Expanded(
                 child: ListView.separated(
                   itemCount: categories.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     final controller = controllers[category.id]!;
@@ -134,7 +127,6 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                       ),
                       child: Row(
                         children: [
-                          /// CATEGORY NAME
                           Expanded(
                             child: Text(
                               category.name,
@@ -143,8 +135,6 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                               ),
                             ),
                           ),
-
-                          /// AMOUNT FIELD
                           SizedBox(
                             width: 110,
                             child: TextField(
@@ -170,7 +160,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
 
               const SizedBox(height: 10),
 
-              /// REMAINING INDICATOR
+              // REMAINING INDICATOR
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
@@ -202,7 +192,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                 ),
               ),
 
-              /// SAVE TEMPLATE
+              // SAVE TEMPLATE
               CheckboxListTile(
                 value: saveTemplate,
                 contentPadding: EdgeInsets.zero,
@@ -214,7 +204,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                 },
               ),
 
-              /// ACTIONS
+              // ACTIONS
               Row(
                 children: [
                   Expanded(
@@ -223,9 +213,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                       child: const Text("Skip"),
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -244,11 +232,8 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
     );
   }
 
-  /// ================= APPLY TEMPLATE =================
-
   void _applyTemplate() {
     final template = context.read<SalaryAllocationProvider>().template;
-
     setState(() {
       for (final entry in template.entries) {
         if (controllers.containsKey(entry.key)) {
@@ -258,24 +243,20 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
     });
   }
 
-  /// ================= APPLY SPLIT =================
-
   Future<void> _applySplit() async {
     final balanceProvider = context.read<CategoryBalanceProvider>();
     final allocationProvider = context.read<SalaryAllocationProvider>();
     final allocationRepo = SalaryAllocationRepository();
 
     final Map<int, double> allocations = {};
-
     for (final entry in controllers.entries) {
       final amount = double.tryParse(entry.value.text) ?? 0;
-
       if (amount > 0) {
         allocations[entry.key] = amount;
       }
     }
 
-    /// move money from salary wallet
+    // Move money between wallets silently (no notifyListeners per call)
     for (final entry in allocations.entries) {
       await balanceProvider.allocate(entry.key, entry.value);
       await balanceProvider.spend(widget.salaryCategoryId, entry.value);
@@ -287,10 +268,13 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
       );
     }
 
-    /// save template if selected
+    // Notify once after all balance changes are done
+    await balanceProvider.loadBalances();
+
     if (saveTemplate) {
       await allocationProvider.saveTemplate(allocations);
     }
+
     if (!mounted) return;
     Navigator.pop(context);
   }

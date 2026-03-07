@@ -14,7 +14,6 @@ class BudgetItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     /// Wallet Balance (REAL MONEY)
     final balance = context.select<CategoryBalanceProvider, double>(
       (p) => p.getBalance(budget.categoryId),
@@ -51,12 +50,7 @@ class BudgetItemCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          showDialog(
-            context: context,
-            builder: (_) => SetBudgetDialog(existingBudget: budget),
-          );
-        },
+        onTap: () => showSetBudgetDialog(context, existingBudget: budget),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(

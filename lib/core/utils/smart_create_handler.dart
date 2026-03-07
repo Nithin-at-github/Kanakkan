@@ -20,20 +20,19 @@ class SmartCreateHandler {
 
       /// 2 → Budget tab
       case 2:
-        showDialog(context: context, builder: (_) => const SetBudgetDialog());
+        showSetBudgetDialog(context);
         break;
 
-      /// 2 → Accounts tab
+      /// 3 → Accounts tab
       case 3:
         AddAccountDialog.show(context);
         break;
 
-      /// 3 → Categories tab
+      /// 4 → Categories tab
       case 4:
         AddCategoryDialog.show(context);
         break;
 
-      /// 4 → Future Budget tab
       default:
         _openTransaction(context);
     }

@@ -175,11 +175,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       _summaryColumn("EXPENSE", totalExpense, AppTheme.error),
                       _summaryColumn("INCOME", totalIncome, AppTheme.success),
-                      // _summaryColumn(
-                      //   "BALANCE",
-                      //   total,
-                      //   total < 0 ? AppTheme.error : AppTheme.success,
-                      // ),
                     ],
                   ),
                 ],

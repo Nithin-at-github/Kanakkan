@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/providers/analysis_provider.dart';
 import 'package:kanakkan/presentation/providers/budget_provider.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
@@ -23,18 +24,19 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
 
         /// ---------------- BALANCES ----------------
-        ChangeNotifierProvider(create: (_) => CategoryBalanceProvider()),
-
-        /// IMPORTANT: Ledger and Budget depend on CategoryBalanceProvider, so we use ProxyProvider to ensure they get the updated balances when they change.
+        /// Single instance — loaded once here, shared by LedgerProvider
+        /// and BudgetProvider via ProxyProvider below.
+        /// Previously there were TWO CategoryBalanceProvider instances
+        /// which caused double notifications and GPU buffer exhaustion.
         ChangeNotifierProvider(
           create: (_) {
             final provider = CategoryBalanceProvider();
-            provider.loadBalances(); // IMPORTANT
+            provider.loadBalances();
             return provider;
           },
         ),
 
-        // ---------------- SALARY ALLOCATION ----------------
+        /// ---------------- SALARY ALLOCATION ----------------
         ChangeNotifierProvider(
           create: (_) {
             final provider = SalaryAllocationProvider();
@@ -49,8 +51,10 @@ void main() async {
           CategoryBalanceProvider,
           LedgerProvider
         >(
-          create: (_) =>
-              LedgerProvider(CategoryProvider(), CategoryBalanceProvider()),
+          create: (context) => LedgerProvider(
+            context.read<CategoryProvider>(),
+            context.read<CategoryBalanceProvider>(),
+          ),
           update: (_, categoryProvider, balanceProvider, ledger) {
             ledger!.updateDependencies(categoryProvider, balanceProvider);
             return ledger;
@@ -62,10 +66,24 @@ void main() async {
           create: (context) =>
               BudgetProvider(context.read<CategoryBalanceProvider>()),
           update: (_, balanceProvider, previous) {
-            if (previous == null) {
-              return BudgetProvider(balanceProvider);
-            }
+            if (previous == null) return BudgetProvider(balanceProvider);
             previous.updateBalanceProvider(balanceProvider);
+            return previous;
+          },
+        ),
+
+        /// ---------------- ANALYSIS ----------------
+        ChangeNotifierProxyProvider2<
+          LedgerProvider,
+          CategoryProvider,
+          AnalysisProvider
+        >(
+          create: (context) => AnalysisProvider(
+            context.read<LedgerProvider>(),
+            context.read<CategoryProvider>(),
+          ),
+          update: (_, ledger, categories, previous) {
+            previous!.updateDependencies(ledger, categories);
             return previous;
           },
         ),
@@ -83,33 +101,26 @@ class KanakkanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     return MaterialApp(
       theme: ThemeData(
         scaffoldBackgroundColor: AppTheme.primary,
         canvasColor: Colors.white,
-        // Explicit dialog background — overrides whatever surface resolves to
         dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
         colorScheme: ColorScheme.light(
           surface: AppTheme.primary,
           primary: AppTheme.primary,
-          // Dialogs and popups (including PopupMenuButton) use these surface variants
           surfaceContainer: Colors.white,
           surfaceContainerHigh: Colors.white,
           surfaceContainerHighest: Colors.white,
-          onSurface: Colors.black87, // default text color on dialogs/popups
+          onSurface: Colors.black87,
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
         ),
-        // Covers PopupMenuButton (three-dot menu) background
         popupMenuTheme: const PopupMenuThemeData(color: Colors.white),
       ),
-      
       debugShowCheckedModeBanner: false,
       title: 'Kanakkan',
-
-      /// Root decides which screen to show
       home: const AppInitializer(),
     );
   }

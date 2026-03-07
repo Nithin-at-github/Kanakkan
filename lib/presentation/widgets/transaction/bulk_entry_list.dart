@@ -59,6 +59,8 @@ class BulkEntryList extends StatelessWidget {
                           decimal: true,
                         ),
                         decoration: InputDecoration(
+                          hintText: "Amount",
+                          hintStyle: const TextStyle(color: Colors.white54),
                           prefixText: "₹ ",
                           prefixStyle: const TextStyle(color: Colors.white),
                           isDense: true,

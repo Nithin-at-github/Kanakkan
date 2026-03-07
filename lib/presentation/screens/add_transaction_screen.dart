@@ -20,9 +20,6 @@ enum TransactionType { income, expense, transfer }
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionEntity? transaction;
-
-  /// The paired leg of a transfer. Only provided when editing a transfer —
-  /// null for income/expense edits and all create flows.
   final TransactionEntity? pairedTransaction;
 
   const AddTransactionScreen({
@@ -41,20 +38,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final List<FocusNode> _amountFocusNodes = [];
   final List<FocusNode> _noteFocusNodes = [];
 
-  bool _multiMode = false;
+  final ValueNotifier<String> _amountNotifier = ValueNotifier("0");
+  final ValueNotifier<bool> _multiModeNotifier = ValueNotifier(false);
 
   Account? _selectedAccount;
   Account? _selectedToAccount;
   Category? _selectedCategory;
 
-  String _amount = "0";
-
   double _cachedTotalAmount = 0;
-
   DateTime _selectedDateTime = DateTime.now();
 
   final TextEditingController _noteController = TextEditingController();
-
   final List<BulkTransactionItem> _items = [BulkTransactionItem()];
 
   bool get _isEditMode => widget.transaction != null;
@@ -68,14 +62,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _noteFocusNodes.add(FocusNode());
 
     final tx = widget.transaction;
-
     if (tx != null) {
-      _amount = tx.amount.toString();
+      _amountNotifier.value = tx.amount.toString();
       _selectedDateTime = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       _noteController.text = tx.note ?? "";
 
       if (_isTransferEdit) {
-        // Lock to transfer — regardless of which leg the user tapped
         _type = TransactionType.transfer;
       } else {
         _type = tx.type == "income"
@@ -90,14 +82,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
         setState(() {
           if (_isTransferEdit) {
-            // Identify legs by type — safe regardless of which leg was tapped
             final paired = widget.pairedTransaction!;
             final expenseLeg = tx.type == "expense" ? tx : paired;
             final incomeLeg = tx.type == "income" ? tx : paired;
-
             _selectedAccount = ledger.resolveAccount(expenseLeg.fromAccountId);
             _selectedToAccount = ledger.resolveAccount(incomeLeg.toAccountId);
-            _selectedCategory = null; // transfers have no category
+            _selectedCategory = null;
           } else {
             _selectedAccount = ledger.resolveAccount(
               tx.type == "income" ? tx.toAccountId : tx.fromAccountId,
@@ -114,6 +104,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     for (final node in _amountFocusNodes) node.dispose();
     for (final node in _noteFocusNodes) node.dispose();
     _noteController.dispose();
+    _amountNotifier.dispose();
+    _multiModeNotifier.dispose();
     super.dispose();
   }
 
@@ -123,12 +115,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _cachedTotalAmount = _items.fold(0, (sum, e) => sum + e.amount);
   }
 
+  // ================= KEYPAD =================
+
+  void _onKeyTap(String key) {
+    final current = _amountNotifier.value;
+    if (key == "⌫") {
+      _amountNotifier.value = current.length > 1
+          ? current.substring(0, current.length - 1)
+          : "0";
+    } else {
+      _amountNotifier.value = current == "0" ? key : current + key;
+    }
+  }
+
   // ================= BUILD =================
 
   @override
   Widget build(BuildContext context) {
     final categoriesProvider = context.watch<CategoryProvider>();
-
     final categories = _type == TransactionType.income
         ? categoriesProvider.incomeCategories
         : categoriesProvider.expenseCategories;
@@ -136,109 +140,120 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Scaffold(
       backgroundColor: AppTheme.primary,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  children: [
-                    if (!_multiMode)
-                      TransactionTopBar(
-                        onCancel: () => Navigator.pop(context),
-                        onSave: _saveTransaction,
-                      )
-                    else
-                      const SizedBox(height: 45),
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _multiModeNotifier,
+          builder: (context, multiMode, _) {
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Column(
+                      children: [
+                        if (!multiMode)
+                          TransactionTopBar(
+                            onCancel: () => Navigator.pop(context),
+                            onSave: _saveTransaction,
+                          )
+                        else
+                          const SizedBox(height: 45),
 
-                    // Hide mode selector in edit mode — bulk edit not supported
-                    if (!_isEditMode) _modeSelector(),
+                        if (!_isEditMode) _modeSelector(multiMode),
 
-                    const SizedBox(height: 10),
+                        const SizedBox(height: 10),
 
-                    TransactionTypeSelector(
-                      type: _type,
-                      multiMode: _multiMode,
-                      // Lock type in transfer edit — switching type on a paired
-                      // transfer would leave an orphaned leg in the DB
-                      onTypeChanged: _isTransferEdit
-                          ? null
-                          : (t) {
+                        TransactionTypeSelector(
+                          type: _type,
+                          multiMode: multiMode,
+                          onTypeChanged: _isTransferEdit
+                              ? null
+                              : (t) {
+                                  setState(() {
+                                    _type = t;
+                                    _selectedCategory = null;
+                                  });
+                                },
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        _dateTimeRow(),
+
+                        AccountCategorySection(
+                          type: _type,
+                          selectedAccount: _selectedAccount,
+                          selectedToAccount: _selectedToAccount,
+                          selectedCategory: _selectedCategory,
+                          onSelectAccount: () => _selectAccount(
+                            context.read<LedgerProvider>(),
+                            true,
+                          ),
+                          onSelectToAccount: () => _selectAccount(
+                            context.read<LedgerProvider>(),
+                            false,
+                          ),
+                          onSelectCategory: () => _selectCategory(categories),
+                        ),
+
+                        const SizedBox(height: 15),
+
+                        if (multiMode)
+                          BulkEntryList(
+                            items: _items,
+                            amountFocusNodes: _amountFocusNodes,
+                            noteFocusNodes: _noteFocusNodes,
+                            total: _cachedTotalAmount,
+                            onAmountChanged: (index, value) {
+                              _items[index].amount =
+                                  double.tryParse(value) ?? 0;
+                              _ensureExtraRow(index);
+                              setState(_recomputeTotal);
+                            },
+                            onNoteChanged: (index, value) {
+                              _items[index].note = value;
+                            },
+                            onSubmitNote: (index) {
+                              _ensureExtraRow(index);
+                              if (index + 1 < _amountFocusNodes.length) {
+                                FocusScope.of(
+                                  context,
+                                ).requestFocus(_amountFocusNodes[index + 1]);
+                              }
+                            },
+                            onDelete: (index) {
                               setState(() {
-                                _type = t;
-                                _selectedCategory = null;
+                                _items.removeAt(index);
+                                _amountFocusNodes.removeAt(index).dispose();
+                                _noteFocusNodes.removeAt(index).dispose();
+                                _recomputeTotal();
                               });
                             },
+                            onSaveAll: _saveBulkTransactions,
+                            onCancel: () => Navigator.pop(context),
+                          ),
+
+                        if (!multiMode) ...[
+                          _notesSection(),
+                          const SizedBox(height: 12),
+                          ValueListenableBuilder<String>(
+                            valueListenable: _amountNotifier,
+                            builder: (_, amount, __) =>
+                                _AmountDisplay(amount: amount),
+                          ),
+                        ],
+                      ],
                     ),
-
-                    const SizedBox(height: 10),
-
-                    _dateTimeRow(),
-
-                    AccountCategorySection(
-                      type: _type,
-                      selectedAccount: _selectedAccount,
-                      selectedToAccount: _selectedToAccount,
-                      selectedCategory: _selectedCategory,
-                      onSelectAccount: () =>
-                          _selectAccount(context.read<LedgerProvider>(), true),
-                      onSelectToAccount: () =>
-                          _selectAccount(context.read<LedgerProvider>(), false),
-                      onSelectCategory: () => _selectCategory(categories),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    if (_multiMode)
-                      BulkEntryList(
-                        items: _items,
-                        amountFocusNodes: _amountFocusNodes,
-                        noteFocusNodes: _noteFocusNodes,
-                        total: _cachedTotalAmount,
-                        onAmountChanged: (index, value) {
-                          _items[index].amount = double.tryParse(value) ?? 0;
-                          _ensureExtraRow(index);
-                          setState(_recomputeTotal);
-                        },
-                        onNoteChanged: (index, value) {
-                          _items[index].note = value;
-                        },
-                        onSubmitNote: (index) {
-                          _ensureExtraRow(index);
-                          if (index + 1 < _amountFocusNodes.length) {
-                            FocusScope.of(
-                              context,
-                            ).requestFocus(_amountFocusNodes[index + 1]);
-                          }
-                        },
-                        onDelete: (index) {
-                          setState(() {
-                            _items.removeAt(index);
-                            _amountFocusNodes.removeAt(index).dispose();
-                            _noteFocusNodes.removeAt(index).dispose();
-                            _recomputeTotal();
-                          });
-                        },
-                        onSaveAll: _saveBulkTransactions,
-                        onCancel: () => Navigator.pop(context),
-                      ),
-
-                    if (!_multiMode) ...[
-                      _notesSection(),
-                      const SizedBox(height: 12),
-                      _AmountDisplay(amount: _amount),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            if (!_multiMode)
-              SizedBox(
-                height: 285,
-                child: TransactionKeypad(onKeyTap: _onKeyTap),
-              ),
-          ],
+                if (!multiMode)
+                  SizedBox(
+                    height: 285,
+                    child: TransactionKeypad(onKeyTap: _onKeyTap),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -246,20 +261,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   // ================= MODE SELECTOR =================
 
-  Widget _modeSelector() {
+  Widget _modeSelector(bool multiMode) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildModeChip(
           label: "Single Entry",
-          selected: !_multiMode,
-          onSelected: () => setState(() => _multiMode = false),
+          selected: !multiMode,
+          onSelected: () => _multiModeNotifier.value = false,
         ),
         const SizedBox(width: 10),
         _buildModeChip(
           label: "Multiple Entry",
-          selected: _multiMode,
-          onSelected: () => setState(() => _multiMode = true),
+          selected: multiMode,
+          onSelected: () => _multiModeNotifier.value = true,
         ),
       ],
     );
@@ -345,20 +360,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  // ================= KEYPAD LOGIC =================
-
-  void _onKeyTap(String key) {
-    setState(() {
-      if (key == "⌫") {
-        _amount = _amount.length > 1
-            ? _amount.substring(0, _amount.length - 1)
-            : "0";
-      } else {
-        _amount = _amount == "0" ? key : _amount + key;
-      }
-    });
-  }
-
   // ================= HELPERS =================
 
   void _ensureExtraRow(int index) {
@@ -374,26 +375,42 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ================= SAVE BULK =================
 
   Future<void> _saveBulkTransactions() async {
-    // ── Validation ──────────────────────────────────────────
     if (_selectedAccount == null) {
       _showSnackbar("Please select an account", isError: true);
       return;
     }
-
     if (_type != TransactionType.transfer && _selectedCategory == null) {
       _showSnackbar("Please select a category", isError: true);
       return;
     }
-
     final validItems = _items.where((item) => item.amount > 0).toList();
-
     if (validItems.isEmpty) {
       _showSnackbar("Enter at least one amount", isError: true);
       return;
     }
-    // ────────────────────────────────────────────────────────
 
+    // Capture before first await — provider notifyListeners() mid-save
+    // rebuilds the tree and can invalidate context-dependent calls
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final ledger = context.read<LedgerProvider>();
+
+    // ── WALLET SUFFICIENCY CHECK FOR BULK ──
+    // Check total of all bulk items against combined wallet balance.
+    if (_type == TransactionType.expense && _selectedCategory != null) {
+      final totalRequired = validItems.fold(0.0, (s, i) => s + i.amount);
+      final canAfford = ledger.canAffordExpense(
+        categoryId: _selectedCategory!.id!,
+        amount: totalRequired,
+      );
+      if (!canAfford) {
+        _showSnackbar(
+          "Insufficient wallet balance for total of ₹${totalRequired.toStringAsFixed(2)}.",
+          isError: true,
+        );
+        return;
+      }
+    }
 
     for (final item in validItems) {
       if (_type == TransactionType.expense) {
@@ -413,19 +430,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
 
-    if (!mounted) return;
-    _showSnackbar(
-      "${validItems.length} transaction${validItems.length > 1 ? 's' : ''} saved",
-      isError: false,
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          "${validItems.length} transaction${validItems.length > 1 ? 's' : ''} saved",
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: AppTheme.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
     );
-    Navigator.pop(context);
+
+    navigator.pop();
   }
 
   void _showSnackbar(String message, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message,
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: isError ? AppTheme.error : AppTheme.success,
         behavior: SnackBarBehavior.floating,
@@ -437,32 +468,52 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // ================= SAVE SINGLE =================
 
   Future<void> _saveTransaction() async {
-    // ── Validation ──────────────────────────────────────────
-    final amt = double.tryParse(_amount) ?? 0;
+    final amt = double.tryParse(_amountNotifier.value) ?? 0;
 
     if (amt <= 0) {
       _showSnackbar("Enter a valid amount", isError: true);
       return;
     }
-
     if (_selectedAccount == null) {
       _showSnackbar("Please select an account", isError: true);
       return;
     }
-
     if (_type == TransactionType.transfer && _selectedToAccount == null) {
       _showSnackbar("Please select a destination account", isError: true);
       return;
     }
-
     if (_type == TransactionType.transfer &&
         _selectedAccount!.id == _selectedToAccount!.id) {
       _showSnackbar("From and To accounts must be different", isError: true);
       return;
     }
-    // ────────────────────────────────────────────────────────
 
+    // Capture navigator BEFORE the first await.
+    // LedgerProvider calls notifyListeners() inside addExpense/addIncome/
+    // transferFunds which triggers a Provider rebuild mid-save. That rebuild
+    // can deactivate this widget, making Navigator.of(context) unreliable
+    // after the await gap — even when mounted is still true.
+    final navigator = Navigator.of(context);
     final ledger = context.read<LedgerProvider>();
+
+    // ── WALLET SUFFICIENCY CHECK ──
+    // For expenses, verify that category wallet + salary wallet can cover
+    // the amount before proceeding. This prevents negative wallet balances.
+    if (!_isEditMode &&
+        _type == TransactionType.expense &&
+        _selectedCategory != null) {
+      final canAfford = ledger.canAffordExpense(
+        categoryId: _selectedCategory!.id!,
+        amount: amt,
+      );
+      if (!canAfford) {
+        _showSnackbar(
+          "Insufficient wallet balance. Top up your wallet or salary first.",
+          isError: true,
+        );
+        return;
+      }
+    }
 
     if (_isEditMode) {
       if (_isTransferEdit) {
@@ -470,7 +521,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         final paired = widget.pairedTransaction!;
         final expenseLeg = tx.type == "expense" ? tx : paired;
         final incomeLeg = tx.type == "income" ? tx : paired;
-
         await ledger.updateTransfer(
           oldExpense: expenseLeg,
           oldIncome: incomeLeg,
@@ -524,8 +574,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     }
 
-    if (!mounted) return;
-    Navigator.pop(context);
+    // Safe — navigator was captured before any await
+    navigator.pop();
   }
 
   // ================= PICKERS =================
@@ -537,7 +587,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-
     if (date != null) {
       setState(() {
         _selectedDateTime = DateTime(
@@ -556,7 +605,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
     );
-
     if (time != null) {
       setState(() {
         _selectedDateTime = DateTime(
@@ -818,7 +866,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 }
 
-// Isolated widget — only rebuilds on keypad taps, not the entire screen
+// Isolated widget — only rebuilds when ValueNotifier fires
 class _AmountDisplay extends StatelessWidget {
   final String amount;
 

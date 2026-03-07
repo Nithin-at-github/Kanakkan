@@ -3,74 +3,63 @@ import 'package:kanakkan/data/repositories/category_balance_repository.dart';
 
 class CategoryBalanceProvider extends ChangeNotifier {
   final CategoryBalanceRepository _repository = CategoryBalanceRepository();
-
   final Map<int, double> _balances = {};
-
   Map<int, double> get balances => _balances;
 
-  /// ================= LOAD =================
+  // ================= LOAD =================
+
   Future<void> loadBalances() async {
     final data = await _repository.getAllBalances();
-
     _balances.clear();
-
     for (final item in data) {
       _balances[item.categoryId] = item.balance;
     }
-
     notifyListeners();
   }
 
-  /// ================= GET =================
+  // ================= GET =================
+
   double getBalance(int categoryId) {
     return _balances[categoryId] ?? 0;
   }
 
-  /// ================= SET =================
+  // ================= SET =================
+
   Future<void> setBalance(int categoryId, double amount) async {
     _balances[categoryId] = amount;
-
-    notifyListeners();
-
     await _repository.setBalance(categoryId, amount);
+    // No notifyListeners() here — caller (LedgerProvider._reloadAll)
+    // triggers a full reload which notifies once at the end.
   }
 
-  /// ================= ALLOCATE =================
+  // ================= ALLOCATE =================
+
   Future<void> allocate(int categoryId, double amount) async {
     final current = _balances[categoryId] ?? 0;
-
-    final updated = current + amount;
-
-    _balances[categoryId] = updated;
-
-    notifyListeners();
-
+    _balances[categoryId] = current + amount;
     await _repository.addToBalance(categoryId, amount);
+    // Silent update — LedgerProvider._reloadAll notifies once after all effects
   }
 
-  /// ================= SPEND =================
+  // ================= SPEND =================
+
   Future<void> spend(int categoryId, double amount) async {
     final current = _balances[categoryId] ?? 0;
-
-    final updated = current - amount;
-
-    _balances[categoryId] = updated;
-
-    notifyListeners();
-
+    _balances[categoryId] = current - amount;
     await _repository.subtractFromBalance(categoryId, amount);
+    // Silent update — LedgerProvider._reloadAll notifies once after all effects
   }
 
-  /// ================= RESET =================
+  // ================= RESET =================
+
   Future<void> resetBalance(int categoryId) async {
     _balances[categoryId] = 0;
-
-    notifyListeners();
-
     await _repository.setBalance(categoryId, 0);
+    notifyListeners();
   }
 
-  /// ================= MOVE =================
+  // ================= MOVE =================
+
   Future<void> moveBalance({
     required int fromCategoryId,
     required int toCategoryId,
@@ -81,34 +70,32 @@ class CategoryBalanceProvider extends ChangeNotifier {
     }
 
     final fromBalance = await _repository.getBalance(fromCategoryId);
-
     if (fromBalance < amount) {
       throw Exception("Insufficient wallet balance");
     }
 
     final db = await _repository.dbHelper.database;
-
     await db.transaction((txn) async {
       await txn.rawUpdate(
         '''
-      UPDATE category_balances
-      SET balance = balance - ?
-      WHERE categoryId = ?
-      ''',
+        UPDATE category_balances
+        SET balance = balance - ?
+        WHERE categoryId = ?
+        ''',
         [amount, fromCategoryId],
       );
-
       await txn.rawInsert(
         '''
-      INSERT INTO category_balances(categoryId, balance)
-      VALUES(?, ?)
-      ON CONFLICT(categoryId)
-      DO UPDATE SET balance = balance + excluded.balance
-      ''',
+        INSERT INTO category_balances(categoryId, balance)
+        VALUES(?, ?)
+        ON CONFLICT(categoryId)
+        DO UPDATE SET balance = balance + excluded.balance
+        ''',
         [toCategoryId, amount],
       );
     });
 
+    // loadBalances() calls notifyListeners() once after all DB changes settle
     await loadBalances();
   }
 }

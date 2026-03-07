@@ -104,7 +104,7 @@ class AccountsScreen extends StatelessWidget {
               ),
 
               child: Column(
-                mainAxisSize: MainAxisSize.min, // ⭐ IMPORTANT
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (accounts.isEmpty) ...[
                     const Padding(
@@ -138,13 +138,12 @@ class AccountsScreen extends StatelessWidget {
 
                     const SizedBox(height: 10),
                     ListView.builder(
-                      shrinkWrap: true, // IMPORTANT
+                      shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: accounts.length,
                       itemBuilder: (context, index) {
                         final acc = accounts[index];
                         final balance = provider.accountBalances[acc.id] ?? 0.0;
-
                         return _accountTile(context, acc, balance);
                       },
                     ),
@@ -171,7 +170,6 @@ class AccountsScreen extends StatelessWidget {
         border: Border.all(color: AppTheme.accent.withOpacity(.35)),
         color: Colors.white,
       ),
-
       child: Row(
         children: [
           /// ACCOUNT INFO
@@ -179,7 +177,6 @@ class AccountsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// NAME
                 Text(
                   acc.name,
                   style: const TextStyle(
@@ -188,10 +185,7 @@ class AccountsScreen extends StatelessWidget {
                     color: AppTheme.primary,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
-                /// BALANCE
                 Text(
                   "Balance → ₹${balance.toStringAsFixed(2)}",
                   style: TextStyle(
@@ -224,7 +218,8 @@ class AccountsScreen extends StatelessWidget {
                 provider.deleteAccount(acc.id!);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text("Account deleted",
+                    content: Text(
+                      "Account deleted",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -269,14 +264,11 @@ class AccountsScreen extends StatelessWidget {
 
   void _editAccount(BuildContext context, Account account) {
     final controller = TextEditingController(text: account.name);
-    final balanceController = TextEditingController(
-      text: account.initialBalance.toString(),
-    );
 
     showDialog(
       context: context,
       builder: (_) => Consumer<LedgerProvider>(
-        builder: (context, ledger, __) {
+        builder: (context, ledger, _) {
           return Dialog(
             backgroundColor: AppTheme.background,
             shape: RoundedRectangleBorder(
@@ -313,23 +305,34 @@ class AccountsScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  /// INITIAL BALANCE
-                  TextField(
-                    controller: balanceController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
+                  /// INITIAL BALANCE — read-only display
+                  InputDecorator(
                     decoration: InputDecoration(
                       labelText: "Initial balance",
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Colors.grey.shade100,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                      ),
+                      suffixIcon: const Tooltip(
+                        message: "Initial balance cannot be changed",
+                        child: Icon(
+                          Icons.lock_outline,
+                          size: 18,
+                          color: Colors.black38,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      "₹${account.initialBalance.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.black54,
                       ),
                     ),
                   ),
 
-                  /// ERROR MESSAGE (NEW)
+                  /// ERROR MESSAGE
                   if (ledger.lastError != null) ...[
                     const SizedBox(height: 12),
                     Container(
@@ -376,18 +379,16 @@ class AccountsScreen extends StatelessWidget {
                             ledger.clearError();
 
                             final newName = controller.text.trim();
-                            final newBalance =
-                                double.tryParse(balanceController.text) ?? 0.0;
 
                             await context.read<LedgerProvider>().updateAccount(
                               Account(
                                 id: account.id,
                                 name: newName,
-                                initialBalance: newBalance,
+                                // preserve the original initial balance unchanged
+                                initialBalance: account.initialBalance,
                               ),
                             );
 
-                            /// close ONLY if success
                             if (context.read<LedgerProvider>().lastError ==
                                 null) {
                               Navigator.pop(context);

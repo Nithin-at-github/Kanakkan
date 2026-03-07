@@ -49,7 +49,9 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       context,
     ).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message,
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: colour,
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 1),
