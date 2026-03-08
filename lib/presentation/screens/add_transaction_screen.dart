@@ -419,6 +419,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           fromAccountId: _selectedAccount!.id!,
           categoryId: _selectedCategory!.id!,
           note: item.note,
+          timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
       } else {
         await ledger.addIncome(
@@ -426,6 +427,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           toAccountId: _selectedAccount!.id!,
           categoryId: _selectedCategory!.id!,
           note: item.note,
+          timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
       }
     }
@@ -485,6 +487,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (_type == TransactionType.transfer &&
         _selectedAccount!.id == _selectedToAccount!.id) {
       _showSnackbar("From and To accounts must be different", isError: true);
+      return;
+    }
+    if (_type != TransactionType.transfer && _selectedCategory == null) {
+      _showSnackbar("Please select a category", isError: true);
       return;
     }
 
@@ -556,6 +562,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           toAccountId: _selectedAccount!.id!,
           categoryId: _selectedCategory?.id,
           note: _noteController.text,
+          timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
       } else if (_type == TransactionType.expense) {
         await ledger.addExpense(
@@ -563,6 +570,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           fromAccountId: _selectedAccount!.id!,
           categoryId: _selectedCategory?.id,
           note: _noteController.text,
+          timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
       } else {
         await ledger.transferFunds(
@@ -570,6 +578,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           fromAccountId: _selectedAccount!.id!,
           toAccountId: _selectedToAccount!.id!,
           note: _noteController.text,
+          timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
       }
     }

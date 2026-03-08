@@ -28,17 +28,17 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   String resolveTransactionCategoryName(TransactionEntity tx) {
-    // Transfers don't have categories
-    if (tx.type == "transfer") {
-      return "Transfer";
-    }
+    // Transfers never have a meaningful category
+    if (tx.transferGroupId != null) return "Transfer";
 
+    // No category selected — show type label instead of "Transfer"
     if (tx.categoryId == null) {
-      return "Transfer";
+      if (tx.type == "income") return "Income";
+      if (tx.type == "expense") return "Expense";
+      return "Transaction";
     }
 
     final category = resolveCategory(tx.categoryId);
-
     return category?.name ?? "Deleted Category";
   }
 
@@ -50,13 +50,12 @@ class CategoryProvider extends ChangeNotifier {
 
   List<Category> get expenseCategories =>
       _categories.where((c) => c.type == "expense").toList();
-  
+
   List<Category> get splitCategories =>
-    _categories.where((c) => c.name.toLowerCase() != "salary").toList();
+      _categories.where((c) => c.name.toLowerCase() != "salary").toList();
 
   Category? resolveCategory(int? categoryId) {
     if (categoryId == null) return null;
-
     return categories.firstWhereOrNull((c) => c.id == categoryId);
   }
 
@@ -78,19 +77,15 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> addCategory(Category category) async {
     clearError();
-
     try {
       final id = await _repository.insertCategory(category);
-
       await categoryBalanceRepository.setBalance(id, 0);
-
       await loadCategories();
     } on DatabaseException catch (e) {
       if (e.toString().contains('UNIQUE')) {
         _setError('Category already exists');
         return;
       }
-
       _setError('Failed to create category');
     } catch (_) {
       _setError('Something went wrong');
@@ -99,19 +94,16 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> deleteCategory(int id) async {
     final balance = await categoryBalanceRepository.getBalance(id);
-
     if (balance != 0) {
       _setError("Category still has wallet balance");
       return;
     }
-
     await _repository.deleteCategory(id);
     await loadCategories();
   }
 
   Future<void> updateCategory(int id, String newName) async {
     clearError();
-
     try {
       await _repository.updateCategory(id, newName);
       await loadCategories();
@@ -120,7 +112,6 @@ class CategoryProvider extends ChangeNotifier {
         _setError('Category already exists');
         return;
       }
-
       _setError('Failed to update category');
     } catch (_) {
       _setError('Something went wrong');

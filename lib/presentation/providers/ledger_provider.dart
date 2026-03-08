@@ -225,6 +225,7 @@ class LedgerProvider extends ChangeNotifier {
     required int toAccountId,
     int? categoryId,
     String? note,
+    int? timestamp,
   }) async {
     final transaction = TransactionModel(
       type: "income",
@@ -233,7 +234,7 @@ class LedgerProvider extends ChangeNotifier {
       toAccountId: toAccountId,
       categoryId: categoryId,
       note: note,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
+      timestamp: timestamp ?? DateTime.now().millisecondsSinceEpoch,
     );
 
     final id = await _transactionRepository.insertTransaction(transaction);
@@ -268,6 +269,7 @@ class LedgerProvider extends ChangeNotifier {
     required int fromAccountId,
     int? categoryId,
     String? note,
+    int? timestamp,
   }) async {
     final transaction = TransactionModel(
       type: "expense",
@@ -276,7 +278,7 @@ class LedgerProvider extends ChangeNotifier {
       toAccountId: null,
       categoryId: categoryId,
       note: note,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
+      timestamp: timestamp ?? DateTime.now().millisecondsSinceEpoch,
     );
 
     await _transactionRepository.insertTransaction(transaction);
@@ -291,14 +293,16 @@ class LedgerProvider extends ChangeNotifier {
     required int fromAccountId,
     required int toAccountId,
     String? note,
+    int? timestamp,
   }) async {
     final groupId = const Uuid().v4();
+    final ts = timestamp ?? DateTime.now().millisecondsSinceEpoch;
 
     final expenseLeg = TransactionModel(
       type: "expense",
       amount: amount,
       fromAccountId: fromAccountId,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
+      timestamp: ts,
       note: note,
       transferGroupId: groupId,
     );
@@ -307,7 +311,7 @@ class LedgerProvider extends ChangeNotifier {
       type: "income",
       amount: amount,
       toAccountId: toAccountId,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
+      timestamp: ts,
       note: note,
       transferGroupId: groupId,
     );
