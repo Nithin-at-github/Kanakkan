@@ -4,25 +4,45 @@ import 'package:kanakkan/domain/entities/transaction_entity.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 
-// ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // DATA MODELS
-// ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 class MonthlyTrend {
-  final String label; // "Jan", "Feb" etc.
+  final String label;
+  final int year;
+  final int month;
   final double income;
   final double expense;
-  const MonthlyTrend(this.label, this.income, this.expense);
+  const MonthlyTrend(
+    this.label,
+    this.year,
+    this.month,
+    this.income,
+    this.expense,
+  );
+  double get savings => income - expense;
 }
 
 class CategoryBreakdown {
+  final int categoryId;
   final String name;
   final double amount;
   final double percentage;
+  final bool isSubcategory;
+  final int? parentId;
+  final String? parentName;
+  final List<CategoryBreakdown> subcategories;
+
   const CategoryBreakdown({
+    required this.categoryId,
     required this.name,
     required this.amount,
     required this.percentage,
+    this.isSubcategory = false,
+    this.parentId,
+    this.parentName,
+    this.subcategories = const [],
   });
 }
 
@@ -41,23 +61,24 @@ class AnalysisInsight {
 
 enum InsightLevel { good, warning, danger, neutral }
 
-// ─────────────────────────────────────────
+enum AnalysisMode { monthly, yearly }
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PROVIDER
-// ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 class AnalysisProvider extends ChangeNotifier {
-  final LedgerProvider _ledger;
-  final CategoryProvider _categories;
+  LedgerProvider _ledger;
+  CategoryProvider _categories;
 
   AnalysisProvider(this._ledger, this._categories) {
-    // Initialize with all accounts selected
     _selectedAccountIds = _ledger.accounts.map((a) => a.id!).toSet();
     _recompute();
   }
 
-  /// Called by ProxyProvider when dependencies change
   void updateDependencies(LedgerProvider ledger, CategoryProvider categories) {
-    // Sync account list — remove stale ids, add new ones
+    _ledger = ledger;
+    _categories = categories;
     final currentIds = ledger.accounts.map((a) => a.id!).toSet();
     _selectedAccountIds = _selectedAccountIds.intersection(currentIds);
     if (_selectedAccountIds.isEmpty) _selectedAccountIds = currentIds;
@@ -65,60 +86,105 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── SELECTED STATE ──
+  // ── STATE ──
 
   Set<int> _selectedAccountIds = {};
   Set<int> get selectedAccountIds => _selectedAccountIds;
 
-  int _monthOffset = 0; // 0 = current month, -1 = last month
+  AnalysisMode _mode = AnalysisMode.monthly;
+  AnalysisMode get mode => _mode;
+  bool get isMonthly => _mode == AnalysisMode.monthly;
+
+  int _monthOffset = 0;
   int get monthOffset => _monthOffset;
 
-  // ── COMPUTED RESULTS ──
+  int _yearOffset = 0;
+  int get yearOffset => _yearOffset;
+
+  // ── COMPUTED — MONTHLY ──
 
   double totalIncome = 0;
   double totalExpense = 0;
   double savings = 0;
-  double savingsRate = 0; // 0–100
+  double savingsRate = 0;
 
-  List<MonthlyTrend> trend = [];
-  List<CategoryBreakdown> topCategories = [];
-  Map<int, double> dailySpend = {}; // day → amount
+  List<MonthlyTrend> trend = []; // 6-month rolling
+  List<CategoryBreakdown> expenseBreakdown = []; // main categories with subs
+  List<CategoryBreakdown> incomeBreakdown = [];
+  Map<int, double> dailySpend = {};
   List<AnalysisInsight> insights = [];
 
+  // ── COMPUTED — YEARLY ──
+
+  double yearTotalIncome = 0;
+  double yearTotalExpense = 0;
+  double yearSavings = 0;
+  double yearSavingsRate = 0;
+  double avgMonthlyIncome = 0;
+  double avgMonthlyExpense = 0;
+  double bestSavingsMonth = 0;
+  String bestSavingsMonthLabel = '';
+  List<MonthlyTrend> yearMonthlyBreakdown = []; // all 12 months of year
+  List<CategoryBreakdown> yearExpenseBreakdown = [];
+  List<CategoryBreakdown> yearIncomeBreakdown = [];
+
   // ── HELPERS ──
+
+  static const _monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  static const _shortMonths = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   DateTime get _focusMonth {
     final now = DateTime.now();
     return DateTime(now.year, now.month + _monthOffset);
   }
 
-  String get monthLabel {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return '${months[_focusMonth.month - 1]} ${_focusMonth.year}';
-  }
+  int get _focusYear => DateTime.now().year + _yearOffset;
 
-  bool get canGoForward => _monthOffset < 0;
+  String get periodLabel => isMonthly
+      ? '${_monthNames[_focusMonth.month - 1]} ${_focusMonth.year}'
+      : 'Year ${_focusYear}';
+
+  bool get canGoForward => isMonthly ? _monthOffset < 0 : _yearOffset < 0;
 
   List<Account> get accounts => _ledger.accounts;
 
   // ── PUBLIC ACTIONS ──
 
+  void setMode(AnalysisMode mode) {
+    _mode = mode;
+    _recompute();
+    notifyListeners();
+  }
+
   void toggleAccount(int accountId) {
     if (_selectedAccountIds.contains(accountId)) {
-      if (_selectedAccountIds.length == 1) return; // keep at least one
+      if (_selectedAccountIds.length == 1) return;
       _selectedAccountIds = Set.from(_selectedAccountIds)..remove(accountId);
     } else {
       _selectedAccountIds = Set.from(_selectedAccountIds)..add(accountId);
@@ -127,15 +193,21 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void previousMonth() {
-    _monthOffset--;
+  void previous() {
+    if (isMonthly)
+      _monthOffset--;
+    else
+      _yearOffset--;
     _recompute();
     notifyListeners();
   }
 
-  void nextMonth() {
+  void next() {
     if (!canGoForward) return;
-    _monthOffset++;
+    if (isMonthly)
+      _monthOffset++;
+    else
+      _yearOffset++;
     _recompute();
     notifyListeners();
   }
@@ -144,11 +216,16 @@ class AnalysisProvider extends ChangeNotifier {
 
   void _recompute() {
     final allTx = _ledger.transactions;
+    if (isMonthly) {
+      _computeMonthly(allTx);
+    } else {
+      _computeYearly(allTx);
+    }
+  }
 
-    // Transactions for the selected month + selected accounts
+  void _computeMonthly(List<TransactionEntity> allTx) {
     final monthTx = _filterByMonthAndAccounts(allTx, _focusMonth);
 
-    // Totals
     totalIncome = monthTx
         .where((t) => t.type == 'income')
         .fold(0.0, (s, t) => s + t.amount);
@@ -160,55 +237,172 @@ class AnalysisProvider extends ChangeNotifier {
         ? (savings / totalIncome * 100).clamp(-100.0, 100.0)
         : 0.0;
 
-    // 6-month trend
-    trend = _buildTrend(allTx);
-
-    // Category breakdown (expenses only)
-    topCategories = _buildCategoryBreakdown(monthTx);
-
-    // Daily spend map
+    trend = _buildTrend(allTx, 6);
+    expenseBreakdown = _buildBreakdown(monthTx, 'expense', totalExpense);
+    incomeBreakdown = _buildBreakdown(monthTx, 'income', totalIncome);
     dailySpend = _buildDailySpend(monthTx);
-
-    // Insights
     insights = _buildInsights();
   }
+
+  void _computeYearly(List<TransactionEntity> allTx) {
+    final year = _focusYear;
+    final yearTx = _filterByYearAndAccounts(allTx, year);
+
+    yearTotalIncome = yearTx
+        .where((t) => t.type == 'income')
+        .fold(0.0, (s, t) => s + t.amount);
+    yearTotalExpense = yearTx
+        .where((t) => t.type == 'expense')
+        .fold(0.0, (s, t) => s + t.amount);
+    yearSavings = yearTotalIncome - yearTotalExpense;
+    yearSavingsRate = yearTotalIncome > 0
+        ? (yearSavings / yearTotalIncome * 100).clamp(-100.0, 100.0)
+        : 0.0;
+
+    // 12-month breakdown for the year
+    yearMonthlyBreakdown = List.generate(12, (i) {
+      final month = DateTime(year, i + 1);
+      final txs = _filterByMonthAndAccounts(allTx, month);
+      final inc = txs
+          .where((t) => t.type == 'income')
+          .fold(0.0, (s, t) => s + t.amount);
+      final exp = txs
+          .where((t) => t.type == 'expense')
+          .fold(0.0, (s, t) => s + t.amount);
+      return MonthlyTrend(_shortMonths[i], year, i + 1, inc, exp);
+    });
+
+    final monthsWithData = yearMonthlyBreakdown
+        .where((m) => m.income > 0 || m.expense > 0)
+        .length;
+    final divisor = monthsWithData > 0 ? monthsWithData.toDouble() : 1;
+    avgMonthlyIncome = yearTotalIncome / divisor;
+    avgMonthlyExpense = yearTotalExpense / divisor;
+
+    final best = yearMonthlyBreakdown.reduce(
+      (a, b) => a.savings > b.savings ? a : b,
+    );
+    bestSavingsMonth = best.savings;
+    bestSavingsMonthLabel = best.label;
+
+    yearExpenseBreakdown = _buildBreakdown(yearTx, 'expense', yearTotalExpense);
+    yearIncomeBreakdown = _buildBreakdown(yearTx, 'income', yearTotalIncome);
+  }
+
+  // ── FILTER HELPERS ──
 
   List<TransactionEntity> _filterByMonthAndAccounts(
     List<TransactionEntity> all,
     DateTime month,
   ) {
     return all.where((tx) {
-      // Skip opening balance entries
       if (tx.note == 'Opening_Balance') return false;
-      // Skip transfers — they don't represent real income/expense
       if (tx.transferGroupId != null) return false;
-
       final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       if (date.year != month.year || date.month != month.month) return false;
-
       final accountId = tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
       return _selectedAccountIds.contains(accountId);
     }).toList();
   }
 
-  List<MonthlyTrend> _buildTrend(List<TransactionEntity> all) {
-    const monthNames = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return List.generate(6, (i) {
+  List<TransactionEntity> _filterByYearAndAccounts(
+    List<TransactionEntity> all,
+    int year,
+  ) {
+    return all.where((tx) {
+      if (tx.note == 'Opening_Balance') return false;
+      if (tx.transferGroupId != null) return false;
+      final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
+      if (date.year != year) return false;
+      final accountId = tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
+      return _selectedAccountIds.contains(accountId);
+    }).toList();
+  }
+
+  // ── BREAKDOWN WITH SUBCATEGORIES ──
+
+  List<CategoryBreakdown> _buildBreakdown(
+    List<TransactionEntity> txs,
+    String type,
+    double total,
+  ) {
+    // Aggregate by actual categoryId (could be subcategory or main)
+    final Map<int, double> rawTotals = {};
+    for (final tx in txs.where((t) => t.type == type)) {
+      if (tx.categoryId == null) continue;
+      rawTotals[tx.categoryId!] = (rawTotals[tx.categoryId!] ?? 0) + tx.amount;
+    }
+
+    // Group: resolve each id to its wallet-owning main category
+    // Map: mainCategoryId → { subId → amount } + direct amount
+    final Map<int, Map<int?, double>> grouped = {};
+
+    for (final entry in rawTotals.entries) {
+      final cat = _categories.resolveCategory(entry.key);
+      if (cat == null) continue;
+
+      if (cat.isSubcategory) {
+        final parentId = cat.parentId!;
+        grouped[parentId] ??= {};
+        grouped[parentId]![entry.key] = entry.value;
+      } else {
+        grouped[entry.key] ??= {};
+        grouped[entry.key]![null] =
+            (grouped[entry.key]![null] ?? 0) + entry.value;
+      }
+    }
+
+    // Build CategoryBreakdown list
+    final List<CategoryBreakdown> result = [];
+    for (final mainId in grouped.keys) {
+      final mainCat = _categories.resolveCategory(mainId);
+      if (mainCat == null) continue;
+
+      // Total for this main category = direct + all subcategory amounts
+      final subMap = grouped[mainId]!;
+      final mainAmount = subMap.values.fold(0.0, (s, v) => s + v);
+
+      // Build subcategory breakdowns
+      final List<CategoryBreakdown> subs = [];
+      for (final subEntry in subMap.entries) {
+        if (subEntry.key == null) continue; // direct transactions
+        final subCat = _categories.resolveCategory(subEntry.key);
+        if (subCat == null) continue;
+        subs.add(
+          CategoryBreakdown(
+            categoryId: subEntry.key!,
+            name: subCat.name,
+            amount: subEntry.value,
+            percentage: mainAmount > 0
+                ? (subEntry.value / mainAmount * 100)
+                : 0,
+            isSubcategory: true,
+            parentId: mainId,
+            parentName: mainCat.name,
+          ),
+        );
+      }
+      subs.sort((a, b) => b.amount.compareTo(a.amount));
+
+      result.add(
+        CategoryBreakdown(
+          categoryId: mainId,
+          name: mainCat.name,
+          amount: mainAmount,
+          percentage: total > 0 ? (mainAmount / total * 100) : 0,
+          subcategories: subs,
+        ),
+      );
+    }
+
+    result.sort((a, b) => b.amount.compareTo(a.amount));
+    return result;
+  }
+
+  List<MonthlyTrend> _buildTrend(List<TransactionEntity> all, int count) {
+    return List.generate(count, (i) {
       final now = DateTime.now();
-      final month = DateTime(now.year, now.month - 5 + i);
+      final month = DateTime(now.year, now.month - (count - 1) + i);
       final txs = _filterByMonthAndAccounts(all, month);
       final inc = txs
           .where((t) => t.type == 'income')
@@ -216,27 +410,14 @@ class AnalysisProvider extends ChangeNotifier {
       final exp = txs
           .where((t) => t.type == 'expense')
           .fold(0.0, (s, t) => s + t.amount);
-      return MonthlyTrend(monthNames[month.month - 1], inc, exp);
+      return MonthlyTrend(
+        _shortMonths[month.month - 1],
+        month.year,
+        month.month,
+        inc,
+        exp,
+      );
     });
-  }
-
-  List<CategoryBreakdown> _buildCategoryBreakdown(
-    List<TransactionEntity> monthTx,
-  ) {
-    final Map<int, double> totals = {};
-    for (final tx in monthTx.where((t) => t.type == 'expense')) {
-      if (tx.categoryId == null) continue;
-      totals[tx.categoryId!] = (totals[tx.categoryId!] ?? 0) + tx.amount;
-    }
-
-    final sorted = totals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return sorted.take(5).map((e) {
-      final name = _categories.resolveCategoryName(e.key);
-      final pct = totalExpense > 0 ? (e.value / totalExpense * 100) : 0.0;
-      return CategoryBreakdown(name: name, amount: e.value, percentage: pct);
-    }).toList();
   }
 
   Map<int, double> _buildDailySpend(List<TransactionEntity> monthTx) {
@@ -251,27 +432,25 @@ class AnalysisProvider extends ChangeNotifier {
   List<AnalysisInsight> _buildInsights() {
     final List<AnalysisInsight> result = [];
 
-    // No data at all
     if (totalIncome == 0 && totalExpense == 0) {
       result.add(
         const AnalysisInsight(
           emoji: '📭',
           title: 'No Data',
-          body: 'No transactions found for the selected accounts and month.',
+          body: 'No transactions found for this period.',
           level: InsightLevel.neutral,
         ),
       );
       return result;
     }
 
-    // Savings rate
     if (savingsRate >= 30) {
       result.add(
         AnalysisInsight(
           emoji: '🌟',
           title: 'Excellent Savings!',
           body:
-              'You saved ${savingsRate.toStringAsFixed(0)}% of your income. That\'s well above the 20% target.',
+              'You saved ${savingsRate.toStringAsFixed(0)}% of your income. Well above the 20% target.',
           level: InsightLevel.good,
         ),
       );
@@ -281,7 +460,7 @@ class AnalysisProvider extends ChangeNotifier {
           emoji: '👍',
           title: 'Good Job!',
           body:
-              'You saved ${savingsRate.toStringAsFixed(0)}% this month, hitting the recommended 20% target.',
+              'You saved ${savingsRate.toStringAsFixed(0)}% this month, hitting the 20% target.',
           level: InsightLevel.good,
         ),
       );
@@ -292,7 +471,7 @@ class AnalysisProvider extends ChangeNotifier {
           emoji: '🎯',
           title: 'Almost There',
           body:
-              'You saved ${savingsRate.toStringAsFixed(0)}%. Reduce spending by ₹${_fmt(needed)} more to reach 20%.',
+              'Reduce spending by ₹${_fmt(needed)} more to reach the 20% savings target.',
           level: InsightLevel.warning,
         ),
       );
@@ -302,13 +481,12 @@ class AnalysisProvider extends ChangeNotifier {
           emoji: '🚨',
           title: 'Overspending Alert',
           body:
-              'You spent ₹${_fmt(totalExpense - totalIncome)} more than you earned. Review your top expenses.',
+              'You spent ₹${_fmt(totalExpense - totalIncome)} more than you earned.',
           level: InsightLevel.danger,
         ),
       );
     }
 
-    // Month-over-month spend change
     if (trend.length >= 2) {
       final thisExp = trend.last.expense;
       final lastExp = trend[trend.length - 2].expense;
@@ -318,9 +496,8 @@ class AnalysisProvider extends ChangeNotifier {
           result.add(
             AnalysisInsight(
               emoji: '📈',
-              title: 'Spending Increased',
-              body:
-                  'You spent ${change.toStringAsFixed(0)}% more than last month. Check what changed.',
+              title: 'Spending Up ${change.toStringAsFixed(0)}%',
+              body: 'You spent more than last month. Check what changed.',
               level: InsightLevel.warning,
             ),
           );
@@ -328,9 +505,8 @@ class AnalysisProvider extends ChangeNotifier {
           result.add(
             AnalysisInsight(
               emoji: '📉',
-              title: 'Spending Decreased',
-              body:
-                  'You spent ${change.abs().toStringAsFixed(0)}% less than last month. Keep it up!',
+              title: 'Spending Down ${change.abs().toStringAsFixed(0)}%',
+              body: 'You spent less than last month. Keep it up!',
               level: InsightLevel.good,
             ),
           );
@@ -338,16 +514,14 @@ class AnalysisProvider extends ChangeNotifier {
       }
     }
 
-    // Top category warning
-    if (topCategories.isNotEmpty && topCategories.first.percentage > 40) {
-      final top = topCategories.first;
+    if (expenseBreakdown.isNotEmpty && expenseBreakdown.first.percentage > 40) {
+      final top = expenseBreakdown.first;
       result.add(
         AnalysisInsight(
           emoji: '⚠️',
           title:
               '${top.name} is ${top.percentage.toStringAsFixed(0)}% of spending',
-          body:
-              'One category taking up this much is a sign to review if it\'s necessary.',
+          body: 'One category dominating spending is worth reviewing.',
           level: InsightLevel.warning,
         ),
       );

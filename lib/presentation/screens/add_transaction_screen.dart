@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/presentation/dialogs/quick_add_dialogs.dart';
 import 'package:intl/intl.dart';
 import 'package:kanakkan/presentation/widgets/transaction/account_category_section.dart';
 import 'package:kanakkan/presentation/widgets/transaction/bulk_entry_list.dart';
@@ -44,6 +45,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Account? _selectedAccount;
   Account? _selectedToAccount;
   Category? _selectedCategory;
+  Category? _selectedSubcategory; // optional, drives category auto-select
 
   double _cachedTotalAmount = 0;
   DateTime _selectedDateTime = DateTime.now();
@@ -92,7 +94,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             _selectedAccount = ledger.resolveAccount(
               tx.type == "income" ? tx.toAccountId : tx.fromAccountId,
             );
-            _selectedCategory = categories.resolveCategory(tx.categoryId);
+            final resolvedCat = categories.resolveCategory(tx.categoryId);
+            if (resolvedCat != null && resolvedCat.isSubcategory) {
+              _selectedSubcategory = resolvedCat;
+              _selectedCategory = categories.resolveMainCategory(tx.categoryId);
+            } else {
+              _selectedCategory = resolvedCat;
+              _selectedSubcategory = null;
+            }
           }
         });
       });
@@ -171,6 +180,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   setState(() {
                                     _type = t;
                                     _selectedCategory = null;
+                                    _selectedSubcategory = null;
                                   });
                                 },
                         ),
@@ -184,6 +194,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           selectedAccount: _selectedAccount,
                           selectedToAccount: _selectedToAccount,
                           selectedCategory: _selectedCategory,
+                          selectedSubcategory: _selectedSubcategory,
                           onSelectAccount: () => _selectAccount(
                             context.read<LedgerProvider>(),
                             true,
@@ -192,6 +203,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             context.read<LedgerProvider>(),
                             false,
                           ),
+                          onSelectSubcategory: () =>
+                              _selectSubcategory(categoriesProvider),
                           onSelectCategory: () => _selectCategory(categories),
                         ),
 
@@ -560,7 +573,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         await ledger.addIncome(
           amount: amt,
           toAccountId: _selectedAccount!.id!,
-          categoryId: _selectedCategory?.id,
+          categoryId: (_selectedSubcategory ?? _selectedCategory)?.id,
           note: _noteController.text,
           timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
@@ -568,7 +581,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         await ledger.addExpense(
           amount: amt,
           fromAccountId: _selectedAccount!.id!,
-          categoryId: _selectedCategory?.id,
+          categoryId: (_selectedSubcategory ?? _selectedCategory)?.id,
           note: _noteController.text,
           timestamp: _selectedDateTime.millisecondsSinceEpoch,
         );
@@ -652,13 +665,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Column(
                 children: [
                   _sheetHandle(),
-                  const Text(
-                    "Select Account",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Select Account",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text("New"),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.accent,
+                        ),
+                        onPressed: () async {
+                          final created = await QuickAddAccountDialog.show(
+                            context,
+                          );
+                          if (created != null) {
+                            setState(() => _selectedAccount = created);
+                            if (context.mounted) Navigator.pop(context);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Expanded(
@@ -682,6 +716,144 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           },
                         );
                       },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ================= CATEGORY SELECT =================
+
+  // ================= SUBCATEGORY SELECT =================
+
+  void _selectSubcategory(CategoryProvider categoriesProvider) {
+    // Build grouped list: income or expense subcategories based on current type
+    final relevantMains = _type == TransactionType.income
+        ? categoriesProvider.incomeCategories
+        : categoriesProvider.expenseCategories;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _sheetHandle(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Select Subcategory",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text("New"),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.accent,
+                        ),
+                        onPressed: () async {
+                          final created = await QuickAddCategoryDialog.show(
+                            context,
+                            preselectedType: _type == TransactionType.income
+                                ? "income"
+                                : "expense",
+                          );
+                          if (created != null && created.isSubcategory) {
+                            final provider = context.read<CategoryProvider>();
+                            setState(() {
+                              _selectedSubcategory = created;
+                              _selectedCategory = provider.resolveMainCategory(
+                                created.id,
+                              );
+                            });
+                            if (context.mounted) Navigator.pop(context);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        // None option
+                        _selectionTile(
+                          title: "None",
+                          icon: Icons.block,
+                          color: Colors.black45,
+                          onTap: () {
+                            setState(() => _selectedSubcategory = null);
+                            Navigator.pop(context);
+                          },
+                        ),
+                        // Grouped by main category
+                        ...relevantMains.map((main) {
+                          final subs = categoriesProvider.subcategoriesOf(
+                            main.id!,
+                          );
+                          if (subs.isEmpty) return const SizedBox.shrink();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  12,
+                                  16,
+                                  4,
+                                ),
+                                child: Text(
+                                  main.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                              ...subs.map(
+                                (sub) => _selectionTile(
+                                  title: sub.name,
+                                  icon: Icons.subdirectory_arrow_right,
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedSubcategory = sub;
+                                      // Auto-set main category from parent
+                                      _selectedCategory = categoriesProvider
+                                          .resolveMainCategory(sub.id);
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
                     ),
                   ),
                 ],
@@ -730,13 +902,47 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   child: Column(
                     children: [
                       _sheetHandle(),
-                      const Text(
-                        "Select Category",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Select Category",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text("New"),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTheme.accent,
+                            ),
+                            onPressed: () async {
+                              final created = await QuickAddCategoryDialog.show(
+                                context,
+                                preselectedType: _type == TransactionType.income
+                                    ? "income"
+                                    : "expense",
+                              );
+                              if (created != null) {
+                                setState(() {
+                                  if (created.isSubcategory) {
+                                    _selectedSubcategory = created;
+                                    _selectedCategory = context
+                                        .read<CategoryProvider>()
+                                        .resolveMainCategory(created.id);
+                                  } else {
+                                    _selectedCategory = created;
+                                    _selectedSubcategory = null;
+                                  }
+                                });
+                                if (context.mounted) Navigator.pop(context);
+                              }
+                            },
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       TextField(
@@ -791,7 +997,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   icon: Icons.arrow_upward,
                                   color: AppTheme.error,
                                   onTap: () {
-                                    setState(() => _selectedCategory = c);
+                                    setState(() {
+                                      _selectedCategory = c;
+                                      // Clear subcategory if it doesn't belong to new category
+                                      if (_selectedSubcategory?.parentId !=
+                                          c.id) {
+                                        _selectedSubcategory = null;
+                                      }
+                                    });
                                     Navigator.pop(context);
                                   },
                                 ),
@@ -804,7 +1017,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   icon: Icons.arrow_downward,
                                   color: AppTheme.success,
                                   onTap: () {
-                                    setState(() => _selectedCategory = c);
+                                    setState(() {
+                                      _selectedCategory = c;
+                                      // Clear subcategory if it doesn't belong to new category
+                                      if (_selectedSubcategory?.parentId !=
+                                          c.id) {
+                                        _selectedSubcategory = null;
+                                      }
+                                    });
                                     Navigator.pop(context);
                                   },
                                 ),

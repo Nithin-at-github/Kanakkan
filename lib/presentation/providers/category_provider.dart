@@ -15,12 +15,13 @@ class CategoryProvider extends ChangeNotifier {
 
   void _setError(String message) {
     lastError = message;
-    notifyListeners();
   }
 
   void clearError() {
     lastError = null;
   }
+
+  // ================= RESOLVERS =================
 
   String resolveCategoryName(int? categoryId) {
     final category = resolveCategory(categoryId);
@@ -28,43 +29,83 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   String resolveTransactionCategoryName(TransactionEntity tx) {
-    // Transfers never have a meaningful category
     if (tx.transferGroupId != null) return "Transfer";
-
-    // No category selected — show type label instead of "Transfer"
     if (tx.categoryId == null) {
       if (tx.type == "income") return "Income";
       if (tx.type == "expense") return "Expense";
       return "Transaction";
     }
-
     final category = resolveCategory(tx.categoryId);
     return category?.name ?? "Deleted Category";
   }
 
-  List<Category> _categories = [];
-  List<Category> get categories => _categories;
-
-  List<Category> get incomeCategories =>
-      _categories.where((c) => c.type == "income").toList();
-
-  List<Category> get expenseCategories =>
-      _categories.where((c) => c.type == "expense").toList();
-
-  List<Category> get splitCategories =>
-      _categories.where((c) => c.name.toLowerCase() != "salary").toList();
-
   Category? resolveCategory(int? categoryId) {
     if (categoryId == null) return null;
-    return categories.firstWhereOrNull((c) => c.id == categoryId);
+    return _categories.firstWhereOrNull((c) => c.id == categoryId);
+  }
+
+  /// Returns the main (parent) category for a given category id.
+  /// If categoryId is already a main category, returns it directly.
+  Category? resolveMainCategory(int? categoryId) {
+    final cat = resolveCategory(categoryId);
+    if (cat == null) return null;
+    if (cat.isMainCategory) return cat;
+    return resolveCategory(cat.parentId);
   }
 
   int? getSalaryCategoryId() {
-    final salaryCategory = categories.firstWhereOrNull(
-      (c) => c.name.toLowerCase() == "salary",
-    );
-    return salaryCategory?.id;
+    return _categories
+        .firstWhereOrNull((c) => c.name.toLowerCase() == "salary")
+        ?.id;
   }
+
+  // ================= STATE =================
+
+  List<Category> _categories = [];
+  List<Category> get categories => _categories;
+
+  /// Top-level categories only (no subcategories)
+  List<Category> get mainCategories =>
+      _categories.where((c) => c.isMainCategory).toList();
+
+  List<Category> get incomeCategories =>
+      mainCategories.where((c) => c.type == "income").toList();
+
+  List<Category> get expenseCategories =>
+      mainCategories.where((c) => c.type == "expense").toList();
+
+  /// Subcategories belonging to a specific parent
+  List<Category> subcategoriesOf(int parentId) =>
+      _categories.where((c) => c.parentId == parentId).toList();
+
+  /// All subcategories across all parents, grouped by parent id.
+  /// Used by the transaction screen grouped picker.
+  Map<Category, List<Category>> get groupedSubcategories {
+    final Map<Category, List<Category>> result = {};
+    for (final main in mainCategories) {
+      final subs = subcategoriesOf(main.id!);
+      if (subs.isNotEmpty) result[main] = subs;
+    }
+    return result;
+  }
+
+  /// Flat list of all subcategories — income + expense combined.
+  List<Category> get allSubcategories =>
+      _categories.where((c) => c.isSubcategory).toList();
+
+  /// Income subcategories only
+  List<Category> get incomeSubcategories =>
+      allSubcategories.where((c) => c.type == "income").toList();
+
+  /// Expense subcategories only
+  List<Category> get expenseSubcategories =>
+      allSubcategories.where((c) => c.type == "expense").toList();
+
+  /// Categories used for salary split (main categories, non-salary)
+  List<Category> get splitCategories =>
+      mainCategories.where((c) => c.name.toLowerCase() != "salary").toList();
+
+  // ================= INIT =================
 
   Future<void> initialize() async {
     await loadCategories();
@@ -75,11 +116,16 @@ class CategoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ================= CRUD =================
+
   Future<void> addCategory(Category category) async {
     clearError();
     try {
       final id = await _repository.insertCategory(category);
-      await categoryBalanceRepository.setBalance(id, 0);
+      // Only main categories get a wallet balance entry
+      if (category.isMainCategory) {
+        await categoryBalanceRepository.setBalance(id, 0);
+      }
       await loadCategories();
     } on DatabaseException catch (e) {
       if (e.toString().contains('UNIQUE')) {
@@ -92,16 +138,45 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> deleteCategory(int id) async {
-    final balance = await categoryBalanceRepository.getBalance(id);
-    if (balance != 0) {
-      _setError("Category still has wallet balance");
+  Future<void> addSubcategory({
+    required String name,
+    required int parentId,
+  }) async {
+    clearError();
+    final parent = resolveCategory(parentId);
+    if (parent == null) {
+      _setError('Parent category not found');
       return;
     }
-    await _repository.deleteCategory(id);
-    await loadCategories();
+    final subcategory = Category(
+      name: name,
+      type: parent.type, // inherits type from parent
+      parentId: parentId,
+    );
+    await addCategory(subcategory);
   }
 
+  Future<String?> deleteCategory(int id) async {
+    clearError();
+
+    final category = resolveCategory(id);
+    if (category == null) return "Category not found";
+
+    // Check balance for main categories
+    if (category.isMainCategory) {
+      final balance = await categoryBalanceRepository.getBalance(id);
+
+      if (balance != 0) {
+        return "Category still has wallet balance";
+      }
+    }
+
+    await _repository.deleteCategory(id);
+    await loadCategories();
+
+    return null;
+  }
+  
   Future<void> updateCategory(int id, String newName) async {
     clearError();
     try {

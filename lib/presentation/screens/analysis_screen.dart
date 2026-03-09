@@ -1,325 +1,528 @@
-import 'dart:math' as math;
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
+import 'package:kanakkan/presentation/screens/analysis_drill_screen.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 
 class AnalysisScreen extends StatelessWidget {
   const AnalysisScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AnalysisProvider>();
+    final p = context.watch<AnalysisProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.primary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── TOP BAR ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                children: [
-                  const Text(
-                    'Analysis',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+      backgroundColor: AppTheme.background,
+      body: Column(
+        children: [
+          _AnalysisHeader(provider: p),
+          Expanded(
+            child: p.isMonthly
+                ? _MonthlyBody(provider: p)
+                : _YearlyBody(provider: p),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HEADER — period nav + mode toggle + account filter
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AnalysisHeader extends StatelessWidget {
+  final AnalysisProvider provider;
+  const _AnalysisHeader({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 52, 16, 20),
+      decoration: const BoxDecoration(
+        color: AppTheme.primary,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // ── MODE TOGGLE ──
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white12,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ModeTab(
+                  label: 'Monthly',
+                  selected: provider.isMonthly,
+                  onTap: () => provider.setMode(AnalysisMode.monthly),
+                ),
+                _ModeTab(
+                  label: 'Yearly',
+                  selected: !provider.isMonthly,
+                  onTap: () => provider.setMode(AnalysisMode.yearly),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── PERIOD NAVIGATION ──
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left, color: Colors.white),
+                onPressed: provider.previous,
+              ),
+              Text(
+                provider.periodLabel,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.chevron_right,
+                    color: provider.canGoForward
+                        ? Colors.white
+                        : Colors.white30),
+                onPressed: provider.canGoForward ? provider.next : null,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // ── ACCOUNT CHIPS ──
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: provider.accounts.map((a) {
+                final selected = provider.selectedAccountIds.contains(a.id);
+                return GestureDetector(
+                  onTap: () => provider.toggleAccount(a.id!),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppTheme.accent
+                          : Colors.white24,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      a.name,
+                      style: TextStyle(
+                        color: selected ? Colors.white : Colors.white60,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  _MonthNavigator(provider: provider),
-                ],
-              ),
+                );
+              }).toList(),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 12),
+class _ModeTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ModeTab(
+      {required this.label, required this.selected, required this.onTap});
 
-            // ── ACCOUNT FILTER CHIPS ──
-            SizedBox(
-              height: 38,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: provider.accounts.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final acc = provider.accounts[i];
-                  final selected = provider.selectedAccountIds.contains(acc.id);
-                  return GestureDetector(
-                    onTap: () => provider.toggleAccount(acc.id!),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected ? AppTheme.accent : Colors.white10,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: selected ? AppTheme.accent : Colors.white24,
-                        ),
-                      ),
-                      child: Text(
-                        acc.name,
-                        style: TextStyle(
-                          color: selected ? AppTheme.primary : Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppTheme.accent : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.white60,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 16),
+// ─────────────────────────────────────────────────────────────────────────────
+// MONTHLY BODY
+// ─────────────────────────────────────────────────────────────────────────────
 
-            // ── SCROLLABLE CONTENT ──
+class _MonthlyBody extends StatelessWidget {
+  final AnalysisProvider provider;
+  const _MonthlyBody({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      children: [
+        // Summary cards row
+        Row(
+          children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _HealthCard(provider: provider),
-                    const SizedBox(height: 16),
-
-                    _SectionTitle('💰 How Well Did You Save?'),
-                    const SizedBox(height: 10),
-                    _SavingsMeter(provider: provider),
-                    const SizedBox(height: 20),
-
-                    _SectionTitle('📈 Income vs Spending (6 Months)'),
-                    const SizedBox(height: 10),
-                    _TrendChart(trend: provider.trend),
-                    const SizedBox(height: 20),
-
-                    if (provider.topCategories.isNotEmpty) ...[
-                      _SectionTitle('🧾 Where Did Money Go?'),
-                      const SizedBox(height: 10),
-                      _SpendingBreakdown(
-                        categories: provider.topCategories,
-                        total: provider.totalExpense,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    if (provider.dailySpend.isNotEmpty) ...[
-                      _SectionTitle('📅 Daily Spending This Month'),
-                      const SizedBox(height: 10),
-                      _DailySpendChart(
-                        dailySpend: provider.dailySpend,
-                        focusMonth: DateTime(
-                          DateTime.now().year,
-                          DateTime.now().month + provider.monthOffset,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    _SectionTitle('💡 Smart Insights'),
-                    const SizedBox(height: 10),
-                    _InsightsList(insights: provider.insights),
-                  ],
-                ),
+              child: _StatCard(
+                label: 'Income',
+                value: provider.totalIncome,
+                color: AppTheme.success,
+                icon: Icons.arrow_downward,
+                onTap: () => _openDrill(context, DrillType.incomeBreakdown),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                label: 'Expense',
+                value: provider.totalExpense,
+                color: AppTheme.error,
+                icon: Icons.arrow_upward,
+                onTap: () => _openDrill(context, DrillType.expenseBreakdown),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
 
-// ─────────────────────────────────────────
-// MONTH NAVIGATOR
-// ─────────────────────────────────────────
+        const SizedBox(height: 10),
 
-class _MonthNavigator extends StatelessWidget {
-  final AnalysisProvider provider;
-  const _MonthNavigator({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(
-              Icons.chevron_left,
-              color: AppTheme.accent,
-              size: 20,
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                label: 'Savings',
+                value: provider.savings,
+                color: provider.savings >= 0
+                    ? AppTheme.accent
+                    : AppTheme.error,
+                icon: Icons.savings,
+                onTap: () => _openDrill(context, DrillType.savingsTrend),
+              ),
             ),
-            onPressed: provider.previousMonth,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          ),
-          Text(
-            provider.monthLabel,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SavingsRateCard(
+                rate: provider.savingsRate,
+                onTap: () => _openDrill(context, DrillType.savingsTrend),
+              ),
             ),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.chevron_right,
-              color: provider.canGoForward ? AppTheme.accent : Colors.white24,
-              size: 20,
-            ),
-            onPressed: provider.canGoForward ? provider.nextMonth : null,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────
-// SECTION TITLE
-// ─────────────────────────────────────────
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle(this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────
-// HEALTH CARD
-// ─────────────────────────────────────────
-
-class _HealthCard extends StatelessWidget {
-  final AnalysisProvider provider;
-  const _HealthCard({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final income = provider.totalIncome;
-    final expense = provider.totalExpense;
-    final savings = provider.savings;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.accent.withOpacity(0.25), Colors.white10],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.accent.withOpacity(0.3)),
+
+        const SizedBox(height: 16),
+
+        // 6-month trend bar chart
+        _SectionCard(
+          title: '6-Month Trend',
+          onTap: () => _openDrill(context, DrillType.monthlyTrend),
+          child: SizedBox(
+            height: 160,
+            child: _TrendBarChart(trend: provider.trend),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Expense breakdown
+        if (provider.expenseBreakdown.isNotEmpty)
+          _SectionCard(
+            title: 'Expense Breakdown',
+            onTap: () => _openDrill(context, DrillType.expenseBreakdown),
+            child: _BreakdownPreview(
+              items: provider.expenseBreakdown,
+              color: AppTheme.error,
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Income breakdown
+        if (provider.incomeBreakdown.isNotEmpty)
+          _SectionCard(
+            title: 'Income Sources',
+            onTap: () => _openDrill(context, DrillType.incomeBreakdown),
+            child: _BreakdownPreview(
+              items: provider.incomeBreakdown,
+              color: AppTheme.success,
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Daily spend
+        if (provider.dailySpend.isNotEmpty)
+          _SectionCard(
+            title: 'Daily Spending',
+            onTap: () => _openDrill(context, DrillType.dailySpend),
+            child: SizedBox(
+              height: 120,
+              child: _DailySpendChart(
+                dailySpend: provider.dailySpend,
+                month: DateTime(
+                  DateTime.now().year,
+                  DateTime.now().month + provider.monthOffset,
+                ),
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Insights
+        if (provider.insights.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Insights',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: AppTheme.primary,
+              ),
+            ),
+          ),
+          ...provider.insights.map((i) => _InsightCard(insight: i)),
+        ],
+      ],
+    );
+  }
+
+  void _openDrill(BuildContext context, DrillType type) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnalysisDrillScreen(type: type),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _StatPill(
-                label: 'Income',
-                value: income,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// YEARLY BODY
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _YearlyBody extends StatelessWidget {
+  final AnalysisProvider provider;
+  const _YearlyBody({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      children: [
+        // Summary cards
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                label: 'Year Income',
+                value: provider.yearTotalIncome,
+                color: AppTheme.success,
+                icon: Icons.arrow_downward,
+                onTap: () => _openDrill(context, DrillType.yearIncomeBreakdown),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatCard(
+                label: 'Year Expense',
+                value: provider.yearTotalExpense,
+                color: AppTheme.error,
+                icon: Icons.arrow_upward,
+                onTap: () => _openDrill(context, DrillType.yearExpenseBreakdown),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                label: 'Year Savings',
+                value: provider.yearSavings,
+                color: provider.yearSavings >= 0
+                    ? AppTheme.accent
+                    : AppTheme.error,
+                icon: Icons.savings,
+                onTap: () => _openDrill(context, DrillType.yearTrend),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SavingsRateCard(
+                rate: provider.yearSavingsRate,
+                onTap: () => _openDrill(context, DrillType.yearTrend),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        Row(
+          children: [
+            Expanded(
+              child: _SmallStatCard(
+                label: 'Avg/Month Income',
+                value: provider.avgMonthlyIncome,
                 color: AppTheme.success,
               ),
-              const SizedBox(width: 10),
-              _StatPill(label: 'Spent', value: expense, color: AppTheme.error),
-              const SizedBox(width: 10),
-              _StatPill(
-                label: 'Saved',
-                value: savings,
-                color: savings >= 0 ? AppTheme.accent : AppTheme.error,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          // Income vs expense ratio bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: SizedBox(
-              height: 10,
-              child: LayoutBuilder(
-                builder: (_, constraints) {
-                  final total = income + expense;
-                  final incomeWidth = total > 0
-                      ? (income / total) * constraints.maxWidth
-                      : constraints.maxWidth / 2;
-                  return Row(
-                    children: [
-                      Container(width: incomeWidth, color: AppTheme.success),
-                      Expanded(child: Container(color: AppTheme.error)),
-                    ],
-                  );
-                },
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _SmallStatCard(
+                label: 'Avg/Month Expense',
+                value: provider.avgMonthlyExpense,
+                color: AppTheme.error,
               ),
             ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        if (provider.bestSavingsMonth.isFinite &&
+            provider.bestSavingsMonthLabel.isNotEmpty)
+          _BestMonthCard(
+            label: provider.bestSavingsMonthLabel,
+            savings: provider.bestSavingsMonth,
           ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _LegendDot(color: AppTheme.success, label: 'Income'),
-              _LegendDot(color: AppTheme.error, label: 'Spent'),
-            ],
+
+        const SizedBox(height: 16),
+
+        // 12-month bar chart
+        _SectionCard(
+          title: '${provider.periodLabel} — Month by Month',
+          onTap: () => _openDrill(context, DrillType.yearTrend),
+          child: SizedBox(
+            height: 180,
+            child: _TrendBarChart(
+              trend: provider.yearMonthlyBreakdown,
+              compact: true,
+            ),
           ),
-        ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Year expense breakdown
+        if (provider.yearExpenseBreakdown.isNotEmpty)
+          _SectionCard(
+            title: 'Expense Breakdown',
+            onTap: () => _openDrill(context, DrillType.yearExpenseBreakdown),
+            child: _BreakdownPreview(
+              items: provider.yearExpenseBreakdown,
+              color: AppTheme.error,
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // Year income breakdown
+        if (provider.yearIncomeBreakdown.isNotEmpty)
+          _SectionCard(
+            title: 'Income Sources',
+            onTap: () => _openDrill(context, DrillType.yearIncomeBreakdown),
+            child: _BreakdownPreview(
+              items: provider.yearIncomeBreakdown,
+              color: AppTheme.success,
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _openDrill(BuildContext context, DrillType type) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AnalysisDrillScreen(type: type),
       ),
     );
   }
 }
 
-class _StatPill extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED WIDGETS
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatCard extends StatelessWidget {
   final String label;
   final double value;
   final Color color;
-  const _StatPill({
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _StatCard({
     required this.label,
     required this.value,
     required this.color,
+    required this.icon,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(blurRadius: 6, color: Colors.black12)
+          ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
+            Row(
+              children: [
+                Icon(icon, color: color, size: 16),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: const TextStyle(
+                        color: Colors.black54, fontSize: 12)),
+                const Spacer(),
+                const Icon(Icons.chevron_right,
+                    color: Colors.black26, size: 16),
+              ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              '₹${_fmt(value)}',
+              '₹${_fmt(value.abs())}',
               style: TextStyle(
                 color: color,
-                fontSize: 14,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -330,208 +533,144 @@ class _StatPill extends StatelessWidget {
   }
 }
 
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _LegendDot({required this.color, required this.label});
+class _SavingsRateCard extends StatelessWidget {
+  final double rate;
+  final VoidCallback onTap;
+  const _SavingsRateCard({required this.rate, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    final color = rate >= 20
+        ? AppTheme.success
+        : rate >= 0
+            ? AppTheme.accent
+            : AppTheme.error;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(blurRadius: 6, color: Colors.black12)
+          ],
         ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.percent, color: color, size: 16),
+                const SizedBox(width: 6),
+                const Text('Savings Rate',
+                    style:
+                        TextStyle(color: Colors.black54, fontSize: 12)),
+                const Spacer(),
+                const Icon(Icons.chevron_right,
+                    color: Colors.black26, size: 16),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${rate.toStringAsFixed(1)}%',
+              style: TextStyle(
+                color: color,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: (rate.abs() / 100).clamp(0.0, 1.0),
+                backgroundColor: color.withOpacity(0.15),
+                valueColor: AlwaysStoppedAnimation(color),
+                minHeight: 5,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-// ─────────────────────────────────────────
-// SAVINGS METER
-// ─────────────────────────────────────────
-
-class _SavingsMeter extends StatelessWidget {
-  final AnalysisProvider provider;
-  const _SavingsMeter({required this.provider});
-
-  String get _emoji {
-    final r = provider.savingsRate;
-    if (r >= 30) return '🌟';
-    if (r >= 20) return '👍';
-    if (r >= 10) return '😐';
-    if (r >= 0) return '⚠️';
-    return '🚨';
-  }
-
-  String get _message {
-    final r = provider.savingsRate;
-    if (r >= 30)
-      return 'Excellent! You saved ${r.toStringAsFixed(0)}% of income';
-    if (r >= 20)
-      return 'Good job! You saved ${r.toStringAsFixed(0)}% of income';
-    if (r >= 10) return 'You saved ${r.toStringAsFixed(0)}%. Try to reach 20%';
-    if (r >= 0)
-      return 'Low savings. Only ${r.toStringAsFixed(0)}% saved this month';
-    return 'You spent more than you earned this month';
-  }
-
-  Color get _color {
-    final r = provider.savingsRate;
-    if (r >= 20) return AppTheme.success;
-    if (r >= 10) return AppTheme.accent;
-    return AppTheme.error;
-  }
+class _SmallStatCard extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+  const _SmallStatCard(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final clampedRate = provider.savingsRate.clamp(0.0, 100.0) / 100.0;
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(_emoji, style: const TextStyle(fontSize: 28)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _message,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Stack(
-            children: [
-              Container(
-                height: 14,
-                decoration: BoxDecoration(
-                  color: Colors.white12,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: clampedRate,
-                child: Container(
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: _color,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '0%',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-              Text(
-                'Target: 20%',
-                style: TextStyle(
-                  color: _color,
-                  fontSize: 11,
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.black54, fontSize: 11)),
+          const SizedBox(height: 6),
+          Text('₹${_fmt(value)}',
+              style: TextStyle(
+                  color: color,
                   fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Text(
-                '100%',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-            ],
-          ),
+                  fontSize: 16)),
         ],
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────
-// 6-MONTH TREND CHART
-// ─────────────────────────────────────────
-
-class _TrendChart extends StatelessWidget {
-  final List<MonthlyTrend> trend;
-  const _TrendChart({required this.trend});
+class _BestMonthCard extends StatelessWidget {
+  final String label;
+  final double savings;
+  const _BestMonthCard({required this.label, required this.savings});
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = trend.fold(
-      0.0,
-      (m, d) => math.max(m, math.max(d.income, d.expense)),
-    );
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.success.withOpacity(0.15),
+            AppTheme.accent.withOpacity(0.1)
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.success.withOpacity(0.3)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          SizedBox(
-            height: 140,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: trend.map((d) {
-                final incH = maxVal > 0 ? (d.income / maxVal) * 110 : 0.0;
-                final expH = maxVal > 0 ? (d.expense / maxVal) * 110 : 0.0;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            _Bar(height: incH, color: AppTheme.success),
-                            const SizedBox(width: 2),
-                            _Bar(height: expH, color: AppTheme.error),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          d.label,
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          const Text('🏆', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _LegendDot(color: AppTheme.success, label: 'Income'),
-              const SizedBox(width: 16),
-              _LegendDot(color: AppTheme.error, label: 'Spending'),
+              const Text('Best Savings Month',
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12)),
+              Text(
+                '$label — ₹${_fmt(savings)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: AppTheme.primary,
+                ),
+              ),
             ],
           ),
         ],
@@ -540,336 +679,114 @@ class _TrendChart extends StatelessWidget {
   }
 }
 
-class _Bar extends StatelessWidget {
-  final double height;
-  final Color color;
-  const _Bar({required this.height, required this.color});
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final VoidCallback onTap;
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
-      width: 10,
-      height: height.clamp(2.0, 110.0),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────
-// SPENDING BREAKDOWN
-// ─────────────────────────────────────────
-
-const _kCategoryColors = [
-  Color(0xFFFF6B6B),
-  Color(0xFFFFD93D),
-  Color(0xFF6BCB77),
-  Color(0xFF4D96FF),
-  Color(0xFFFF922B),
-];
-
-class _SpendingBreakdown extends StatelessWidget {
-  final List<CategoryBreakdown> categories;
-  final double total;
-  const _SpendingBreakdown({required this.categories, required this.total});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          // Donut
-          SizedBox(
-            height: 140,
-            child: CustomPaint(
-              painter: _DonutPainter(
-                values: categories.map((c) => c.amount).toList(),
-                colors: _kCategoryColors,
-                total: total,
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Total',
-                      style: TextStyle(color: Colors.white54, fontSize: 11),
-                    ),
-                    Text(
-                      '₹${_fmt(total)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Category rows
-          ...categories.asMap().entries.map((entry) {
-            final i = entry.key;
-            final cat = entry.value;
-            final color = _kCategoryColors[i % _kCategoryColors.length];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          cat.name,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        '₹${_fmt(cat.amount)}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 34,
-                        child: Text(
-                          '${cat.percentage.toStringAsFixed(0)}%',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(color: color, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: (cat.percentage / 100).clamp(0.0, 1.0),
-                      minHeight: 6,
-                      backgroundColor: Colors.white12,
-                      valueColor: AlwaysStoppedAnimation(color),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
-class _DonutPainter extends CustomPainter {
-  final List<double> values;
-  final List<Color> colors;
-  final double total;
-  const _DonutPainter({
-    required this.values,
-    required this.colors,
-    required this.total,
+  const _SectionCard({
+    required this.title,
+    required this.child,
+    required this.onTap,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (total <= 0) return;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 10;
-    double startAngle = -math.pi / 2;
-
-    for (int i = 0; i < values.length; i++) {
-      final sweep = (values[i] / total) * 2 * math.pi;
-      final paint = Paint()
-        ..color = colors[i % colors.length]
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 22
-        ..strokeCap = StrokeCap.butt;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweep - 0.04,
-        false,
-        paint,
-      );
-      startAngle += sweep;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => true;
-}
-
-// ─────────────────────────────────────────
-// DAILY SPEND CHART
-// ─────────────────────────────────────────
-
-class _DailySpendChart extends StatelessWidget {
-  final Map<int, double> dailySpend;
-  final DateTime focusMonth;
-  const _DailySpendChart({required this.dailySpend, required this.focusMonth});
-
-  @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final isCurrentMonth =
-        focusMonth.year == now.year && focusMonth.month == now.month;
-    final daysInMonth = DateUtils.getDaysInMonth(
-      focusMonth.year,
-      focusMonth.month,
-    );
-    final maxDay = isCurrentMonth ? now.day : daysInMonth;
-    final maxVal = dailySpend.values.fold(0.0, math.max);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: List.generate(maxDay, (i) {
-            final day = i + 1;
-            final val = dailySpend[day] ?? 0;
-            final h = maxVal > 0 ? (val / maxVal) * 80 : 0.0;
-            final isToday = isCurrentMonth && day == now.day;
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (val > 0)
-                    Text(
-                      _fmtShort(val),
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 7,
-                      ),
-                    ),
-                  const SizedBox(height: 2),
-                  Container(
-                    width: 14,
-                    height: h.clamp(3.0, 80.0),
-                    decoration: BoxDecoration(
-                      color: isToday
-                          ? AppTheme.accent
-                          : AppTheme.error.withOpacity(0.7),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(3),
-                      ),
-                    ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(blurRadius: 8, color: Colors.black12)
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: AppTheme.primary,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$day',
-                    style: TextStyle(
-                      color: isToday ? AppTheme.accent : Colors.white38,
-                      fontSize: 9,
-                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                ),
+                const Row(
+                  children: [
+                    Text('Details',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.black45)),
+                    Icon(Icons.chevron_right,
+                        color: Colors.black26, size: 16),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
         ),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────
-// INSIGHTS LIST
-// ─────────────────────────────────────────
-
-class _InsightsList extends StatelessWidget {
-  final List<AnalysisInsight> insights;
-  const _InsightsList({required this.insights});
-
-  Color _levelColor(InsightLevel level) {
-    switch (level) {
-      case InsightLevel.good:
-        return AppTheme.success;
-      case InsightLevel.warning:
-        return AppTheme.accent;
-      case InsightLevel.danger:
-        return AppTheme.error;
-      case InsightLevel.neutral:
-        return Colors.white54;
-    }
-  }
+class _BreakdownPreview extends StatelessWidget {
+  final List<CategoryBreakdown> items;
+  final Color color;
+  const _BreakdownPreview(
+      {required this.items, required this.color});
 
   @override
   Widget build(BuildContext context) {
+    final preview = items.take(4).toList();
     return Column(
-      children: insights.map((insight) {
-        final color = _levelColor(insight.level);
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withOpacity(0.25)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      children: preview.map((item) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
             children: [
-              Text(insight.emoji, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      insight.title,
-                      style: TextStyle(
-                        color: color,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(item.name,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500)),
+                  ),
+                  Text(
+                    '₹${_fmt(item.amount)}',
+                    style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      insight.body,
+                        color: color,
+                        fontSize: 13),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 36,
+                    child: Text(
+                      '${item.percentage.toStringAsFixed(0)}%',
+                      textAlign: TextAlign.right,
                       style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
+                          fontSize: 11, color: Colors.black45),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: (item.percentage / 100).clamp(0.0, 1.0),
+                  backgroundColor: color.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation(color),
+                  minHeight: 4,
                 ),
               ),
             ],
@@ -880,17 +797,209 @@ class _InsightsList extends StatelessWidget {
   }
 }
 
+class _InsightCard extends StatelessWidget {
+  final AnalysisInsight insight;
+  const _InsightCard({required this.insight});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (insight.level) {
+      InsightLevel.good => AppTheme.success,
+      InsightLevel.warning => Colors.orange,
+      InsightLevel.danger => AppTheme.error,
+      InsightLevel.neutral => Colors.blueGrey,
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(insight.emoji, style: const TextStyle(fontSize: 22)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(insight.title,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                        fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(insight.body,
+                    style: const TextStyle(
+                        fontSize: 13, color: Colors.black54)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARTS (preview size — full charts in drill screen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TrendBarChart extends StatelessWidget {
+  final List<MonthlyTrend> trend;
+  final bool compact;
+  const _TrendBarChart({required this.trend, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (trend.isEmpty) {
+      return const Center(
+          child: Text('No data', style: TextStyle(color: Colors.black38)));
+    }
+
+    final maxVal = trend
+        .expand((t) => [t.income, t.expense])
+        .fold(0.0, math.max);
+
+    return BarChart(
+      BarChartData(
+        maxY: maxVal * 1.2,
+        barTouchData: BarTouchData(enabled: false),
+        titlesData: FlTitlesData(
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (v, meta) {
+                final idx = v.toInt();
+                if (idx < 0 || idx >= trend.length) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    trend[idx].label,
+                    style: TextStyle(
+                        fontSize: compact ? 9 : 10,
+                        color: Colors.black54),
+                  ),
+                );
+              },
+              reservedSize: 20,
+            ),
+          ),
+        ),
+        gridData: const FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        barGroups: List.generate(trend.length, (i) {
+          final t = trend[i];
+          return BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                toY: t.income,
+                color: AppTheme.success.withOpacity(0.8),
+                width: compact ? 6 : 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              BarChartRodData(
+                toY: t.expense,
+                color: AppTheme.error.withOpacity(0.8),
+                width: compact ? 6 : 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _DailySpendChart extends StatelessWidget {
+  final Map<int, double> dailySpend;
+  final DateTime month;
+  const _DailySpendChart(
+      {required this.dailySpend, required this.month});
+
+  @override
+  Widget build(BuildContext context) {
+    final daysInMonth =
+        DateTime(month.year, month.month + 1, 0).day;
+    final maxVal =
+        dailySpend.values.fold(0.0, math.max);
+
+    return LineChart(
+      LineChartData(
+        minX: 1,
+        maxX: daysInMonth.toDouble(),
+        minY: 0,
+        maxY: maxVal * 1.3,
+        lineTouchData: const LineTouchData(enabled: false),
+        titlesData: FlTitlesData(
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 7,
+              getTitlesWidget: (v, meta) => Text(
+                '${v.toInt()}',
+                style:
+                    const TextStyle(fontSize: 10, color: Colors.black45),
+              ),
+              reservedSize: 18,
+            ),
+          ),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: maxVal > 0 ? maxVal / 3 : 1000,
+          getDrawingHorizontalLine: (_) =>
+              const FlLine(color: Colors.black12, strokeWidth: 1),
+        ),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: List.generate(daysInMonth, (i) {
+              final day = i + 1;
+              return FlSpot(day.toDouble(), dailySpend[day] ?? 0);
+            }),
+            isCurved: true,
+            color: AppTheme.error,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              color: AppTheme.error.withOpacity(0.1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────
-// HELPERS
+// HELPER
 // ─────────────────────────────────────────
 
 String _fmt(double v) {
   if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
   if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-  return v.toStringAsFixed(0);
-}
-
-String _fmtShort(double v) {
-  if (v >= 1000) return '${(v / 1000).toStringAsFixed(0)}K';
   return v.toStringAsFixed(0);
 }

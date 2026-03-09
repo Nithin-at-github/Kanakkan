@@ -4,6 +4,7 @@ import 'package:kanakkan/data/models/salary_trigger.dart';
 import 'package:kanakkan/data/models/transaction_model.dart';
 import 'package:kanakkan/data/repositories/account_repository.dart';
 import 'package:kanakkan/data/repositories/salary_allocation_repository.dart';
+import 'package:kanakkan/data/repositories/transaction_wallet_split_repository.dart';
 import 'package:kanakkan/data/repositories/transaction_repository.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/data/models/account_model.dart';
@@ -33,6 +34,8 @@ class LedgerProvider extends ChangeNotifier {
 
   final SalaryAllocationRepository _salaryAllocationRepository =
       SalaryAllocationRepository();
+  final TransactionWalletSplitRepository _walletSplitRepository =
+      TransactionWalletSplitRepository();
 
   // ================= ERROR STATE =================
 
@@ -257,6 +260,15 @@ class LedgerProvider extends ChangeNotifier {
     }
   }
 
+  /// Returns the wallet-owning category id for a given categoryId.
+  /// Subcategories don't have wallets — we use their parent's wallet.
+  int? _walletCategoryId(int? categoryId) {
+    if (categoryId == null) return null;
+    final cat = categoryProvider.resolveCategory(categoryId);
+    if (cat == null) return null;
+    return cat.isSubcategory ? cat.parentId : categoryId;
+  }
+
   bool _isSalaryCategory(int? categoryId) {
     if (categoryId == null) return false;
     final category = categoryProvider.resolveCategory(categoryId);
@@ -281,8 +293,8 @@ class LedgerProvider extends ChangeNotifier {
       timestamp: timestamp ?? DateTime.now().millisecondsSinceEpoch,
     );
 
-    await _transactionRepository.insertTransaction(transaction);
-    await _applyBalanceEffect(transaction);
+    final id = await _transactionRepository.insertTransaction(transaction);
+    await _applyBalanceEffect(transaction, transactionId: id);
 
     // Single reload + single notifyListeners at the end
     await _reloadAll();
@@ -321,6 +333,12 @@ class LedgerProvider extends ChangeNotifier {
 
     // Single reload + single notifyListeners at the end
     await _reloadAll();
+  }
+
+  /// Returns wallet splits for an expense transaction.
+  /// Used by the transaction detail sheet to show which wallets were debited.
+  Future<List<WalletSplit>> getWalletSplits(int transactionId) {
+    return _walletSplitRepository.getSplits(transactionId);
   }
 
   Future<TransactionEntity?> getPairedTransferLeg(TransactionEntity tx) async {
@@ -475,11 +493,11 @@ class LedgerProvider extends ChangeNotifier {
   /// + salary wallet combined. Used by AddTransactionScreen to gate
   /// the save button before calling addExpense.
   bool canAffordExpense({required int categoryId, required double amount}) {
-    if (_isSalaryCategory(categoryId)) {
-      // Paying directly into salary wallet — just check salary balance
-      return balanceProvider.getBalance(categoryId) >= amount;
+    final walletId = _walletCategoryId(categoryId) ?? categoryId;
+    if (_isSalaryCategory(walletId)) {
+      return balanceProvider.getBalance(walletId) >= amount;
     }
-    final categoryBalance = balanceProvider.getBalance(categoryId);
+    final categoryBalance = balanceProvider.getBalance(walletId);
     final salaryId = salaryCategoryId;
     final salaryBalance = salaryId != null
         ? balanceProvider.getBalance(salaryId)
@@ -490,22 +508,40 @@ class LedgerProvider extends ChangeNotifier {
   Future<void> _applyBalanceEffect(
     TransactionEntity tx, {
     bool reverse = false,
+    int? transactionId,
   }) async {
     if (tx.categoryId == null) return;
     final amount = reverse ? -tx.amount : tx.amount;
 
     if (tx.type == "expense") {
       if (reverse) {
-        // Reversal: we don't know original split, so reload from DB isn't
-        // feasible here. Simplest correct approach: add back to category
-        // wallet directly. If salary was used, salary split dialog handles
-        // its own reversal. For simple expense reversal, restore to category.
+        // Reversal: read stored splits so we restore each wallet correctly
+        final id = transactionId ?? tx.id;
+        if (id != null) {
+          final splits = await _walletSplitRepository.getSplits(id);
+          if (splits.isNotEmpty) {
+            for (final split in splits) {
+              await balanceProvider.allocate(split.categoryId, split.amount);
+            }
+            await _walletSplitRepository.deleteSplits(id);
+            return;
+          }
+        }
+        // Fallback for old transactions with no split record
         await balanceProvider.allocate(tx.categoryId!, tx.amount);
       } else {
-        await _spendWithSalaryFallback(
+        final splits = await _spendWithSalaryFallback(
           categoryId: tx.categoryId!,
           amount: tx.amount,
         );
+        // Persist splits so detail screen and reversal can read them
+        final id = transactionId ?? tx.id;
+        if (id != null && splits.isNotEmpty) {
+          await _walletSplitRepository.saveSplits(
+            transactionId: id,
+            splits: splits,
+          );
+        }
       }
     }
 
@@ -516,16 +552,21 @@ class LedgerProvider extends ChangeNotifier {
 
   /// Spends from category wallet first. If category wallet runs short,
   /// the remainder is pulled from the salary wallet.
-  Future<void> _spendWithSalaryFallback({
+  /// Returns the list of wallet splits so they can be persisted.
+  Future<List<WalletSplit>> _spendWithSalaryFallback({
     required int categoryId,
     required double amount,
   }) async {
-    final categoryBalance = balanceProvider.getBalance(categoryId);
+    // Subcategories don't have wallets — resolve to main category wallet
+    final walletId = _walletCategoryId(categoryId) ?? categoryId;
+    final splits = <WalletSplit>[];
+    final categoryBalance = balanceProvider.getBalance(walletId);
 
     if (categoryBalance >= amount) {
       // Category wallet has enough — spend entirely from it
-      await balanceProvider.spend(categoryId, amount);
-      return;
+      await balanceProvider.spend(walletId, amount);
+      splits.add(WalletSplit(categoryId: walletId, amount: amount));
+      return splits;
     }
 
     // Partial: use whatever is in category wallet
@@ -533,14 +574,18 @@ class LedgerProvider extends ChangeNotifier {
     final fromSalary = amount - fromCategory;
 
     if (fromCategory > 0) {
-      await balanceProvider.spend(categoryId, fromCategory);
+      await balanceProvider.spend(walletId, fromCategory);
+      splits.add(WalletSplit(categoryId: walletId, amount: fromCategory));
     }
 
     // Pull shortfall from salary wallet
     final salaryId = salaryCategoryId;
     if (salaryId != null && fromSalary > 0) {
       await balanceProvider.spend(salaryId, fromSalary);
+      splits.add(WalletSplit(categoryId: salaryId, amount: fromSalary));
     }
+
+    return splits;
   }
 
   // ================= RELOAD HELPER =================

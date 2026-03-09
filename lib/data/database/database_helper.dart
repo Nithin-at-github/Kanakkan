@@ -7,8 +7,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Bumped to 3 for transferGroupId migration
-  static const int _dbVersion = 3;
+  // Bumped to 5 for subcategories (parentId on categories)
+  static const int _dbVersion = 5;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -59,7 +59,9 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         type TEXT NOT NULL,
-        UNIQUE(name, type)
+        parentId INTEGER,
+        UNIQUE(name, type),
+        FOREIGN KEY(parentId) REFERENCES categories(id) ON DELETE CASCADE
       )
     ''');
 
@@ -119,6 +121,28 @@ class DatabaseHelper {
         amount REAL NOT NULL
       )
     ''');
+
+    await _createWalletSplitsTable(db);
+  }
+
+  /// Records exactly how much was deducted from each wallet per expense.
+  /// For a simple expense: one row (categoryId, amount).
+  /// For a salary-fallback expense: two rows — category wallet + salary wallet.
+  Future<void> _createWalletSplitsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE transaction_wallet_splits(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transactionId INTEGER NOT NULL,
+        categoryId INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        FOREIGN KEY(transactionId) REFERENCES transactions(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_wallet_splits_tx
+      ON transaction_wallet_splits(transactionId)
+    ''');
   }
 
   // =====================================================
@@ -151,7 +175,6 @@ class DatabaseHelper {
       ON salary_allocations(salaryTransactionId)
     ''');
 
-    // Index for fast paired-leg lookup during transfer edits
     await db.execute('''
       CREATE INDEX idx_transactions_transfer_group
       ON transactions(transferGroupId)
@@ -166,7 +189,6 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute("PRAGMA foreign_keys = OFF");
 
-      // ACCOUNTS
       await db.execute('''
         CREATE TABLE accounts_new(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -180,7 +202,6 @@ class DatabaseHelper {
       await db.execute("DROP TABLE accounts");
       await db.execute("ALTER TABLE accounts_new RENAME TO accounts");
 
-      // TRANSACTIONS
       await db.execute('''
         CREATE TABLE transactions_new(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -201,7 +222,6 @@ class DatabaseHelper {
       await db.execute("DROP TABLE transactions");
       await db.execute("ALTER TABLE transactions_new RENAME TO transactions");
 
-      // BUDGETS
       await db.execute('''
         CREATE TABLE budgets_new(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -222,17 +242,32 @@ class DatabaseHelper {
     }
 
     if (oldVersion < 3) {
-      // Add transferGroupId to existing transactions table.
-      // NULL for all existing rows — only new transfers will have it populated.
-      // ALTER TABLE ADD COLUMN is safe in SQLite and doesn't require a table rebuild.
       await db.execute('''
         ALTER TABLE transactions ADD COLUMN transferGroupId TEXT
       ''');
-
-      // Add index for fast paired-leg lookup
       await db.execute('''
         CREATE INDEX idx_transactions_transfer_group
         ON transactions(transferGroupId)
+      ''');
+    }
+
+    if (oldVersion < 4) {
+      // Add wallet splits table — tracks which wallets were debited per expense
+      // and how much, supporting the salary-fallback partial deduction feature.
+      await _createWalletSplitsTable(db);
+    }
+
+    if (oldVersion < 5) {
+      // Add parentId to categories for subcategory support.
+      // NULL = top-level category, non-null = subcategory of parentId.
+      await db.execute('''
+        ALTER TABLE categories ADD COLUMN parentId INTEGER
+        REFERENCES categories(id) ON DELETE CASCADE
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_categories_parent
+        ON categories(parentId)
       ''');
     }
   }
