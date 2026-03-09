@@ -26,11 +26,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late NavigationProvider _nav;
 
   void _openSalarySplitDialog(SalaryTrigger trigger) {
+    // Use the flag-based getter — no hardcoded name lookup
     final salaryCategoryId = context
         .read<CategoryProvider>()
-        .categories
-        .firstWhere((c) => c.name.toLowerCase() == "salary")
-        .id!;
+        .getSalaryCategoryId();
+
+    // Guard: salary wallet may have been cleared since the trigger fired
+    if (salaryCategoryId == null) return;
 
     showDialog(
       context: context,
@@ -50,7 +52,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     ledger.salaryIncomeTrigger.addListener(() {
       final trigger = ledger.consumeSalaryTrigger();
-
       if (trigger != null) {
         _openSalarySplitDialog(trigger);
       }
@@ -201,25 +202,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: filtered.isEmpty
                   ? _emptyTransactions()
                   : ListView.builder(
-                      shrinkWrap: true, //  CONTENT HEIGHT
+                      shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: filtered.length,
                       itemBuilder: (_, i) {
                         final tx = filtered[i];
-
                         final ledger = context.read<LedgerProvider>();
-
                         final categoryProvider = context
                             .read<CategoryProvider>();
-
                         final isIncome = tx.type == "income";
-
                         final accountName = ledger.resolvePrimaryAccountName(
                           tx,
                         );
-
-                        final categoryName = categoryProvider.resolveTransactionCategoryName(tx);
-
+                        final categoryName = categoryProvider
+                            .resolveTransactionCategoryName(tx);
                         final date = DateTime.fromMillisecondsSinceEpoch(
                           tx.timestamp,
                         );
@@ -232,7 +228,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(14),
                             onTap: () => _showTransactionDetails(tx),
-
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -244,7 +239,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   color: AppTheme.accent.withOpacity(.25),
                                 ),
                               ),
-
                               child: Row(
                                 children: [
                                   /// ICON
@@ -285,9 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             color: AppTheme.primary,
                                           ),
                                         ),
-
                                         const SizedBox(height: 4),
-
                                         Text(
                                           "$accountName • ${DateFormat("MMM d").format(date)}",
                                           style: const TextStyle(
@@ -319,24 +311,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
             ),
 
-            const SizedBox(height: 90), // FAB spacing
+            const SizedBox(height: 90),
           ],
         ),
       ),
     );
   }
 
-  /// FILTER LOGIC
   List<TransactionEntity> _filterTransactions(List<TransactionEntity> all) {
     return all.where((tx) {
       final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
-
       switch (filterMode) {
         case DateFilterMode.daily:
           return date.year == selectedDate.year &&
               date.month == selectedDate.month &&
               date.day == selectedDate.day;
-
         case DateFilterMode.weekly:
           final start = selectedDate.subtract(
             Duration(days: selectedDate.weekday - 1),
@@ -344,11 +333,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final end = start.add(const Duration(days: 6));
           return date.isAfter(start.subtract(const Duration(seconds: 1))) &&
               date.isBefore(end.add(const Duration(days: 1)));
-
         case DateFilterMode.monthly:
           return date.year == selectedDate.year &&
               date.month == selectedDate.month;
-
         case DateFilterMode.yearly:
           return date.year == selectedDate.year;
       }
@@ -359,38 +346,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     switch (filterMode) {
       case DateFilterMode.daily:
         return DateFormat("MMM d, yyyy").format(selectedDate);
-
       case DateFilterMode.weekly:
         final start = selectedDate.subtract(
           Duration(days: selectedDate.weekday - 1),
         );
         final end = start.add(const Duration(days: 6));
-
-        final startFormatted = DateFormat("MMM d").format(start);
-
-        final endFormatted = DateFormat("MMM d").format(end);
-
-        return "$startFormatted - $endFormatted";
-
+        return "${DateFormat("MMM d").format(start)} - ${DateFormat("MMM d").format(end)}";
       case DateFilterMode.monthly:
         return DateFormat("MMMM yyyy").format(selectedDate);
-
       case DateFilterMode.yearly:
         return DateFormat("yyyy").format(selectedDate);
     }
   }
 
-  void _previousPeriod() {
-    setState(() {
-      selectedDate = _shiftDate(-1);
-    });
-  }
-
-  void _nextPeriod() {
-    setState(() {
-      selectedDate = _shiftDate(1);
-    });
-  }
+  void _previousPeriod() => setState(() => selectedDate = _shiftDate(-1));
+  void _nextPeriod() => setState(() => selectedDate = _shiftDate(1));
 
   DateTime _shiftDate(int step) {
     switch (filterMode) {

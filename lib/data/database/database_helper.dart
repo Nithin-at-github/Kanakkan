@@ -8,7 +8,7 @@ class DatabaseHelper {
   DatabaseHelper._init();
 
   // Bumped to 5 for subcategories (parentId on categories)
-  static const int _dbVersion = 5;
+  static const int _dbVersion = 6;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -269,6 +269,16 @@ class DatabaseHelper {
         CREATE INDEX idx_categories_parent
         ON categories(parentId)
       ''');
+    }
+
+    if (oldVersion < 6) {
+      await db.execute(
+        'ALTER TABLE categories ADD COLUMN isSalaryWallet INTEGER NOT NULL DEFAULT 0',
+      );
+      // Auto-migrate existing "salary" named category
+      await db.execute(
+        "UPDATE categories SET isSalaryWallet = 1 WHERE LOWER(name) = 'salary' AND type = 'income'",
+      );
     }
   }
 }

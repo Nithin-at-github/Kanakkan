@@ -1,9 +1,3 @@
-// ============================================================
-// FIX 1: Replace MaterialPageRoute with a custom route that
-// uses your app's background color and a clean slide transition.
-// Put this in a shared file e.g. lib/core/utils/app_router.dart
-// ============================================================
-
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 
@@ -45,50 +39,3 @@ class AppPageRoute<T> extends PageRouteBuilder<T> {
         reverseTransitionDuration: const Duration(milliseconds: 180),
       );
 }
-
-
-// ============================================================
-// FIX 2: Set scaffoldBackgroundColor in your MaterialApp theme
-// so the navigator background is never white between routes.
-//
-// In your MaterialApp (likely main.dart or app.dart):
-// ============================================================
-
-/*
-MaterialApp(
-  theme: ThemeData(
-    scaffoldBackgroundColor: AppTheme.primary,  // ADD THIS
-    // ... rest of your theme
-  ),
-)
-*/
-
-
-// ============================================================
-// FIX 3: Use AppPageRoute instead of MaterialPageRoute
-// wherever you push AddTransactionScreen.
-//
-// In your transaction detail sheet (_editTransaction):
-// ============================================================
-
-/*
-void _editTransaction(TransactionEntity tx, {TransactionEntity? pairedTransaction}) {
-  Navigator.push(
-    context,
-    AppPageRoute(                           // <-- was MaterialPageRoute
-      page: AddTransactionScreen(
-        transaction: tx,
-        pairedTransaction: pairedTransaction,
-      ),
-    ),
-  );
-}
-
-// And wherever you push AddTransactionScreen for a new transaction:
-Navigator.push(
-  context,
-  AppPageRoute(
-    page: const AddTransactionScreen(),
-  ),
-);
-*/

@@ -15,6 +15,7 @@ class CategoryProvider extends ChangeNotifier {
 
   void _setError(String message) {
     lastError = message;
+    notifyListeners();
   }
 
   void clearError() {
@@ -53,11 +54,13 @@ class CategoryProvider extends ChangeNotifier {
     return resolveCategory(cat.parentId);
   }
 
-  int? getSalaryCategoryId() {
-    return _categories
-        .firstWhereOrNull((c) => c.name.toLowerCase() == "salary")
-        ?.id;
-  }
+  /// The category designated as the salary wallet, or null if none set.
+  Category? get salaryWalletCategory =>
+      _categories.firstWhereOrNull((c) => c.isSalaryWallet);
+
+  int? getSalaryCategoryId() => salaryWalletCategory?.id;
+
+  bool get hasSalaryWallet => salaryWalletCategory != null;
 
   // ================= STATE =================
 
@@ -101,9 +104,13 @@ class CategoryProvider extends ChangeNotifier {
   List<Category> get expenseSubcategories =>
       allSubcategories.where((c) => c.type == "expense").toList();
 
-  /// Categories used for salary split (main categories, non-salary)
-  List<Category> get splitCategories =>
-      mainCategories.where((c) => c.name.toLowerCase() != "salary").toList();
+  /// Income main categories available for salary split
+  /// (excludes the salary wallet itself — it's the source, not a target)
+  List<Category> get splitCategories => mainCategories
+      .where(
+        (c) => c.type == "expense" || (c.type == "income" && !c.isSalaryWallet),
+      )
+      .toList();
 
   // ================= INIT =================
 
@@ -156,27 +163,42 @@ class CategoryProvider extends ChangeNotifier {
     await addCategory(subcategory);
   }
 
-  Future<String?> deleteCategory(int id) async {
+  Future<void> setSalaryWallet(int categoryId) async {
     clearError();
+    final category = resolveCategory(categoryId);
+    if (category == null || category.type != "income") {
+      _setError("Only income categories can be the salary wallet");
+      return;
+    }
+    await _repository.setSalaryWallet(categoryId);
+    await loadCategories();
+  }
 
+  Future<void> clearSalaryWallet() async {
+    await _repository.clearSalaryWallet();
+    await loadCategories();
+  }
+
+  Future<void> deleteCategory(int id) async {
+    clearError();
     final category = resolveCategory(id);
-    if (category == null) return "Category not found";
+    if (category == null) return;
 
-    // Check balance for main categories
+    // For main categories, check wallet balance
     if (category.isMainCategory) {
       final balance = await categoryBalanceRepository.getBalance(id);
-
       if (balance != 0) {
-        return "Category still has wallet balance";
+        _setError("Category still has wallet balance");
+        return;
       }
     }
 
+    // Subcategories are deleted via CASCADE in DB,
+    // but we delete explicitly here for clarity
     await _repository.deleteCategory(id);
     await loadCategories();
-
-    return null;
   }
-  
+
   Future<void> updateCategory(int id, String newName) async {
     clearError();
     try {

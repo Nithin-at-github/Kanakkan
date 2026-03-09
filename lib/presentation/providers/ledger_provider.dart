@@ -25,12 +25,7 @@ class LedgerProvider extends ChangeNotifier {
 
   LedgerProvider(this.categoryProvider, this.balanceProvider);
 
-  int? get salaryCategoryId {
-    final salary = categoryProvider.categories.firstWhereOrNull(
-      (c) => c.name.toLowerCase() == "salary",
-    );
-    return salary?.id;
-  }
+  int? get salaryCategoryId => categoryProvider.getSalaryCategoryId();
 
   final SalaryAllocationRepository _salaryAllocationRepository =
       SalaryAllocationRepository();
@@ -246,11 +241,9 @@ class LedgerProvider extends ChangeNotifier {
     // Single reload + single notifyListeners at the end
     await _reloadAll();
 
-    // Fire salary trigger after a microtask delay so AddTransactionScreen
-    // has time to pop first. Without this, the dialog opens on top of
-    // AddTransactionScreen and navigator.pop() closes the dialog instead
-    // of returning to the dashboard.
-    if (_isSalaryCategory(categoryId)) {
+    // Fire salary trigger only if this category is designated as the
+    // salary wallet. Gracefully skips if no wallet is designated.
+    if (categoryProvider.hasSalaryWallet && _isSalaryCategory(categoryId)) {
       Future.microtask(() {
         salaryIncomeTrigger.value = SalaryTrigger(
           transactionId: id,
@@ -269,11 +262,11 @@ class LedgerProvider extends ChangeNotifier {
     return cat.isSubcategory ? cat.parentId : categoryId;
   }
 
+  /// Uses the isSalaryWallet flag — name-independent
   bool _isSalaryCategory(int? categoryId) {
     if (categoryId == null) return false;
     final category = categoryProvider.resolveCategory(categoryId);
-    if (category == null) return false;
-    return category.name.toLowerCase() == "salary";
+    return category?.isSalaryWallet ?? false;
   }
 
   Future<void> addExpense({
@@ -423,15 +416,17 @@ class LedgerProvider extends ChangeNotifier {
       if (tx != null) {
         await _applyBalanceEffect(tx, reverse: true);
 
-        // Reverse salary wallet allocations if this was a salary transaction
-        if (_isSalaryCategory(tx.categoryId)) {
-          final allocations = await _salaryAllocationRepository.getAllocations(
-            id,
-          );
-          for (final alloc in allocations) {
+        // Reverse salary wallet allocations using stored records — NOT the
+        // current isSalaryWallet flag. This is correct even if the user has
+        // switched the salary wallet since this transaction was created.
+        final salaryAllocations = await _salaryAllocationRepository
+            .getAllocations(id);
+        if (salaryAllocations.isNotEmpty) {
+          for (final alloc in salaryAllocations) {
             final categoryId = alloc['categoryId'] as int;
             final amount = (alloc['amount'] as num).toDouble();
-            // Reverse: subtract from the target wallet, add back to salary wallet
+            // Reverse: subtract from the target wallet, add back to the
+            // original salary wallet (tx.categoryId) regardless of current flag
             await balanceProvider.spend(categoryId, amount);
             await balanceProvider.allocate(tx.categoryId!, amount);
           }
@@ -446,8 +441,11 @@ class LedgerProvider extends ChangeNotifier {
   }
 
   Future<TransactionDeleteType> getDeleteType(TransactionEntity tx) async {
-    final salaryId = salaryCategoryId;
-    if (salaryId == null || tx.type != "income" || tx.categoryId != salaryId) {
+    // Do NOT rely on current isSalaryWallet flag — the user may have
+    // switched the salary wallet since this transaction was created.
+    // Instead, check whether salary allocations were actually stored
+    // for this transaction. That's the authoritative source of truth.
+    if (tx.type != 'income' || tx.id == null) {
       return TransactionDeleteType.normal;
     }
     final allocations = await _salaryAllocationRepository.getAllocations(
@@ -498,6 +496,8 @@ class LedgerProvider extends ChangeNotifier {
       return balanceProvider.getBalance(walletId) >= amount;
     }
     final categoryBalance = balanceProvider.getBalance(walletId);
+    // If no salary wallet is designated, only check category balance
+    if (!categoryProvider.hasSalaryWallet) return categoryBalance >= amount;
     final salaryId = salaryCategoryId;
     final salaryBalance = salaryId != null
         ? balanceProvider.getBalance(salaryId)

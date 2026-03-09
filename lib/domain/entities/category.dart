@@ -3,12 +3,14 @@ class Category {
   final String name;
   final String type;
   final int? parentId;
+  final bool isSalaryWallet;
 
   const Category({
     this.id,
     required this.name,
     required this.type,
     this.parentId,
+    this.isSalaryWallet = false,
   });
 
   bool get isSubcategory => parentId != null;
@@ -20,12 +22,14 @@ class Category {
     String? type,
     int? parentId,
     bool clearParent = false,
+    bool? isSalaryWallet,
   }) {
     return Category(
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
       parentId: clearParent ? null : (parentId ?? this.parentId),
+      isSalaryWallet: isSalaryWallet ?? this.isSalaryWallet,
     );
   }
 

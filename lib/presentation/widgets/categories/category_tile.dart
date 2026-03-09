@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/presentation/dialogs/edit_category_dialog.dart';
+import 'package:kanakkan/presentation/widgets/categories/salary_wallet_setup_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
@@ -19,31 +20,85 @@ class CategoryTile extends StatelessWidget {
     final provider = context.read<CategoryProvider>();
     final balances = context.watch<CategoryBalanceProvider>();
     final subcategories = provider.subcategoriesOf(category.id!);
+    final isSalaryWallet = category.isSalaryWallet;
 
     return ListTile(
       onTap: () => showDialog(
         context: context,
         builder: (_) => SubcategoryDialog(parent: category, accent: accent),
       ),
-      leading: CircleAvatar(
-        radius: 18,
-        backgroundColor: accent.withOpacity(0.15),
-        child: Icon(
-          category.type == "income" ? Icons.arrow_downward : Icons.arrow_upward,
-          color: accent,
-          size: 18,
-        ),
+
+      // ── LEADING — crown badge for salary wallet ──
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: accent.withOpacity(0.15),
+            child: Icon(
+              category.type == "income"
+                  ? Icons.arrow_downward
+                  : Icons.arrow_upward,
+              color: accent,
+              size: 18,
+            ),
+          ),
+          if (isSalaryWallet)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.amber,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.workspace_premium,
+                  size: 10,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
       ),
-      title: Text(
-        category.name,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+
+      // ── TITLE — salary wallet pill ──
+      title: Row(
+        children: [
+          Text(
+            category.name,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          if (isSalaryWallet) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.withOpacity(0.4)),
+              ),
+              child: const Text(
+                "Salary Wallet",
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
+
       subtitle: subcategories.isNotEmpty
           ? Text(
-              "${subcategories.length} subcategories",
+              "${subcategories.length} subcategor${subcategories.length == 1 ? 'y' : 'ies'}",
               style: const TextStyle(fontSize: 12, color: Colors.black45),
             )
           : null,
+
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -61,11 +116,25 @@ class CategoryTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             onSelected: (value) async {
-              if (value == "edit") {
-                editCategoryDialog(context, category);
-              } else {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
 
+              if (value == "set_salary") {
+                final confirmed = await confirmWalletChange(
+                  context: context,
+                  provider: provider,
+                  tappedCategory: category,
+                );
+                if (confirmed) await provider.setSalaryWallet(category.id!);
+              } else if (value == "clear_salary") {
+                final confirmed = await confirmWalletChange(
+                  context: context,
+                  provider: provider,
+                  tappedCategory: category,
+                );
+                if (confirmed) await provider.clearSalaryWallet();
+              } else if (value == "edit") {
+                editCategoryDialog(context, category);
+              } else if (value == "delete") {
                 final confirm = await ConfirmDeleteDialog.show(
                   context: context,
                   title: "Delete Category",
@@ -76,13 +145,13 @@ class CategoryTile extends StatelessWidget {
 
                 if (!confirm) return;
 
-                final error = await provider.deleteCategory(category.id!);
+                await provider.deleteCategory(category.id!);
 
-                if (error != null) {
+                if (provider.lastError != null) {
                   scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text(
-                        error,
+                        provider.lastError!,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -93,27 +162,57 @@ class CategoryTile extends StatelessWidget {
                       duration: const Duration(seconds: 2),
                     ),
                   );
-                }else{
+                } else {
                   scaffoldMessenger.showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       content: Text(
                         "Category deleted",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
                       backgroundColor: AppTheme.error,
                       behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
+                      duration: Duration(seconds: 2),
                     ),
                   );
                 }
               }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: "edit", child: Text("Edit")),
-              PopupMenuItem(value: "delete", child: Text("Delete")),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: "edit", child: Text("Edit")),
+              if (category.type == "income" && !isSalaryWallet)
+                const PopupMenuItem(
+                  value: "set_salary",
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.workspace_premium,
+                        size: 16,
+                        color: Colors.amber,
+                      ),
+                      SizedBox(width: 8),
+                      Text("Set as Salary Wallet"),
+                    ],
+                  ),
+                ),
+              if (category.type == "income" && isSalaryWallet)
+                const PopupMenuItem(
+                  value: "clear_salary",
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.workspace_premium_outlined,
+                        size: 16,
+                        color: Colors.black45,
+                      ),
+                      SizedBox(width: 8),
+                      Text("Remove Salary Wallet"),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(value: "delete", child: Text("Delete")),
             ],
           ),
         ],
