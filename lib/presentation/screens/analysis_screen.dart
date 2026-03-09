@@ -2,12 +2,42 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
+import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/screens/analysis_drill_screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
-class AnalysisScreen extends StatelessWidget {
+class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
+
+  @override
+  State<AnalysisScreen> createState() => _AnalysisScreenState();
+}
+
+class _AnalysisScreenState extends State<AnalysisScreen> {
+  late NavigationProvider _nav;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _nav = context.read<NavigationProvider>();
+      _nav.addListener(_onTabChanged);
+    });
+  }
+
+  @override
+  void dispose() {
+    _nav.removeListener(_onTabChanged);
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    // Tab index 1 = Analysis. Reset to today when user navigates here.
+    if (_nav.currentIndex == 1 && _nav.previousIndex != 1) {
+      context.read<AnalysisProvider>().resetToToday();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -7,68 +7,52 @@ import 'package:kanakkan/presentation/screens/analysis_screen.dart';
 import 'package:kanakkan/presentation/screens/budget_screen.dart';
 import 'package:kanakkan/presentation/screens/categories_screen.dart';
 import 'package:kanakkan/presentation/screens/dashboard_screen.dart';
+import 'package:kanakkan/presentation/widgets/app_drawer.dart';
 import 'package:kanakkan/presentation/widgets/universal_create_sheet.dart';
 import 'package:provider/provider.dart';
+
+// Global key so any ReusableAppBar can open this scaffold's drawer
+// regardless of how deep in the widget tree it sits.
+final GlobalKey<ScaffoldState> rootScaffoldKey = GlobalKey<ScaffoldState>();
 
 class RootScaffold extends StatelessWidget {
   const RootScaffold({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     final nav = context.watch<NavigationProvider>();
 
     final pages = const [
-      DashboardScreen(),   // index 0
-      AnalysisScreen(),    // index 1
-      BudgetScreen(),      // index 2
-      AccountsScreen(),    // index 3
-      CategoriesScreen(),  // index 4
+      DashboardScreen(), // index 0
+      AnalysisScreen(), // index 1
+      BudgetScreen(), // index 2
+      AccountsScreen(), // index 3
+      CategoriesScreen(), // index 4
     ];
 
     return Scaffold(
-
+      key: rootScaffoldKey,
+      drawer: const AppDrawer(),
       floatingActionButton: GestureDetector(
-        onLongPress: () {
-          /// LONG PRESS → Universal creator
-          UniversalCreateSheet.show(context);
-        },
-
+        onLongPress: () => UniversalCreateSheet.show(context),
         child: FloatingActionButton.extended(
           backgroundColor: AppTheme.accent,
           elevation: 6,
           icon: const Icon(Icons.add),
           label: Text(_fabLabel(nav.currentIndex)),
-
-          /// SHORT PRESS → Smart action
-          onPressed: () {
-            SmartCreateHandler.handle(context, nav.currentIndex);
-          },
+          onPressed: () => SmartCreateHandler.handle(context, nav.currentIndex),
         ),
       ),
-
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      
-      body: IndexedStack(
-        index: nav.currentIndex,
-        children: pages,
-      ),
-
+      body: IndexedStack(index: nav.currentIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: nav.currentIndex,
         selectedItemColor: AppTheme.accent,
         unselectedItemColor: Colors.grey,
-
-        onTap: (index) {
-          context.read<NavigationProvider>().setIndex(index);
-        },
-
+        onTap: (index) => context.read<NavigationProvider>().setIndex(index),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt),
-            label: "Records",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt), label: "Records"),
           BottomNavigationBarItem(
             icon: Icon(Icons.pie_chart),
             label: "Analysis",
@@ -89,7 +73,7 @@ class RootScaffold extends StatelessWidget {
       ),
     );
   }
-  
+
   String _fabLabel(int index) {
     switch (index) {
       case 0:

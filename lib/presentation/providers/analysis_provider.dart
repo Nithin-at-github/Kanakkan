@@ -182,6 +182,15 @@ class AnalysisProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Resets period to the current month/year. Called when the
+  /// Analysis tab becomes active so it always shows today's period.
+  void resetToToday() {
+    _monthOffset = 0;
+    _yearOffset = 0;
+    _recompute();
+    notifyListeners();
+  }
+
   void toggleAccount(int accountId) {
     if (_selectedAccountIds.contains(accountId)) {
       if (_selectedAccountIds.length == 1) return;
