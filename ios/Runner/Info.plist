@@ -47,5 +47,27 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSFaceIDUsageDescription</key>
+		<string>Authentication is required to unlock your financial data securely.</string>
+		<!-- File picker — access files from Files app -->
+		<key>UISupportsDocumentBrowser</key>
+		<true/>
+
+		<!-- Share sheet — allow sharing to other apps -->
+		<key>LSSupportsOpeningDocumentsInPlace</key>
+		<true/>
+
+		<!-- url_launcher — allow opening external URLs like LinkedIn -->
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>https</string>
+			<string>http</string>
+		</array>
+
+		<key>NSDocumentsFolderUsageDescription</key>
+			<string>Kanakkan needs access to save backup files.</string>
+			
+		<key>UIFileSharingEnabled</key>
+		<true/>
 	</dict>
 </plist>

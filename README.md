@@ -8,7 +8,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" />
   <img src="https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart" />
-  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android" />
   <img src="https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite" />
 </p>
 
@@ -84,7 +83,7 @@
 
 | Layer | Technology |
 |---|---|
-| Framework | Flutter 3.x / Dart 3.x |
+| Framework | Flutter 3.41.4 / Dart 3.11.1 |
 | State Management | Provider (`ChangeNotifier`) |
 | Database | SQLite via `sqflite` |
 | Security | `flutter_secure_storage`, `local_auth` |
@@ -120,6 +119,12 @@ lib/
 │   └── widgets/           # Reusable widget components
 └── main.dart
 ```
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 

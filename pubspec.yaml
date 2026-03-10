@@ -51,6 +51,7 @@ dependencies:
   csv: ^6.0.0
   pdf: ^3.11.3
   url_launcher: ^6.3.2
+  local_auth_platform_interface: ^1.1.0
 
 flutter_native_splash:
   color: "#2D2438"
