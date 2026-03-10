@@ -9,6 +9,7 @@ class DatabaseHelper {
 
   // Bumped to 5 for subcategories (parentId on categories)
   static const int _dbVersion = 6;
+  static int get dbVersion => _dbVersion;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -280,5 +281,34 @@ class DatabaseHelper {
         "UPDATE categories SET isSalaryWallet = 1 WHERE LOWER(name) = 'salary' AND type = 'income'",
       );
     }
+  }
+
+  /// Returns the absolute path to the database file.
+  Future<String> getDatabasePath() async {
+    final dbPath = await getDatabasesPath();
+    return join(dbPath, 'kanakkan.db');
+  }
+
+  /// Closes the database connection and clears the cached instance.
+  /// Must be called before replacing the DB file during restore.
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+  /// Reopens the database after a restore.
+  /// Runs migrations if the restored DB is on an older version.
+  Future<void> reopenDatabase() async {
+    _database = await _initDB('kanakkan.db');
+  }
+
+  /// Deletes the database completely and re-initializes it.
+  Future<void> resetDatabase() async {
+    await closeDatabase();
+    final path = await getDatabasePath();
+    await deleteDatabase(path);
+    await reopenDatabase();
   }
 }

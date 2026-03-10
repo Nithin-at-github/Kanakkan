@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
+import 'package:kanakkan/presentation/handlers/export_handler.dart';
+import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// The app-wide navigation drawer.
@@ -36,18 +40,30 @@ class AppDrawer extends StatelessWidget {
                   _DrawerTile(
                     icon: Icons.cloud_upload_outlined,
                     label: "Backup Data",
-                    onTap: () {
+                    subtitle: "Save a copy to your device",
+                    onTap: () async {
                       Navigator.pop(context);
-                      // TODO: trigger backup
+                      // Drawer context is now deactivated — use the stable
+                      // scaffold context so Provider lookups + dialogs work.
+                      final ctx = rootScaffoldKey.currentContext;
+                      if (ctx == null || !ctx.mounted) return;
+                      await BackupRestoreHandler.runBackup(ctx);
                     },
                   ),
 
                   _DrawerTile(
                     icon: Icons.cloud_download_outlined,
                     label: "Restore Data",
-                    onTap: () {
+                    subtitle: "Load from a backup file",
+                    onTap: () async {
                       Navigator.pop(context);
-                      // TODO: trigger restore
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      final ctx = rootScaffoldKey.currentContext;
+                      if (ctx == null || !ctx.mounted) return;
+                      final confirmed =
+                          await BackupRestoreHandler.confirmRestore(ctx);
+                      if (!confirmed || !ctx.mounted) return;
+                      await BackupRestoreHandler.runRestore(ctx);
                     },
                   ),
 
@@ -57,7 +73,9 @@ class AppDrawer extends StatelessWidget {
                     subtitle: "Download as CSV or PDF",
                     onTap: () {
                       Navigator.pop(context);
-                      // TODO: open export options
+                      final ctx = rootScaffoldKey.currentContext;
+                      if (ctx == null) return;
+                      ExportHandler.showExportOptions(ctx);
                     },
                   ),
 
@@ -74,7 +92,8 @@ class AppDrawer extends StatelessWidget {
                     labelColor: AppTheme.error,
                     onTap: () {
                       Navigator.pop(context);
-                      _confirmReset(context);
+                      final ctx = rootScaffoldKey.currentContext;
+                      if (ctx != null) _confirmReset(ctx);
                     },
                   ),
 
@@ -94,6 +113,9 @@ class AppDrawer extends StatelessWidget {
   }
 
   void _confirmReset(BuildContext context) {
+    // Capture navigator before the async dialog — the builder's `_` context
+    // is deactivated once the dialog closes, causing the stale context error.
+    final navigator = Navigator.of(context);
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -155,7 +177,7 @@ class AppDrawer extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => navigator.pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         side: const BorderSide(color: Colors.black26),
@@ -172,9 +194,12 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        // TODO: execute reset
+                      onPressed: () async {
+                        navigator.pop();
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        final ctx = rootScaffoldKey.currentContext;
+                        if (ctx == null || !ctx.mounted) return;
+                        await BackupRestoreHandler.runReset(ctx);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.error,
@@ -214,8 +239,8 @@ class _DrawerHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppTheme.primary,
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(15),
-          bottomRight: Radius.circular(15),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
       child: Column(
@@ -250,7 +275,7 @@ class _DrawerHeader extends StatelessWidget {
               color: AppTheme.accent,
             ),
           ),
-          
+
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (_, snap) {
@@ -365,13 +390,40 @@ class _DrawerTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DrawerFooter extends StatelessWidget {
+  static const _linkedInUrl = 'https://www.linkedin.com/in/nithinjk28/';
+
+  Future<void> _openLinkedIn() async {
+    final uri = Uri.parse(_linkedInUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Text(
-        "Made with ♥ in Kerala",
-        style: TextStyle(fontSize: 11, color: Colors.black26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Made with ♥ in Keralam",
+            style: TextStyle(fontSize: 11, color: Colors.black26),
+          ),
+          const SizedBox(height: 4),
+          GestureDetector(
+            onTap: _openLinkedIn,
+            child: const Text(
+              "by Nithin JK",
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.accent,
+                fontWeight: FontWeight.w600,
+                decorationColor: AppTheme.accent,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
