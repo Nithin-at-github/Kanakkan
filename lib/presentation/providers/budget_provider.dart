@@ -25,12 +25,6 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgets() async {
     _budgets = await _repository.getBudgets(currentMonth, currentYear);
-
-    /// load envelope balances for visible categories
-    for (final budget in _budgets) {
-      await balanceProvider.getBalance(budget.categoryId);
-    }
-
     notifyListeners();
   }
 

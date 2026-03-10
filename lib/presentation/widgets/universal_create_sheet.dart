@@ -92,7 +92,7 @@ class UniversalCreateSheet {
   }) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: color.withOpacity(.15),
+        backgroundColor: color.withValues(alpha: .15),
         child: Icon(icon, color: color),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),

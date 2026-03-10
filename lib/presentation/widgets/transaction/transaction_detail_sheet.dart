@@ -119,7 +119,7 @@ class _TransactionDetailSheetContentState
 
           // ── AMOUNT ──
           Text(
-            "₹${tx.amount.toStringAsFixed(2)}",
+            "₹${formatAmt(tx.amount)}",
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -133,7 +133,7 @@ class _TransactionDetailSheetContentState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: typeColor.withOpacity(0.15),
+              color: typeColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
@@ -249,6 +249,7 @@ class _TransactionDetailSheetContentState
     bool confirm;
     switch (deleteType) {
       case TransactionDeleteType.salaryDistributed:
+        if (!context.mounted) return;
         confirm = await ConfirmDeleteDialog.show(
           context: context,
           title: "Delete Salary",
@@ -257,6 +258,7 @@ class _TransactionDetailSheetContentState
         );
         break;
       case TransactionDeleteType.normal:
+        if (!context.mounted) return;
         confirm = await ConfirmDeleteDialog.show(
           context: context,
           title: "Delete Transaction",
@@ -319,7 +321,7 @@ class _TransactionDetailSheetContentState
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: color),
@@ -375,9 +377,9 @@ class _WalletImpactSection extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 6),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.08),
+                color: color.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withOpacity(0.2)),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -400,7 +402,7 @@ class _WalletImpactSection extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    "₹${split.amount.toStringAsFixed(2)}",
+                    "₹${formatAmt(split.amount)}",
                     style: TextStyle(
                       color: color,
                       fontWeight: FontWeight.bold,
@@ -426,7 +428,7 @@ class _WalletImpactSkeleton extends StatelessWidget {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.05),
+          color: Colors.black.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(10),
         ),
       ),

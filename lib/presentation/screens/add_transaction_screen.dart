@@ -110,8 +110,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
-    for (final node in _amountFocusNodes) node.dispose();
-    for (final node in _noteFocusNodes) node.dispose();
+    for (final node in _amountFocusNodes) { node.dispose(); }
+    for (final node in _noteFocusNodes) { node.dispose(); }
     _noteController.dispose();
     _amountNotifier.dispose();
     _multiModeNotifier.dispose();
@@ -250,7 +250,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           const SizedBox(height: 12),
                           ValueListenableBuilder<String>(
                             valueListenable: _amountNotifier,
-                            builder: (_, amount, __) =>
+                            builder: (_, amount, _) =>
                                 _AmountDisplay(amount: amount),
                           ),
                         ],
@@ -361,7 +361,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           hintText: "Add notes",
           hintStyle: const TextStyle(color: Colors.white54),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.4)),
+            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
             borderRadius: BorderRadius.circular(8),
           ),
           focusedBorder: OutlineInputBorder(
@@ -418,31 +418,44 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       );
       if (!canAfford) {
         _showSnackbar(
-          "Insufficient wallet balance for total of ₹${totalRequired.toStringAsFixed(2)}.",
+          "Insufficient wallet balance for total of ₹${formatAmt(totalRequired)}.",
           isError: true,
         );
         return;
       }
     }
 
-    for (final item in validItems) {
-      if (_type == TransactionType.expense) {
-        await ledger.addExpense(
-          amount: item.amount,
-          fromAccountId: _selectedAccount!.id!,
-          categoryId: _selectedCategory!.id!,
-          note: item.note,
-          timestamp: _selectedDateTime.millisecondsSinceEpoch,
-        );
-      } else {
-        await ledger.addIncome(
-          amount: item.amount,
-          toAccountId: _selectedAccount!.id!,
-          categoryId: _selectedCategory!.id!,
-          note: item.note,
-          timestamp: _selectedDateTime.millisecondsSinceEpoch,
-        );
-      }
+    // Use batch methods to insert all items and reload exactly once,
+    // instead of N individual addExpense/addIncome calls (each of which
+    // triggers _reloadAll + notifyListeners).
+    if (_type == TransactionType.expense) {
+      await ledger.addExpensesBatch(
+        validItems
+            .map(
+              (item) => (
+                amount: item.amount,
+                fromAccountId: _selectedAccount!.id!,
+                categoryId: _selectedCategory!.id! as int?,
+                note: item.note as String?,
+                timestamp: _selectedDateTime.millisecondsSinceEpoch as int?,
+              ),
+            )
+            .toList(),
+      );
+    } else {
+      await ledger.addIncomesBatch(
+        validItems
+            .map(
+              (item) => (
+                amount: item.amount,
+                toAccountId: _selectedAccount!.id!,
+                categoryId: _selectedCategory!.id! as int?,
+                note: item.note as String?,
+                timestamp: _selectedDateTime.millisecondsSinceEpoch as int?,
+              ),
+            )
+            .toList(),
+      );
     }
 
     messenger.showSnackBar(
@@ -782,6 +795,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 : "expense",
                           );
                           if (created != null && created.isSubcategory) {
+                            if (!context.mounted) return;
                             final provider = context.read<CategoryProvider>();
                             setState(() {
                               _selectedSubcategory = created;
@@ -1104,7 +1118,7 @@ class _AmountDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      "₹${double.parse(amount).toStringAsFixed(2)}",
+      "₹${formatAmt(double.parse(amount))}",
       style: const TextStyle(
         fontSize: 48,
         color: AppTheme.accent,

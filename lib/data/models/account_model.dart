@@ -4,8 +4,8 @@ class AccountModel extends Account {
   const AccountModel({
     super.id,
     required super.name,
-    required double initialBalance,
-  }) : super(initialBalance: initialBalance);
+    required super.initialBalance,
+  });
 
   /// Convert DB map → Model
   factory AccountModel.fromMap(Map<String, dynamic> map) {

@@ -57,7 +57,7 @@ class AccountsScreen extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Text(
-                    "Total Balance → ₹${totalBalance.toStringAsFixed(2)}",
+                    "Total Balance → ₹${formatAmt(totalBalance)}",
                     style: const TextStyle(
                       color: AppTheme.accent,
                       fontSize: 18,
@@ -167,7 +167,7 @@ class AccountsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.accent.withOpacity(.35)),
+        border: Border.all(color: AppTheme.accent.withValues(alpha: .35)),
         color: Colors.white,
       ),
       child: Row(
@@ -187,7 +187,7 @@ class AccountsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Balance → ₹${balance.toStringAsFixed(2)}",
+                  "Balance → ₹${formatAmt(balance)}",
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -216,20 +216,22 @@ class AccountsScreen extends StatelessWidget {
                 );
                 if (!confirm) return;
                 provider.deleteAccount(acc.id!);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "Account deleted",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        "Account deleted",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
+                      backgroundColor: AppTheme.error,
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 1),
                     ),
-                    backgroundColor: AppTheme.error,
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 1),
-                  ),
-                );
+                  );
+                }
               }
             },
             itemBuilder: (_) => const [
@@ -251,7 +253,7 @@ class AccountsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          "₹${amount.toStringAsFixed(2)}",
+          "₹${formatAmt(amount)}",
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.bold,
@@ -324,7 +326,7 @@ class AccountsScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      "₹${account.initialBalance.toStringAsFixed(2)}",
+                      "₹${formatAmt(account.initialBalance)}",
                       style: const TextStyle(
                         fontSize: 15,
                         color: Colors.black54,
@@ -339,7 +341,7 @@ class AccountsScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.error.withOpacity(0.1),
+                        color: AppTheme.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -380,7 +382,8 @@ class AccountsScreen extends StatelessWidget {
 
                             final newName = controller.text.trim();
 
-                            await context.read<LedgerProvider>().updateAccount(
+                            final ledgerRef = context.read<LedgerProvider>();
+                            await ledgerRef.updateAccount(
                               Account(
                                 id: account.id,
                                 name: newName,
@@ -389,9 +392,8 @@ class AccountsScreen extends StatelessWidget {
                               ),
                             );
 
-                            if (context.read<LedgerProvider>().lastError ==
-                                null) {
-                              Navigator.pop(context);
+                            if (ledgerRef.lastError == null) {
+                              if (context.mounted) Navigator.pop(context);
                             }
                           },
                           child: const Text("Save"),

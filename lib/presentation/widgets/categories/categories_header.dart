@@ -52,7 +52,7 @@ class CategoriesHeader extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          "₹${amount.toStringAsFixed(2)}",
+          "₹${formatAmt(amount)}",
           style: TextStyle(
             color: color,
             fontSize: 18,

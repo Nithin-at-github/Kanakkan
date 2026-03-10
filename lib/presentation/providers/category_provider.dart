@@ -40,9 +40,10 @@ class CategoryProvider extends ChangeNotifier {
     return category?.name ?? "Deleted Category";
   }
 
+  /// O(1) Map lookup — replaces the previous O(N) firstWhereOrNull scan.
   Category? resolveCategory(int? categoryId) {
     if (categoryId == null) return null;
-    return _categories.firstWhereOrNull((c) => c.id == categoryId);
+    return _categoryMap[categoryId];
   }
 
   /// Returns the main (parent) category for a given category id.
@@ -55,37 +56,44 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   /// The category designated as the salary wallet, or null if none set.
-  Category? get salaryWalletCategory =>
-      _categories.firstWhereOrNull((c) => c.isSalaryWallet);
+  Category? get salaryWalletCategory => _salaryWalletCategory;
 
-  int? getSalaryCategoryId() => salaryWalletCategory?.id;
+  int? getSalaryCategoryId() => _salaryWalletCategory?.id;
 
-  bool get hasSalaryWallet => salaryWalletCategory != null;
+  bool get hasSalaryWallet => _salaryWalletCategory != null;
 
   // ================= STATE =================
 
   List<Category> _categories = [];
   List<Category> get categories => _categories;
 
+  // ── CACHED DERIVED LISTS — rebuilt once in _rebuildCache ──
+  Map<int, Category> _categoryMap = {};
+  Category? _salaryWalletCategory;
+
+  List<Category> _mainCategories = [];
+  List<Category> _incomeCategories = [];
+  List<Category> _expenseCategories = [];
+  List<Category> _allSubcategories = [];
+  List<Category> _incomeSubcategories = [];
+  List<Category> _expenseSubcategories = [];
+  List<Category> _splitCategories = [];
+  Map<int, List<Category>> _subcategoryMap = {}; // parentId → subs
+
   /// Top-level categories only (no subcategories)
-  List<Category> get mainCategories =>
-      _categories.where((c) => c.isMainCategory).toList();
+  List<Category> get mainCategories => _mainCategories;
+  List<Category> get incomeCategories => _incomeCategories;
+  List<Category> get expenseCategories => _expenseCategories;
 
-  List<Category> get incomeCategories =>
-      mainCategories.where((c) => c.type == "income").toList();
-
-  List<Category> get expenseCategories =>
-      mainCategories.where((c) => c.type == "expense").toList();
-
-  /// Subcategories belonging to a specific parent
+  /// Subcategories belonging to a specific parent — O(1) map lookup.
   List<Category> subcategoriesOf(int parentId) =>
-      _categories.where((c) => c.parentId == parentId).toList();
+      _subcategoryMap[parentId] ?? const [];
 
   /// All subcategories across all parents, grouped by parent id.
   /// Used by the transaction screen grouped picker.
   Map<Category, List<Category>> get groupedSubcategories {
     final Map<Category, List<Category>> result = {};
-    for (final main in mainCategories) {
+    for (final main in _mainCategories) {
       final subs = subcategoriesOf(main.id!);
       if (subs.isNotEmpty) result[main] = subs;
     }
@@ -93,24 +101,55 @@ class CategoryProvider extends ChangeNotifier {
   }
 
   /// Flat list of all subcategories — income + expense combined.
-  List<Category> get allSubcategories =>
-      _categories.where((c) => c.isSubcategory).toList();
+  List<Category> get allSubcategories => _allSubcategories;
 
   /// Income subcategories only
-  List<Category> get incomeSubcategories =>
-      allSubcategories.where((c) => c.type == "income").toList();
+  List<Category> get incomeSubcategories => _incomeSubcategories;
 
   /// Expense subcategories only
-  List<Category> get expenseSubcategories =>
-      allSubcategories.where((c) => c.type == "expense").toList();
+  List<Category> get expenseSubcategories => _expenseSubcategories;
 
   /// Income main categories available for salary split
   /// (excludes the salary wallet itself — it's the source, not a target)
-  List<Category> get splitCategories => mainCategories
-      .where(
-        (c) => c.type == "expense" || (c.type == "income" && !c.isSalaryWallet),
-      )
-      .toList();
+  List<Category> get splitCategories => _splitCategories;
+
+  /// Rebuilds all in-memory caches from the raw _categories list.
+  /// Called once after each DB load — O(N) total, not O(N) per getter call.
+  void _rebuildCache() {
+    _categoryMap = {for (final c in _categories) c.id!: c};
+
+    _mainCategories = _categories.where((c) => c.isMainCategory).toList();
+    _allSubcategories = _categories.where((c) => c.isSubcategory).toList();
+
+    _incomeCategories =
+        _mainCategories.where((c) => c.type == "income").toList();
+    _expenseCategories =
+        _mainCategories.where((c) => c.type == "expense").toList();
+
+    _incomeSubcategories =
+        _allSubcategories.where((c) => c.type == "income").toList();
+    _expenseSubcategories =
+        _allSubcategories.where((c) => c.type == "expense").toList();
+
+    _splitCategories = _mainCategories
+        .where(
+          (c) =>
+              c.type == "expense" ||
+              (c.type == "income" && !c.isSalaryWallet),
+        )
+        .toList();
+
+    _subcategoryMap = {};
+    for (final sub in _allSubcategories) {
+      if (sub.parentId != null) {
+        (_subcategoryMap[sub.parentId!] ??= []).add(sub);
+      }
+    }
+
+    _salaryWalletCategory = _categories.firstWhereOrNull(
+      (c) => c.isSalaryWallet,
+    );
+  }
 
   // ================= INIT =================
 
@@ -120,6 +159,7 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> loadCategories() async {
     _categories = await _repository.getAllCategories();
+    _rebuildCache();
     notifyListeners();
   }
 

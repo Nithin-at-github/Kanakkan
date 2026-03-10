@@ -168,7 +168,7 @@ class AnalysisProvider extends ChangeNotifier {
 
   String get periodLabel => isMonthly
       ? '${_monthNames[_focusMonth.month - 1]} ${_focusMonth.year}'
-      : 'Year ${_focusYear}';
+      : 'Year $_focusYear';
 
   bool get canGoForward => isMonthly ? _monthOffset < 0 : _yearOffset < 0;
 
@@ -203,20 +203,22 @@ class AnalysisProvider extends ChangeNotifier {
   }
 
   void previous() {
-    if (isMonthly)
+    if (isMonthly) {
       _monthOffset--;
-    else
+    } else {
       _yearOffset--;
+    }
     _recompute();
     notifyListeners();
   }
 
   void next() {
     if (!canGoForward) return;
-    if (isMonthly)
+    if (isMonthly) {
       _monthOffset++;
-    else
+    } else {
       _yearOffset++;
+    }
     _recompute();
     notifyListeners();
   }
@@ -225,15 +227,39 @@ class AnalysisProvider extends ChangeNotifier {
 
   void _recompute() {
     final allTx = _ledger.transactions;
+    // Build a (year, month) → transactions bucket map in one O(N) pass.
+    // Every subsequent monthly/yearly filter is then a O(1) map lookup
+    // instead of a repeated O(N) full-list scan.
+    final buckets = _bucketByMonth(allTx);
     if (isMonthly) {
-      _computeMonthly(allTx);
+      _computeMonthly(allTx, buckets);
     } else {
-      _computeYearly(allTx);
+      _computeYearly(allTx, buckets);
     }
   }
 
-  void _computeMonthly(List<TransactionEntity> allTx) {
-    final monthTx = _filterByMonthAndAccounts(allTx, _focusMonth);
+  /// Partitions all transactions into a `(year, month)` map in a single pass.
+  Map<(int, int), List<TransactionEntity>> _bucketByMonth(
+    List<TransactionEntity> all,
+  ) {
+    final map = <(int, int), List<TransactionEntity>>{};
+    for (final tx in all) {
+      if (tx.note == 'Opening_Balance') continue;
+      if (tx.transferGroupId != null) continue;
+      final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
+      final key = (date.year, date.month);
+      (map[key] ??= []).add(tx);
+    }
+    return map;
+  }
+
+  void _computeMonthly(
+    List<TransactionEntity> allTx,
+    Map<(int, int), List<TransactionEntity>> buckets,
+  ) {
+    final monthTx = _filterBucketByAccounts(
+        buckets[(_focusMonth.year, _focusMonth.month)] ?? const [],
+    );
 
     totalIncome = monthTx
         .where((t) => t.type == 'income')
@@ -246,16 +272,19 @@ class AnalysisProvider extends ChangeNotifier {
         ? (savings / totalIncome * 100).clamp(-100.0, 100.0)
         : 0.0;
 
-    trend = _buildTrend(allTx, 6);
+    trend = _buildTrend(buckets, 6);
     expenseBreakdown = _buildBreakdown(monthTx, 'expense', totalExpense);
     incomeBreakdown = _buildBreakdown(monthTx, 'income', totalIncome);
     dailySpend = _buildDailySpend(monthTx);
     insights = _buildInsights();
   }
 
-  void _computeYearly(List<TransactionEntity> allTx) {
+  void _computeYearly(
+    List<TransactionEntity> allTx,
+    Map<(int, int), List<TransactionEntity>> buckets,
+  ) {
     final year = _focusYear;
-    final yearTx = _filterByYearAndAccounts(allTx, year);
+    final yearTx = _filterYearBucketByAccounts(buckets, year);
 
     yearTotalIncome = yearTx
         .where((t) => t.type == 'income')
@@ -268,14 +297,15 @@ class AnalysisProvider extends ChangeNotifier {
         ? (yearSavings / yearTotalIncome * 100).clamp(-100.0, 100.0)
         : 0.0;
 
-    // 12-month breakdown for the year
+    // 12-month breakdown: O(1) bucket lookup per month instead of O(N) scan
     yearMonthlyBreakdown = List.generate(12, (i) {
-      final month = DateTime(year, i + 1);
-      final txs = _filterByMonthAndAccounts(allTx, month);
-      final inc = txs
+      final monthBucket = _filterBucketByAccounts(
+        buckets[(year, i + 1)] ?? const [],
+      );
+      final inc = monthBucket
           .where((t) => t.type == 'income')
           .fold(0.0, (s, t) => s + t.amount);
-      final exp = txs
+      final exp = monthBucket
           .where((t) => t.type == 'expense')
           .fold(0.0, (s, t) => s + t.amount);
       return MonthlyTrend(_shortMonths[i], year, i + 1, inc, exp);
@@ -298,34 +328,34 @@ class AnalysisProvider extends ChangeNotifier {
     yearIncomeBreakdown = _buildBreakdown(yearTx, 'income', yearTotalIncome);
   }
 
-  // ── FILTER HELPERS ──
+  // ── FILTER HELPERS (bucket-based) ──
 
-  List<TransactionEntity> _filterByMonthAndAccounts(
-    List<TransactionEntity> all,
-    DateTime month,
+  /// Filters a pre-bucketed month list by selected accounts only — O(K).
+  List<TransactionEntity> _filterBucketByAccounts(
+    List<TransactionEntity> bucket,
   ) {
-    return all.where((tx) {
-      if (tx.note == 'Opening_Balance') return false;
-      if (tx.transferGroupId != null) return false;
-      final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
-      if (date.year != month.year || date.month != month.month) return false;
+    return bucket.where((tx) {
       final accountId = tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
       return _selectedAccountIds.contains(accountId);
     }).toList();
   }
 
-  List<TransactionEntity> _filterByYearAndAccounts(
-    List<TransactionEntity> all,
+  /// Collects all buckets for a given year and filters by selected accounts.
+  List<TransactionEntity> _filterYearBucketByAccounts(
+    Map<(int, int), List<TransactionEntity>> buckets,
     int year,
   ) {
-    return all.where((tx) {
-      if (tx.note == 'Opening_Balance') return false;
-      if (tx.transferGroupId != null) return false;
-      final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
-      if (date.year != year) return false;
-      final accountId = tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
-      return _selectedAccountIds.contains(accountId);
-    }).toList();
+    final result = <TransactionEntity>[];
+    for (int m = 1; m <= 12; m++) {
+      final bucket = buckets[(year, m)];
+      if (bucket == null) continue;
+      for (final tx in bucket) {
+        final accountId =
+            tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
+        if (_selectedAccountIds.contains(accountId)) result.add(tx);
+      }
+    }
+    return result;
   }
 
   // ── BREAKDOWN WITH SUBCATEGORIES ──
@@ -408,11 +438,17 @@ class AnalysisProvider extends ChangeNotifier {
     return result;
   }
 
-  List<MonthlyTrend> _buildTrend(List<TransactionEntity> all, int count) {
+  List<MonthlyTrend> _buildTrend(
+    Map<(int, int), List<TransactionEntity>> buckets,
+    int count,
+  ) {
     return List.generate(count, (i) {
       final now = DateTime.now();
       final month = DateTime(now.year, now.month - (count - 1) + i);
-      final txs = _filterByMonthAndAccounts(all, month);
+      // O(1) bucket lookup + O(K) account filter per month
+      final txs = _filterBucketByAccounts(
+        buckets[(month.year, month.month)] ?? const [],
+      );
       final inc = txs
           .where((t) => t.type == 'income')
           .fold(0.0, (s, t) => s + t.amount);

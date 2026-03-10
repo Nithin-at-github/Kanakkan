@@ -29,9 +29,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
       /// initial load
       _resetToCurrentMonth();
-    });
 
-    Future.microtask(() => context.read<BudgetProvider>().loadBudgets());
+      context.read<BudgetProvider>().loadBudgets();
+    });
   }
 
   @override
@@ -120,10 +120,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     double totalSpent = 0;
     for (final b in budgetProvider.budgets) {
-      totalSpent += budgetProvider.getSpentForCategory(
-        ledgerProvider,
-        b.categoryId,
-      );
+      // Use the pre-built monthly totals cache — O(1) map lookup per category
+      // instead of a full transaction scan per budget row.
+      totalSpent += ledgerProvider.getMonthlySpent(b.categoryId);
     }
 
     return Scaffold(
@@ -242,7 +241,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: InkWell(
-                  splashColor: AppTheme.accent.withOpacity(.15),
+                  splashColor: AppTheme.accent.withValues(alpha: .15),
                   highlightColor: Colors.transparent,
                   borderRadius: BorderRadius.circular(28),
                   onTap: _openCopyDialog,
@@ -252,7 +251,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.accent.withOpacity( .8),
+                      color: AppTheme.accent.withValues(alpha:  .8),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: AppTheme.accent,
@@ -305,7 +304,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          "₹${amount.toStringAsFixed(2)}",
+          "₹${formatAmt(amount)}",
           style: TextStyle(
             fontSize: 16,
             color: color,

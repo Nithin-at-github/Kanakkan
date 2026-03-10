@@ -58,7 +58,9 @@ class ExportService {
     final file = File('${temp.path}/$fileName');
     
     await file.writeAsString(csvString);
-    await Share.shareXFiles([XFile(file.path)], subject: 'Kanakkan Export (CSV)');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(file.path)], subject: 'Kanakkan Export (CSV)'),
+    );
   }
 
   Future<void> exportToPdf({
@@ -141,6 +143,8 @@ class ExportService {
     final file = File('${temp.path}/$fileName');
     
     await file.writeAsBytes(await pdf.save());
-    await Share.shareXFiles([XFile(file.path)], subject: 'Kanakkan Export (PDF)');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(file.path)], subject: 'Kanakkan Export (PDF)'),
+    );
   }
 }

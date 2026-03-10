@@ -124,7 +124,7 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
                           leading: CircleAvatar(child: Text(category.name[0])),
                           title: Text(category.name),
                           trailing: Text(
-                            "₹${budget.allocatedAmount.toStringAsFixed(0)}",
+                            "₹${formatAmt(budget.allocatedAmount, decimals: false)}",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         );
@@ -168,7 +168,7 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
                         fromYear: selectedYear,
                       );
 
-                      if (mounted) {
+                      if (context.mounted) {
                         Navigator.pop(context);
                       }
                     },

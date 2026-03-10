@@ -224,9 +224,9 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.color.withOpacity(0.1),
+        color: widget.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: widget.color.withOpacity(0.3)),
+        border: Border.all(color: widget.color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -387,7 +387,7 @@ class _CategoryRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: (item.percentage / 100).clamp(0.0, 1.0),
-                    backgroundColor: color.withOpacity(0.1),
+                    backgroundColor: color.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation(color),
                     minHeight: 6,
                   ),
@@ -423,10 +423,10 @@ class _SubcategoryList extends StatelessWidget {
       margin: const EdgeInsets.only(left: 22, bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: parentColor.withOpacity(0.04),
+        color: parentColor.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
         border: Border(
-          left: BorderSide(color: parentColor.withOpacity(0.3), width: 2),
+          left: BorderSide(color: parentColor.withValues(alpha: 0.3), width: 2),
         ),
       ),
       child: Column(
@@ -440,7 +440,7 @@ class _SubcategoryList extends StatelessWidget {
                     Icon(
                       Icons.subdirectory_arrow_right,
                       size: 14,
-                      color: parentColor.withOpacity(0.6),
+                      color: parentColor.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -472,9 +472,9 @@ class _SubcategoryList extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: (sub.percentage / 100).clamp(0.0, 1.0),
-                    backgroundColor: parentColor.withOpacity(0.08),
+                    backgroundColor: parentColor.withValues(alpha: 0.08),
                     valueColor: AlwaysStoppedAnimation(
-                      parentColor.withOpacity(0.6),
+                      parentColor.withValues(alpha: 0.6),
                     ),
                     minHeight: 4,
                   ),
@@ -607,7 +607,7 @@ class _SavingsDrill extends StatelessWidget {
                     barWidth: 2.5,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                      getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
                         radius: 4,
                         color: spot.y >= 0 ? AppTheme.success : AppTheme.error,
                         strokeWidth: 0,
@@ -615,7 +615,7 @@ class _SavingsDrill extends StatelessWidget {
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: AppTheme.accent.withOpacity(0.08),
+                      color: AppTheme.accent.withValues(alpha: 0.08),
                     ),
                   ),
                 ],
@@ -677,11 +677,9 @@ class _SavingsDrill extends StatelessWidget {
                               value: t.income > 0
                                   ? (t.expense / t.income).clamp(0.0, 1.0)
                                   : 0,
-                              backgroundColor: AppTheme.success.withOpacity(
-                                0.2,
-                              ),
+                              backgroundColor: AppTheme.success.withValues(alpha: 0.2),
                               valueColor: AlwaysStoppedAnimation(
-                                AppTheme.error.withOpacity(0.7),
+                                AppTheme.error.withValues(alpha: 0.7),
                               ),
                               minHeight: 5,
                             ),
@@ -861,7 +859,7 @@ class _TrendDrill extends StatelessWidget {
             children: [
               TableRow(
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.06),
+                  color: AppTheme.primary.withValues(alpha: 0.06),
                 ),
                 children: ['Month', 'Income', 'Expense', 'Savings']
                     .map(
@@ -1046,20 +1044,20 @@ class _DailyDrill extends StatelessWidget {
                     barWidth: 2.5,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, _, __, ___) {
+                      getDotPainter: (spot, _, _, _) {
                         final isHigh = spot.y >= maxVal * 0.7;
                         return FlDotCirclePainter(
                           radius: isHigh ? 5 : 3,
                           color: isHigh
                               ? AppTheme.error
-                              : AppTheme.error.withOpacity(0.5),
+                              : AppTheme.error.withValues(alpha: 0.5),
                           strokeWidth: 0,
                         );
                       },
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: AppTheme.error.withOpacity(0.08),
+                      color: AppTheme.error.withValues(alpha: 0.08),
                     ),
                   ),
                   // Average line
@@ -1068,7 +1066,7 @@ class _DailyDrill extends StatelessWidget {
                       FlSpot(1, avgDaily),
                       FlSpot(daysInMonth.toDouble(), avgDaily),
                     ],
-                    color: Colors.orange.withOpacity(0.6),
+                    color: Colors.orange.withValues(alpha: 0.6),
                     barWidth: 1.5,
                     dashArray: [6, 4],
                     dotData: const FlDotData(show: false),
@@ -1109,11 +1107,9 @@ class _DailyDrill extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
                                   value: pct.clamp(0.0, 1.0),
-                                  backgroundColor: AppTheme.error.withOpacity(
-                                    0.1,
-                                  ),
+                                  backgroundColor: AppTheme.error.withValues(alpha: 0.1),
                                   valueColor: AlwaysStoppedAnimation(
-                                    AppTheme.error.withOpacity(0.7 + pct * 0.3),
+                                    AppTheme.error.withValues(alpha: 0.7 + pct * 0.3),
                                   ),
                                   minHeight: 8,
                                 ),
@@ -1196,9 +1192,9 @@ class _DrillSummaryRow extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.1),
+                  color: item.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: item.color.withOpacity(0.25)),
+                  border: Border.all(color: item.color.withValues(alpha: 0.25)),
                 ),
                 child: Column(
                   children: [
@@ -1282,7 +1278,7 @@ class _SavingsGauge extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -1301,7 +1297,7 @@ class _SavingsGauge extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: (rate.abs() / 100).clamp(0.0, 1.0),
-              backgroundColor: color.withOpacity(0.15),
+              backgroundColor: color.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation(color),
               minHeight: 16,
             ),

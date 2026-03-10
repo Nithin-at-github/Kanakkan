@@ -169,7 +169,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
     // unbounded constraints from the dialog surface.
     return Dialog(
       backgroundColor: AppTheme.background,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 70),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SizedBox(
         // Explicit fixed width — dialog knows its size before painting
@@ -203,7 +203,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                 // Inside SingleChildScrollView, dropdown measures itself
                 // correctly without needing intrinsic height pass
                 DropdownButtonFormField<int>(
-                  value: _selectedCategoryId,
+                  initialValue: _selectedCategoryId,
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'Category',
@@ -261,7 +261,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                 // Danger zone
                 if (_isEdit) ...[
                   const SizedBox(height: 24),
-                  Divider(color: Colors.red.withOpacity(.3)),
+                  Divider(color: Colors.red.withValues(alpha: .3)),
                   TextButton.icon(
                     onPressed: _loading ? null : _confirmDelete,
                     icon:
@@ -285,7 +285,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                         padding: const EdgeInsets.symmetric(
                             vertical: 12, horizontal: 20),
                         side: BorderSide(
-                            color: AppTheme.accent.withOpacity(.5)),
+                            color: AppTheme.accent.withValues(alpha: .5)),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),

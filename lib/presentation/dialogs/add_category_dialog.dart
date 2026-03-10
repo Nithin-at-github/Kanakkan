@@ -87,7 +87,7 @@ class AddCategoryDialog {
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.error.withOpacity(0.1),
+                              color: AppTheme.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -136,21 +136,18 @@ class AddCategoryDialog {
                                     return;
                                   }
                   
-                                  await context
-                                      .read<CategoryProvider>()
-                                      .addCategory(
-                                        Category(
-                                          name: controller.text.trim(),
-                                          type: type,
-                                        ),
-                                      );
+                                  final catProvider =
+                                      context.read<CategoryProvider>();
+                                  await catProvider.addCategory(
+                                    Category(
+                                      name: controller.text.trim(),
+                                      type: type,
+                                    ),
+                                  );
                   
                                   /// close ONLY if success
-                                  if (context
-                                          .read<CategoryProvider>()
-                                          .lastError ==
-                                      null) {
-                                    Navigator.pop(context);
+                                  if (catProvider.lastError == null) {
+                                    if (context.mounted) Navigator.pop(context);
                                   }
                                 },
                                 child: const Text("Add"),
@@ -182,7 +179,7 @@ class AddCategoryDialog {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.15) : null,
+          color: selected ? color.withValues(alpha: 0.15) : null,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? color : Colors.grey,

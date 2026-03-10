@@ -75,9 +75,12 @@ class BackupService {
       await source.copy(dest.path);
 
       // Share via system sheet — user chooses where to save
-      final result = await Share.shareXFiles([
-        XFile(dest.path, mimeType: 'application/octet-stream'),
-      ], subject: 'Kanakkan Backup — $timestamp');
+      final result = await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(dest.path, mimeType: 'application/octet-stream')],
+          subject: 'Kanakkan Backup — $timestamp',
+        ),
+      );
 
       // Clean up temp file
       if (await dest.exists()) await dest.delete();

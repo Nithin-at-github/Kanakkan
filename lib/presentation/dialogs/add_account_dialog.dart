@@ -88,7 +88,7 @@ class AddAccountDialog {
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.error.withOpacity(0.1),
+                              color: AppTheme.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -146,14 +146,14 @@ class AddAccountDialog {
                                       double.tryParse(balanceText) ?? 0.0;
                   
                                   /// CALL PROVIDER
-                                  await context.read<LedgerProvider>().addAccount(
+                                  final providerRef = context.read<LedgerProvider>();
+                                  await providerRef.addAccount(
                                     Account(name: name, initialBalance: balance),
                                   );
                   
                                   /// CLOSE ONLY IF SUCCESS
-                                  if (context.read<LedgerProvider>().lastError ==
-                                      null) {
-                                    Navigator.pop(context);
+                                  if (providerRef.lastError == null) {
+                                    if (context.mounted) Navigator.pop(context);
                                   }
                                 },
                                 child: const Text(

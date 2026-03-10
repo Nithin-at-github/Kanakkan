@@ -55,7 +55,7 @@ class BudgetItemCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.accent.withOpacity(.25)),
+            border: Border.all(color: AppTheme.accent.withValues(alpha: .25)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,7 +75,7 @@ class BudgetItemCard extends StatelessWidget {
                   ),
 
                   Text(
-                    "Limit ₹${budget.allocatedAmount.toStringAsFixed(0)}",
+                    "Limit ₹${formatAmt(budget.allocatedAmount, decimals: false)}",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accent,
@@ -86,7 +86,7 @@ class BudgetItemCard extends StatelessWidget {
 
               /// ================= AVAILABLE (PRIMARY VALUE) =================
               Text(
-                "Spent ₹${spent.toStringAsFixed(0)}",
+                "Spent ₹${formatAmt(spent, decimals: false)}",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -100,7 +100,7 @@ class BudgetItemCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: AppTheme.accent.withOpacity(.2),
+                  backgroundColor: AppTheme.accent.withValues(alpha: .2),
                   valueColor: AlwaysStoppedAnimation(progressColor),
                 ),
               ),
@@ -113,8 +113,8 @@ class BudgetItemCard extends StatelessWidget {
                 children: [
                   Text(
                     isOverspent
-                        ? "Overspent ₹${(spent - budget.allocatedAmount).toStringAsFixed(0)}"
-                        : "Remaining ₹${(budget.allocatedAmount - spent).toStringAsFixed(0)}",
+                        ? "Overspent ₹${formatAmt(spent - budget.allocatedAmount, decimals: false)}"
+                        : "Remaining ₹${formatAmt(budget.allocatedAmount - spent, decimals: false)}",
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       color: isOverspent ? AppTheme.error : Colors.black87,
@@ -122,7 +122,7 @@ class BudgetItemCard extends StatelessWidget {
                   ),
 
                   Text(
-                    "Wallet ₹${balance.toStringAsFixed(0)}",
+                    "Wallet ₹${formatAmt(balance, decimals: false)}",
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       color: Colors.black54,

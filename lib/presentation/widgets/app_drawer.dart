@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/dialogs/change_pin_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/handlers/export_handler.dart';
@@ -35,7 +36,7 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // ── MANAGEMENT SECTION ──
-                  _SectionLabel(label: "Management"),
+                  _SectionLabel(label: "MANAGEMENT"),
 
                   _DrawerTile(
                     icon: Icons.cloud_upload_outlined,
@@ -76,6 +77,28 @@ class AppDrawer extends StatelessWidget {
                       final ctx = rootScaffoldKey.currentContext;
                       if (ctx == null) return;
                       ExportHandler.showExportOptions(ctx);
+                    },
+                  ),
+
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Divider(height: 1, color: Colors.black12),
+                  ),
+
+                  // ── SECURITY SECTION ──
+                  _SectionLabel(label: "SECURITY"),
+
+                  _DrawerTile(
+                    icon: Icons.pin_outlined,
+                    label: "Change PIN",
+                    subtitle: "Update your login PIN",
+                    onTap: () async {
+                      Navigator.pop(context);
+                      // Wait for drawer close animation before showing sheet
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      final ctx = rootScaffoldKey.currentContext;
+                      if (ctx == null || !ctx.mounted) return;
+                      await ChangePinSheet.show(ctx);
                     },
                   ),
 
@@ -128,7 +151,7 @@ class AppDrawer extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppTheme.error.withOpacity(0.1),
+                backgroundColor: AppTheme.error.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.delete_forever,
                   color: AppTheme.error,
@@ -148,9 +171,9 @@ class AppDrawer extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.05),
+                  color: AppTheme.error.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.error.withOpacity(0.2)),
+                  border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
                 ),
                 child: const Column(
                   children: [
@@ -231,7 +254,18 @@ class AppDrawer extends StatelessWidget {
 // HEADER
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _DrawerHeader extends StatelessWidget {
+class _DrawerHeader extends StatefulWidget {
+  @override
+  State<_DrawerHeader> createState() => _DrawerHeaderState();
+}
+
+class _DrawerHeaderState extends State<_DrawerHeader> {
+  // Cached once — PackageInfo.fromPlatform() is a platform-channel call
+  // that never changes at runtime. Storing it here means it runs once per
+  // drawer lifecycle instead of on every build.
+  late final Future<PackageInfo> _packageInfoFuture =
+      PackageInfo.fromPlatform();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -251,9 +285,9 @@ class _DrawerHeader extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.accent.withOpacity(0.15),
+              color: AppTheme.accent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.accent.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
             ),
             child: const Center(
               child: Text(
@@ -277,7 +311,7 @@ class _DrawerHeader extends StatelessWidget {
           ),
 
           FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
+            future: _packageInfoFuture,
             builder: (_, snap) {
               final version = snap.hasData
                   ? "v${snap.data!.version} (${snap.data!.buildNumber})"
@@ -286,7 +320,7 @@ class _DrawerHeader extends StatelessWidget {
                 version,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                 ),
               );
             },
@@ -310,8 +344,8 @@ class _SectionLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
+        label,
+        style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
           color: Colors.black38,
@@ -356,7 +390,7 @@ class _DrawerTile extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -378,7 +412,7 @@ class _DrawerTile extends StatelessWidget {
         trailing: Icon(
           Icons.chevron_right,
           size: 18,
-          color: (iconColor ?? Colors.black).withOpacity(0.3),
+          color: (iconColor ?? Colors.black).withValues(alpha: 0.3),
         ),
       ),
     );

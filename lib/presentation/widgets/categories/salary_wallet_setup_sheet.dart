@@ -74,10 +74,10 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.08),
+                        color: Colors.amber.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: Colors.amber.withOpacity(0.3)),
+                            color: Colors.amber.withValues(alpha: 0.3)),
                       ),
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,10 +113,10 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.08),
+                          color: Colors.orange.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                              color: Colors.orange.withOpacity(0.3)),
+                              color: Colors.orange.withValues(alpha: 0.3)),
                         ),
                         child: const Row(
                           children: [
@@ -186,7 +186,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                           padding:
                               const EdgeInsets.symmetric(vertical: 14),
                           side: BorderSide(
-                              color: AppTheme.accent.withOpacity(0.4)),
+                              color: AppTheme.accent.withValues(alpha: 0.4)),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
                         ),
@@ -315,7 +315,7 @@ class _CategoryPickerTile extends StatelessWidget {
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.amber.withOpacity(0.12)
+              ? Colors.amber.withValues(alpha: 0.12)
               : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -327,7 +327,7 @@ class _CategoryPickerTile extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.amber.withOpacity(0.15),
+                    color: Colors.amber.withValues(alpha: 0.15),
                     blurRadius: 8,
                   )
                 ]
@@ -339,8 +339,8 @@ class _CategoryPickerTile extends StatelessWidget {
             CircleAvatar(
               radius: 18,
               backgroundColor: isSelected
-                  ? Colors.amber.withOpacity(0.2)
-                  : AppTheme.success.withOpacity(0.1),
+                  ? Colors.amber.withValues(alpha: 0.2)
+                  : AppTheme.success.withValues(alpha: 0.1),
               child: Icon(
                 Icons.arrow_downward,
                 color: isSelected ? Colors.amber : AppTheme.success,
@@ -421,7 +421,7 @@ class _WalletChangeDialog extends StatelessWidget {
             // ── ICON ──
             CircleAvatar(
               radius: 28,
-              backgroundColor: iconColor.withOpacity(0.12),
+              backgroundColor: iconColor.withValues(alpha: 0.12),
               child: Icon(icon, color: iconColor, size: 28),
             ),
             const SizedBox(height: 14),
@@ -448,7 +448,7 @@ class _WalletChangeDialog extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.black12),
               ),
@@ -543,7 +543,7 @@ class _FeatureRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.amber.withOpacity(0.15),
+            color: Colors.amber.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.amber, size: 18),

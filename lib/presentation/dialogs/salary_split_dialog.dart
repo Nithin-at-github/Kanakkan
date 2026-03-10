@@ -81,7 +81,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "₹${widget.salaryAmount.toStringAsFixed(0)}",
+                    "₹${formatAmt(widget.salaryAmount, decimals: false)}",
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -108,7 +108,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
               Expanded(
                 child: ListView.separated(
                   itemCount: categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     final controller = controllers[category.id]!;
@@ -168,8 +168,8 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                 ),
                 decoration: BoxDecoration(
                   color: remaining < 0
-                      ? AppTheme.error.withOpacity(0.1)
-                      : AppTheme.success.withOpacity(0.1),
+                      ? AppTheme.error.withValues(alpha: 0.1)
+                      : AppTheme.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -180,7 +180,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      "₹${remaining.toStringAsFixed(0)}",
+                      "₹${formatAmt(remaining, decimals: false)}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: remaining < 0

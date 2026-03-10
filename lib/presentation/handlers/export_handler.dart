@@ -259,7 +259,9 @@ class _ExportSheetState extends State<_ExportSheet> {
               onSurface: Colors.black,
               surface: AppTheme.background,
             ),
-            dialogBackgroundColor: AppTheme.background,
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppTheme.background,
+            ),
           ),
           child: child!,
         ),

@@ -616,7 +616,7 @@ class _SavingsRateCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: (rate.abs() / 100).clamp(0.0, 1.0),
-                backgroundColor: color.withOpacity(0.15),
+                backgroundColor: color.withValues(alpha: 0.15),
                 valueColor: AlwaysStoppedAnimation(color),
                 minHeight: 5,
               ),
@@ -675,12 +675,12 @@ class _BestMonthCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.success.withOpacity(0.15),
-            AppTheme.accent.withOpacity(0.1)
+            AppTheme.success.withValues(alpha: 0.15),
+            AppTheme.accent.withValues(alpha: 0.1)
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.success.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.success.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -814,7 +814,7 @@ class _BreakdownPreview extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: (item.percentage / 100).clamp(0.0, 1.0),
-                  backgroundColor: color.withOpacity(0.1),
+                  backgroundColor: color.withValues(alpha: 0.1),
                   valueColor: AlwaysStoppedAnimation(color),
                   minHeight: 4,
                 ),
@@ -844,9 +844,9 @@ class _InsightCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -937,13 +937,13 @@ class _TrendBarChart extends StatelessWidget {
             barRods: [
               BarChartRodData(
                 toY: t.income,
-                color: AppTheme.success.withOpacity(0.8),
+                color: AppTheme.success.withValues(alpha: 0.8),
                 width: compact ? 6 : 8,
                 borderRadius: BorderRadius.circular(4),
               ),
               BarChartRodData(
                 toY: t.expense,
-                color: AppTheme.error.withOpacity(0.8),
+                color: AppTheme.error.withValues(alpha: 0.8),
                 width: compact ? 6 : 8,
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -1015,7 +1015,7 @@ class _DailySpendChart extends StatelessWidget {
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: AppTheme.error.withOpacity(0.1),
+              color: AppTheme.error.withValues(alpha: 0.1),
             ),
           ),
         ],

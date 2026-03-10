@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/safe_iterable.dart';
 import 'package:kanakkan/data/models/salary_trigger.dart';
 import 'package:kanakkan/data/models/transaction_model.dart';
+import 'package:kanakkan/data/database/database_helper.dart';
 import 'package:kanakkan/data/repositories/account_repository.dart';
 import 'package:kanakkan/data/repositories/salary_allocation_repository.dart';
 import 'package:kanakkan/data/repositories/transaction_wallet_split_repository.dart';
@@ -150,10 +151,36 @@ class LedgerProvider extends ChangeNotifier {
   // ================= BALANCE CALC =================
 
   Future<void> calculateBalances() async {
-    for (final account in _accounts) {
-      _accountBalances[account.id!] = await _transactionRepository
-          .calculateAccountBalance(account.id!);
+    final db = await DatabaseHelper.instance.database;
+
+    // Single query: credit (incoming) per account
+    final creditRows = await db.rawQuery(
+      'SELECT toAccountId AS id, SUM(amount) AS total '
+      'FROM transactions WHERE toAccountId IS NOT NULL '
+      'GROUP BY toAccountId',
+    );
+    // Single query: debit (outgoing) per account
+    final debitRows = await db.rawQuery(
+      'SELECT fromAccountId AS id, SUM(amount) AS total '
+      'FROM transactions WHERE fromAccountId IS NOT NULL '
+      'GROUP BY fromAccountId',
+    );
+
+    final credits = <int, double>{};
+    for (final row in creditRows) {
+      credits[row['id'] as int] = (row['total'] as num).toDouble();
     }
+    final debits = <int, double>{};
+    for (final row in debitRows) {
+      debits[row['id'] as int] = (row['total'] as num).toDouble();
+    }
+
+    _accountBalances.clear();
+    for (final account in _accounts) {
+      final id = account.id!;
+      _accountBalances[id] = (credits[id] ?? 0) - (debits[id] ?? 0);
+    }
+
     notifyListeners();
   }
 
@@ -291,6 +318,68 @@ class LedgerProvider extends ChangeNotifier {
 
     // Single reload + single notifyListeners at the end
     await _reloadAll();
+  }
+
+  /// Saves multiple expenses in one DB transaction and reloads once.
+  /// Used by the bulk-entry screen to avoid N individual _reloadAll calls.
+  Future<void> addExpensesBatch(
+    List<({double amount, int fromAccountId, int? categoryId, String? note, int? timestamp})> items,
+  ) async {
+    for (final item in items) {
+      final transaction = TransactionModel(
+        type: "expense",
+        amount: item.amount,
+        fromAccountId: item.fromAccountId,
+        toAccountId: null,
+        categoryId: item.categoryId,
+        note: item.note,
+        timestamp: item.timestamp ?? DateTime.now().millisecondsSinceEpoch,
+      );
+      final id = await _transactionRepository.insertTransaction(transaction);
+      await _applyBalanceEffect(transaction, transactionId: id);
+    }
+    // Single reload for all items
+    await _reloadAll();
+  }
+
+  /// Saves multiple income transactions in one pass and reloads once.
+  Future<void> addIncomesBatch(
+    List<({double amount, int toAccountId, int? categoryId, String? note, int? timestamp})> items,
+  ) async {
+    int? lastSalaryTxId;
+    double? lastSalaryAmount;
+
+    for (final item in items) {
+      final transaction = TransactionModel(
+        type: "income",
+        amount: item.amount,
+        fromAccountId: null,
+        toAccountId: item.toAccountId,
+        categoryId: item.categoryId,
+        note: item.note,
+        timestamp: item.timestamp ?? DateTime.now().millisecondsSinceEpoch,
+      );
+      final id = await _transactionRepository.insertTransaction(transaction);
+      await _applyBalanceEffect(transaction);
+
+      if (categoryProvider.hasSalaryWallet &&
+          _isSalaryCategory(item.categoryId)) {
+        lastSalaryTxId = id;
+        lastSalaryAmount = item.amount;
+      }
+    }
+
+    await _reloadAll();
+
+    // Fire salary trigger for the last salary income if any
+    if (lastSalaryTxId != null) {
+      Future.microtask(() {
+        salaryIncomeTrigger.value = SalaryTrigger(
+          transactionId: lastSalaryTxId!,
+          amount: lastSalaryAmount!,
+        );
+      });
+    }
   }
 
   Future<void> transferFunds({
@@ -604,9 +693,30 @@ class LedgerProvider extends ChangeNotifier {
       rebuildMonthlyTotals(month: _activeMonth!, year: _activeYear!);
     }
 
+    // 2 grouped queries instead of N×2 sequential per-account queries
+    final db = await DatabaseHelper.instance.database;
+    final creditRows = await db.rawQuery(
+      'SELECT toAccountId AS id, SUM(amount) AS total '
+      'FROM transactions WHERE toAccountId IS NOT NULL '
+      'GROUP BY toAccountId',
+    );
+    final debitRows = await db.rawQuery(
+      'SELECT fromAccountId AS id, SUM(amount) AS total '
+      'FROM transactions WHERE fromAccountId IS NOT NULL '
+      'GROUP BY fromAccountId',
+    );
+    final credits = <int, double>{};
+    for (final row in creditRows) {
+      credits[row['id'] as int] = (row['total'] as num).toDouble();
+    }
+    final debits = <int, double>{};
+    for (final row in debitRows) {
+      debits[row['id'] as int] = (row['total'] as num).toDouble();
+    }
+    _accountBalances.clear();
     for (final account in _accounts) {
-      _accountBalances[account.id!] = await _transactionRepository
-          .calculateAccountBalance(account.id!);
+      final id = account.id!;
+      _accountBalances[id] = (credits[id] ?? 0) - (debits[id] ?? 0);
     }
 
     notifyListeners(); // ← exactly once per operation

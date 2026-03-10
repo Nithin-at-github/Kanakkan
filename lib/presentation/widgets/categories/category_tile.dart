@@ -34,7 +34,7 @@ class CategoryTile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: accent.withOpacity(0.15),
+            backgroundColor: accent.withValues(alpha: 0.15),
             child: Icon(
               category.type == "income"
                   ? Icons.arrow_downward
@@ -75,9 +75,9 @@ class CategoryTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.15),
+                color: Colors.amber.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.withOpacity(0.4)),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
               ),
               child: const Text(
                 "Salary Wallet",
@@ -103,7 +103,7 @@ class CategoryTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            "₹${balances.getBalance(category.id!).toStringAsFixed(0)}",
+            "₹${formatAmt(balances.getBalance(category.id!), decimals: false)}",
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

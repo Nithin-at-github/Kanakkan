@@ -82,7 +82,7 @@ class AccountCategorySection extends StatelessWidget {
                     value: selectedCategory?.name,
                     // Dim slightly when auto-set by subcategory to hint it's linked
                     valueColor: selectedSubcategory != null
-                        ? AppTheme.accent.withOpacity(0.8)
+                        ? AppTheme.accent.withValues(alpha: 0.8)
                         : null,
                     onTap: onSelectCategory,
                   ),
@@ -127,7 +127,7 @@ class _SelectorBox extends StatelessWidget {
           color: Colors.white10,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: hasValue ? AppTheme.accent.withOpacity(0.5) : Colors.white24,
+            color: hasValue ? AppTheme.accent.withValues(alpha: 0.5) : Colors.white24,
           ),
         ),
         child: Row(

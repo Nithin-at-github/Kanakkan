@@ -60,7 +60,7 @@ class _LockScreenState extends State<LockScreen> {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: AppTheme.accent.withOpacity(.4)),
+        borderSide: BorderSide(color: AppTheme.accent.withValues(alpha: .4)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -71,8 +71,8 @@ class _LockScreenState extends State<LockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
 
       child: Scaffold(
         backgroundColor: AppTheme.background,

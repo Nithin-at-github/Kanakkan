@@ -67,7 +67,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: AppTheme.accent.withOpacity(.4)),
+        borderSide: BorderSide(color: AppTheme.accent.withValues(alpha: .4)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),

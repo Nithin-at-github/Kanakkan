@@ -36,7 +36,7 @@ class SubcategoryDialog extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: accent.withOpacity(0.15),
+                  backgroundColor: accent.withValues(alpha: 0.15),
                   child: Icon(
                     parent.type == "income"
                         ? Icons.arrow_downward
@@ -94,7 +94,7 @@ class SubcategoryDialog extends StatelessWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: subcategories.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const Divider(height: 1, color: Colors.black12),
                   itemBuilder: (context, i) {
                     final sub = subcategories[i];
@@ -143,9 +143,11 @@ class SubcategoryDialog extends StatelessWidget {
 
                               if (!confirm) return;
 
-                              await context
-                                  .read<CategoryProvider>()
-                                  .deleteCategory(sub.id!);
+                              if (!context.mounted) return;
+                              final catProvider = context.read<CategoryProvider>();
+                              await catProvider.deleteCategory(sub.id!);
+                              // No further context usage needed after await
+                              // (dialog auto-rebuilds via provider watch)
                             },
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),

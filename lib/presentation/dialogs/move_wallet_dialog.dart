@@ -60,7 +60,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
         
                   return DropdownMenuItem(
                     value: c.id,
-                    child: Text("${c.name} (₹${balance.toStringAsFixed(0)})"),
+                    child: Text("${c.name} (₹${formatAmt(balance, decimals: false)})"),
                   );
                 }).toList(),
                 onChanged: (v) {
@@ -87,7 +87,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
         
                   return DropdownMenuItem(
                     value: c.id,
-                    child: Text("${c.name} (₹${balance.toStringAsFixed(0)})"),
+                    child: Text("${c.name} (₹${formatAmt(balance, decimals: false)})"),
                   );
                 }).toList(),
                 onChanged: (v) {
@@ -127,7 +127,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.error.withOpacity(0.1),
+                    color: AppTheme.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(

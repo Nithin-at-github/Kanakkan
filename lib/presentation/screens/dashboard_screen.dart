@@ -84,6 +84,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<LedgerProvider>();
+    // Hoist these reads above the ListView so they are not repeated per item.
+    final categoryProvider = context.read<CategoryProvider>();
 
     final filtered = _filterTransactions(provider.transactions);
 
@@ -207,11 +209,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       itemCount: filtered.length,
                       itemBuilder: (_, i) {
                         final tx = filtered[i];
-                        final ledger = context.read<LedgerProvider>();
-                        final categoryProvider = context
-                            .read<CategoryProvider>();
+                        // Use the already-read providers hoisted above —
+                        // no per-item context.read needed.
                         final isIncome = tx.type == "income";
-                        final accountName = ledger.resolvePrimaryAccountName(
+                        final accountName = provider.resolvePrimaryAccountName(
                           tx,
                         );
                         final categoryName = categoryProvider
@@ -236,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: AppTheme.accent.withOpacity(.25),
+                                  color: AppTheme.accent.withValues(alpha: .25),
                                 ),
                               ),
                               child: Row(
@@ -249,7 +250,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           (isIncome
                                                   ? AppTheme.success
                                                   : AppTheme.error)
-                                              .withOpacity(.12),
+                                              .withValues(alpha: .12),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(
@@ -293,7 +294,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                                   /// AMOUNT
                                   Text(
-                                    "₹${tx.amount.toStringAsFixed(2)}",
+                                    "₹${formatAmt(tx.amount)}",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
@@ -403,7 +404,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          "₹${amount.toStringAsFixed(2)}",
+          "₹${formatAmt(amount)}",
           style: TextStyle(
             fontSize: 18,
             color: color,

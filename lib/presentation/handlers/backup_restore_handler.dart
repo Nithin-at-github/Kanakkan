@@ -170,7 +170,7 @@ class BackupRestoreHandler {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: Colors.orange.withOpacity(0.1),
+                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
                     child: const Icon(
                       Icons.cloud_download_outlined,
                       color: Colors.orange,
@@ -190,10 +190,10 @@ class BackupRestoreHandler {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.06),
+                      color: Colors.orange.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.orange.withOpacity(0.25),
+                        color: Colors.orange.withValues(alpha: 0.25),
                       ),
                     ),
                     child: const Column(
@@ -343,7 +343,7 @@ class BackupRestoreHandler {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppTheme.error.withOpacity(0.1),
+                backgroundColor: AppTheme.error.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.error_outline,
                   color: AppTheme.error,
@@ -402,7 +402,7 @@ class BackupRestoreHandler {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppTheme.success.withOpacity(0.1),
+                backgroundColor: AppTheme.success.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.check_circle_outline,
                   color: AppTheme.success,
@@ -464,7 +464,7 @@ class BackupRestoreHandler {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppTheme.success.withOpacity(0.1),
+                backgroundColor: AppTheme.success.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.delete_sweep,
                   color: AppTheme.success,

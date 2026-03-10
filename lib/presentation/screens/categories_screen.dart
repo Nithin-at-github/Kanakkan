@@ -36,7 +36,7 @@ class CategoriesScreen extends StatelessWidget {
               // Amber when designated, muted when not
               color: provider.hasSalaryWallet
                   ? Colors.amber
-                  : AppTheme.accent.withOpacity(0.5),
+                  : AppTheme.accent.withValues(alpha: 0.5),
               size: 28,
             ),
             tooltip: provider.hasSalaryWallet

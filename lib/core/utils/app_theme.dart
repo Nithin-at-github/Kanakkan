@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class AppTheme {
   /// Core Palette
@@ -50,4 +51,21 @@ class AppTheme {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
+}
+
+/// Formats a rupee amount with comma separators.
+///
+/// Examples:
+///   formatAmt(999)                  → "999"
+///   formatAmt(1200)                 → "1,200"
+///   formatAmt(1200.50)              → "1,200.50"
+///   formatAmt(1200, decimals: false)→ "1,200"
+String formatAmt(double value, {bool decimals = true}) {
+  if (decimals) {
+    // #,##0.## → shows up to 2 decimal places, strips trailing zeros
+    // 1200.00 → "1,200"   |   1200.50 → "1,200.50"
+    return NumberFormat('#,##0.##', 'en_IN').format(value);
+  } else {
+    return NumberFormat('#,##0', 'en_IN').format(value);
+  }
 }

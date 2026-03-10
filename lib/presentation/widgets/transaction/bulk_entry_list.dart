@@ -147,7 +147,7 @@ class BulkEntryList extends StatelessWidget {
                 ),
               ),
               Text(
-                "₹${total.toStringAsFixed(0)}",
+                "₹${formatAmt(total, decimals: false)}",
                 style: const TextStyle(
                   color: AppTheme.accent,
                   fontWeight: FontWeight.bold,

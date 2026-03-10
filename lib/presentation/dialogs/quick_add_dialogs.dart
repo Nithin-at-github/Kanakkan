@@ -410,7 +410,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                       );
                     }
                     return DropdownButtonFormField<Category>(
-                      value: parentInList ? _selectedParent : null,
+                      initialValue: parentInList ? _selectedParent : null,
                       decoration: InputDecoration(
                         labelText: "Parent category",
                         filled: true,
@@ -572,7 +572,7 @@ class _TypeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.15) : Colors.white,
+          color: selected ? color.withValues(alpha: 0.15) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: selected ? color : Colors.black26),
         ),
