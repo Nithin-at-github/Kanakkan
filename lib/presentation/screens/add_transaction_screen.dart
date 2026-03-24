@@ -142,9 +142,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesProvider = context.watch<CategoryProvider>();
-    final categories = _type == TransactionType.income
-        ? categoriesProvider.incomeCategories
-        : categoriesProvider.expenseCategories;
+    final categories = categoriesProvider.mainCategories;
 
     return Scaffold(
       backgroundColor: AppTheme.primary,
@@ -575,7 +573,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             toAccountId: _type == TransactionType.income
                 ? _selectedAccount?.id
                 : null,
-            categoryId: _selectedCategory?.id,
+            categoryId: (_selectedSubcategory ?? _selectedCategory)?.id,
             note: _noteController.text,
             timestamp: _selectedDateTime.millisecondsSinceEpoch,
           ),
@@ -746,9 +744,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   void _selectSubcategory(CategoryProvider categoriesProvider) {
     // Build grouped list: income or expense subcategories based on current type
-    final relevantMains = _type == TransactionType.income
-        ? categoriesProvider.incomeCategories
-        : categoriesProvider.expenseCategories;
+    final relevantMains = categoriesProvider.mainCategories;
 
     showModalBottomSheet(
       context: context,
@@ -790,9 +786,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         onPressed: () async {
                           final created = await QuickAddCategoryDialog.show(
                             context,
-                            preselectedType: _type == TransactionType.income
-                                ? "income"
-                                : "expense",
                           );
                           if (created != null && created.isSubcategory) {
                             if (!context.mounted) return;
@@ -892,12 +885,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final incomeCategories = filtered
-                .where((c) => c.type == "income")
-                .toList();
-            final expenseCategories = filtered
-                .where((c) => c.type == "expense")
-                .toList();
+
 
             return DraggableScrollableSheet(
               expand: false,
@@ -936,9 +924,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             onPressed: () async {
                               final created = await QuickAddCategoryDialog.show(
                                 context,
-                                preselectedType: _type == TransactionType.income
-                                    ? "income"
-                                    : "expense",
                               );
                               if (created != null) {
                                 setState(() {
@@ -1003,36 +988,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         child: ListView(
                           controller: scrollController,
                           children: [
-                            if (expenseCategories.isNotEmpty) ...[
-                              _sectionTitle("Expense"),
-                              for (final c in expenseCategories)
+                            if (filtered.isNotEmpty) ...[
+                              for (final c in filtered)
                                 _selectionTile(
                                   title: c.name,
-                                  icon: Icons.arrow_upward,
-                                  color: AppTheme.error,
+                                  icon: Icons.label_outline,
+                                  color: AppTheme.accent,
                                   onTap: () {
                                     setState(() {
                                       _selectedCategory = c;
-                                      // Clear subcategory if it doesn't belong to new category
-                                      if (_selectedSubcategory?.parentId !=
-                                          c.id) {
-                                        _selectedSubcategory = null;
+
+                                      // ── ACCOUNT AUTO-LINK ──
+                                      if (c.linkedAccountId != null) {
+                                        final ledger =
+                                            context.read<LedgerProvider>();
+                                        final linkedAcc = ledger
+                                            .resolveAccount(c.linkedAccountId);
+                                        if (linkedAcc != null) {
+                                          if (_type ==
+                                              TransactionType.transfer) {
+                                            _selectedAccount = linkedAcc;
+                                          } else {
+                                            _selectedAccount = linkedAcc;
+                                          }
+                                        }
                                       }
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                            ],
-                            if (incomeCategories.isNotEmpty) ...[
-                              _sectionTitle("Income"),
-                              for (final c in incomeCategories)
-                                _selectionTile(
-                                  title: c.name,
-                                  icon: Icons.arrow_downward,
-                                  color: AppTheme.success,
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedCategory = c;
+
                                       // Clear subcategory if it doesn't belong to new category
                                       if (_selectedSubcategory?.parentId !=
                                           c.id) {
@@ -1095,18 +1076,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _sectionTitle(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppTheme.primary,
-        ),
-      ),
-    );
-  }
+
 }
 
 // Isolated widget — only rebuilds when ValueNotifier fires

@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/utils/form_validation.dart';
+import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:provider/provider.dart';
 
 class AddCategoryDialog {
   static void show(BuildContext context) {
     final controller = TextEditingController();
-    
-    String type = "expense";
     String? nameError;
+    Account? selectedAccount;
 
     showDialog(
       context: context,
-      builder: (_) => Consumer<CategoryProvider>(
-        builder: (context, provider, _) {
+      builder: (_) => Consumer2<CategoryProvider, LedgerProvider>(
+        builder: (context, provider, ledger, _) {
           return StatefulBuilder(
             builder: (context, setState) {
               return Dialog(
@@ -31,21 +32,21 @@ class AddCategoryDialog {
                       children: [
                         /// TITLE
                         const Text(
-                          "New Category",
+                          'New Category',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primary,
                           ),
                         ),
-                  
+
                         const SizedBox(height: 20),
-                  
+
                         /// NAME FIELD
                         TextField(
                           controller: controller,
                           decoration: InputDecoration(
-                            labelText: "Category name",
+                            labelText: 'Category name',
                             errorText: nameError,
                             filled: true,
                             fillColor: AppTheme.background,
@@ -53,34 +54,53 @@ class AddCategoryDialog {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
+                          onChanged: (_) {
+                            if (nameError != null) {
+                              setState(() => nameError = null);
+                            }
+                          },
                         ),
-                  
-                        const SizedBox(height: 20),
-                  
-                        /// TYPE SELECTOR
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _typeChip(
-                                "Income",
-                                type == "income",
-                                AppTheme.success,
-                                () => setState(() => type = "income"),
+
+                        const SizedBox(height: 16),
+
+                        /// LINKED ACCOUNT DROPDOWN
+                        DropdownButtonFormField<Account?>(
+                          initialValue: selectedAccount,
+                          decoration: InputDecoration(
+                            labelText: 'Linked account (optional)',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: [
+                            const DropdownMenuItem<Account?>(
+                              value: null,
+                              child: Text(
+                                'None',
+                                style: TextStyle(color: Colors.black54),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _typeChip(
-                                "Expense",
-                                type == "expense",
-                                AppTheme.error,
-                                () => setState(() => type = "expense"),
+                            ...ledger.accounts.map(
+                              (a) => DropdownMenuItem<Account?>(
+                                value: a,
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.account_balance,
+                                        size: 16, color: AppTheme.accent),
+                                    const SizedBox(width: 8),
+                                    Text(a.name),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
+                          onChanged: (val) =>
+                              setState(() => selectedAccount = val),
                         ),
-                  
-                        /// ERROR MESSAGE (NEW)
+
+                        /// ERROR MESSAGE
                         if (provider.lastError != null) ...[
                           const SizedBox(height: 16),
                           Container(
@@ -99,9 +119,9 @@ class AddCategoryDialog {
                             ),
                           ),
                         ],
-                  
+
                         const SizedBox(height: 24),
-                  
+
                         /// ACTIONS
                         Row(
                           children: [
@@ -111,12 +131,12 @@ class AddCategoryDialog {
                                   provider.clearError();
                                   Navigator.pop(context);
                                 },
-                                child: const Text("Cancel"),
+                                child: const Text('Cancel'),
                               ),
                             ),
-                  
+
                             const SizedBox(width: 12),
-                  
+
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
@@ -124,33 +144,31 @@ class AddCategoryDialog {
                                 ),
                                 onPressed: () async {
                                   provider.clearError();
-                  
+
                                   final name = controller.text.trim();
-                  
-                                  /// VALIDATION USING HELPER
+
                                   setState(() {
-                                    nameError = FormValidation.categoryName(name);
+                                    nameError =
+                                        FormValidation.categoryName(name);
                                   });
-                  
-                                  if (nameError != null) {
-                                    return;
-                                  }
-                  
+
+                                  if (nameError != null) return;
+
                                   final catProvider =
                                       context.read<CategoryProvider>();
                                   await catProvider.addCategory(
                                     Category(
-                                      name: controller.text.trim(),
-                                      type: type,
+                                      name: name,
+                                      linkedAccountId: selectedAccount?.id,
                                     ),
                                   );
-                  
+
                                   /// close ONLY if success
                                   if (catProvider.lastError == null) {
                                     if (context.mounted) Navigator.pop(context);
                                   }
                                 },
-                                child: const Text("Add"),
+                                child: const Text('Add'),
                               ),
                             ),
                           ],
@@ -163,38 +181,6 @@ class AddCategoryDialog {
             },
           );
         },
-      ),
-    );
-  }
-
-  static Widget _typeChip(
-    String label,
-    bool selected,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.15) : null,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? color : Colors.grey,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: selected ? color : Colors.black54,
-            ),
-          ),
-        ),
       ),
     );
   }

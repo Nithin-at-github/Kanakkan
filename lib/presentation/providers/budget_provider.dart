@@ -19,6 +19,7 @@ class BudgetProvider extends ChangeNotifier {
 
   List<BudgetEntity> _budgets = [];
   List<BudgetEntity> get budgets => _budgets;
+  double get totalBudgetsAmount => _budgets.fold(0, (sum, b) => sum + b.allocatedAmount);
 
   int currentMonth = DateTime.now().month;
   int currentYear = DateTime.now().year;

@@ -1,16 +1,16 @@
 class Category {
   final int? id;
   final String name;
-  final String type;
   final int? parentId;
   final bool isSalaryWallet;
+  final int? linkedAccountId;
 
   const Category({
     this.id,
     required this.name,
-    required this.type,
     this.parentId,
     this.isSalaryWallet = false,
+    this.linkedAccountId,
   });
 
   bool get isSubcategory => parentId != null;
@@ -19,17 +19,19 @@ class Category {
   Category copyWith({
     int? id,
     String? name,
-    String? type,
     int? parentId,
     bool clearParent = false,
     bool? isSalaryWallet,
+    int? linkedAccountId,
+    bool clearLinkedAccount = false,
   }) {
     return Category(
       id: id ?? this.id,
       name: name ?? this.name,
-      type: type ?? this.type,
       parentId: clearParent ? null : (parentId ?? this.parentId),
       isSalaryWallet: isSalaryWallet ?? this.isSalaryWallet,
+      linkedAccountId:
+          clearLinkedAccount ? null : (linkedAccountId ?? this.linkedAccountId),
     );
   }
 
@@ -43,5 +45,5 @@ class Category {
 
   @override
   String toString() =>
-      'Category(id: $id, name: $name, type: $type, parentId: $parentId)';
+      'Category(id: $id, name: $name, parentId: $parentId, linkedAccountId: $linkedAccountId)';
 }

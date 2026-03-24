@@ -7,8 +7,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Bumped to 5 for subcategories (parentId on categories)
-  static const int _dbVersion = 6;
+  // Bumped to 8: fixed self-referencing FK in categories migration
+  static const int _dbVersion = 8;
   static int get dbVersion => _dbVersion;
 
   Future<Database> get database async {
@@ -58,10 +58,10 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE categories(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         parentId INTEGER,
-        UNIQUE(name, type),
+        isSalaryWallet INTEGER NOT NULL DEFAULT 0,
+        linkedAccountId INTEGER,
         FOREIGN KEY(parentId) REFERENCES categories(id) ON DELETE CASCADE
       )
     ''');
@@ -280,6 +280,47 @@ class DatabaseHelper {
       await db.execute(
         "UPDATE categories SET isSalaryWallet = 1 WHERE LOWER(name) = 'salary' AND type = 'income'",
       );
+    }
+
+    if (oldVersion < 8) {
+      // Rebuild categories table: remove `type` column, add `linkedAccountId`.
+      // We use a safer rename-copy-drop pattern to avoid self-referencing 
+      // foreign key issues (the 'no such table: categories_new' error).
+      await db.execute('PRAGMA foreign_keys = OFF');
+
+      // 1. Rename existing table to a temporary name
+      await db.execute('ALTER TABLE categories RENAME TO categories_old');
+
+      // 2. Create the new table with the FINAL name immediately
+      // This ensures the self-referencing FK points to 'categories', not 'categories_old' or 'categories_new'.
+      await db.execute('''
+        CREATE TABLE categories(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          parentId INTEGER,
+          isSalaryWallet INTEGER NOT NULL DEFAULT 0,
+          linkedAccountId INTEGER,
+          FOREIGN KEY(parentId) REFERENCES categories(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // 3. Copy existing rows from the old table
+      // We check if 'type' column exists by querying the table info or just trying a safe SELECT.
+      // Since version 7 might have already removed it, we select only the needed columns.
+      await db.execute('''
+        INSERT INTO categories(id, name, parentId, isSalaryWallet)
+        SELECT id, name, parentId, isSalaryWallet FROM categories_old
+      ''');
+
+      // 4. Drop the old table
+      await db.execute('DROP TABLE categories_old');
+
+      // 5. Recreate index on the new table
+      await db.execute('''
+        CREATE INDEX idx_categories_parent ON categories(parentId)
+      ''');
+
+      await db.execute('PRAGMA foreign_keys = ON');
     }
   }
 

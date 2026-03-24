@@ -28,7 +28,7 @@ class CategoryTile extends StatelessWidget {
         builder: (_) => SubcategoryDialog(parent: category, accent: accent),
       ),
 
-      // ── LEADING — crown badge for salary wallet ──
+      // ── LEADING — neutral label icon + crown badge for salary wallet ──
       leading: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -36,9 +36,7 @@ class CategoryTile extends StatelessWidget {
             radius: 18,
             backgroundColor: accent.withValues(alpha: 0.15),
             child: Icon(
-              category.type == "income"
-                  ? Icons.arrow_downward
-                  : Icons.arrow_upward,
+              Icons.label_outline,
               color: accent,
               size: 18,
             ),
@@ -80,7 +78,7 @@ class CategoryTile extends StatelessWidget {
                 border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
               ),
               child: const Text(
-                "Salary Wallet",
+                'Salary Wallet',
                 style: TextStyle(
                   fontSize: 10,
                   color: Colors.amber,
@@ -94,7 +92,7 @@ class CategoryTile extends StatelessWidget {
 
       subtitle: subcategories.isNotEmpty
           ? Text(
-              "${subcategories.length} subcategor${subcategories.length == 1 ? 'y' : 'ies'}",
+              '${subcategories.length} subcategor${subcategories.length == 1 ? 'y' : 'ies'}',
               style: const TextStyle(fontSize: 12, color: Colors.black45),
             )
           : null,
@@ -103,7 +101,7 @@ class CategoryTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            "₹${formatAmt(balances.getBalance(category.id!), decimals: false)}",
+            '₹${formatAmt(balances.getBalance(category.id!), decimals: false)}',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -118,29 +116,29 @@ class CategoryTile extends StatelessWidget {
             onSelected: (value) async {
               final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-              if (value == "set_salary") {
+              if (value == 'set_salary') {
                 final confirmed = await confirmWalletChange(
                   context: context,
                   provider: provider,
                   tappedCategory: category,
                 );
                 if (confirmed) await provider.setSalaryWallet(category.id!);
-              } else if (value == "clear_salary") {
+              } else if (value == 'clear_salary') {
                 final confirmed = await confirmWalletChange(
                   context: context,
                   provider: provider,
                   tappedCategory: category,
                 );
                 if (confirmed) await provider.clearSalaryWallet();
-              } else if (value == "edit") {
+              } else if (value == 'edit') {
                 editCategoryDialog(context, category);
-              } else if (value == "delete") {
+              } else if (value == 'delete') {
                 final confirm = await ConfirmDeleteDialog.show(
                   context: context,
-                  title: "Delete Category",
+                  title: 'Delete Category',
                   message: subcategories.isNotEmpty
-                      ? "This will also delete all ${subcategories.length} subcategories permanently."
-                      : "This will remove the category permanently.",
+                      ? 'This will also delete all ${subcategories.length} subcategories permanently.'
+                      : 'This will remove the category permanently.',
                 );
 
                 if (!confirm) return;
@@ -166,7 +164,7 @@ class CategoryTile extends StatelessWidget {
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(
                       content: Text(
-                        "Category deleted",
+                        'Category deleted',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -181,10 +179,11 @@ class CategoryTile extends StatelessWidget {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: "edit", child: Text("Edit")),
-              if (category.type == "income" && !isSalaryWallet)
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              // Any main category can become the salary wallet (no type guard)
+              if (!isSalaryWallet)
                 const PopupMenuItem(
-                  value: "set_salary",
+                  value: 'set_salary',
                   child: Row(
                     children: [
                       Icon(
@@ -193,13 +192,13 @@ class CategoryTile extends StatelessWidget {
                         color: Colors.amber,
                       ),
                       SizedBox(width: 8),
-                      Text("Set as Salary Wallet"),
+                      Text('Set as Salary Wallet'),
                     ],
                   ),
                 ),
-              if (category.type == "income" && isSalaryWallet)
+              if (isSalaryWallet)
                 const PopupMenuItem(
-                  value: "clear_salary",
+                  value: 'clear_salary',
                   child: Row(
                     children: [
                       Icon(
@@ -208,11 +207,11 @@ class CategoryTile extends StatelessWidget {
                         color: Colors.black45,
                       ),
                       SizedBox(width: 8),
-                      Text("Remove Salary Wallet"),
+                      Text('Remove Salary Wallet'),
                     ],
                   ),
                 ),
-              const PopupMenuItem(value: "delete", child: Text("Delete")),
+              const PopupMenuItem(value: 'delete', child: Text('Delete')),
             ],
           ),
         ],

@@ -160,9 +160,8 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
         ? <int>{}
         : budgetProvider.budgets.map((b) => b.categoryId).toSet();
 
-    // Budgets apply to main expense categories only — no subcategories,
-    // no income categories (salary splits handle income distribution).
-    final budgetableCategories = categories.expenseCategories;
+    // Budgets apply to all main categories — subcategories are excluded.
+    final budgetableCategories = categories.mainCategories;
 
     // Key insight: give the dialog an EXPLICIT width and let content
     // flow naturally — no IntrinsicHeight, no mainAxisSize.min fighting

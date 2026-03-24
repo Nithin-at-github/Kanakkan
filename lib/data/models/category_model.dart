@@ -4,17 +4,17 @@ class CategoryModel extends Category {
   const CategoryModel({
     super.id,
     required super.name,
-    required super.type,
     super.parentId,
     super.isSalaryWallet = false,
+    super.linkedAccountId,
   });
 
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
       'name': name,
-      'type': type,
       'parentId': parentId,
+      if (linkedAccountId != null) 'linkedAccountId': linkedAccountId,
       // isSalaryWallet is intentionally excluded from INSERT/UPDATE here.
       // It is managed exclusively via CategoryRepository.setSalaryWallet()
       // and cleared via clearSalaryWallet(). The DB DEFAULT 0 handles new rows.
@@ -25,9 +25,9 @@ class CategoryModel extends Category {
     return CategoryModel(
       id: map['id'] as int?,
       name: map['name'] as String,
-      type: map['type'] as String,
       parentId: map['parentId'] as int?,
       isSalaryWallet: (map['isSalaryWallet'] as int? ?? 0) == 1,
+      linkedAccountId: map['linkedAccountId'] as int?,
     );
   }
 }

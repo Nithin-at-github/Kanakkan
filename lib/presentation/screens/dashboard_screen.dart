@@ -90,11 +90,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final filtered = _filterTransactions(provider.transactions);
 
     final totalExpense = filtered
-        .where((e) => e.type == "expense")
+        .where((e) => e.type == "expense" && e.transferGroupId == null)
         .fold(0.0, (sum, e) => sum + e.amount);
 
     final totalIncome = filtered
-        .where((e) => e.type == "income")
+        .where((e) => e.type == "income" && e.transferGroupId == null)
         .fold(0.0, (sum, e) => sum + e.amount);
 
     return Scaffold(
@@ -177,6 +177,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       _summaryColumn("EXPENSE", totalExpense, AppTheme.error),
                       _summaryColumn("INCOME", totalIncome, AppTheme.success),
+                      _summaryColumn(
+                        "BALANCE",
+                        totalIncome - totalExpense,
+                        (totalIncome - totalExpense) < 0
+                            ? AppTheme.error
+                            : Colors.white,
+                      ),
                     ],
                   ),
                 ],

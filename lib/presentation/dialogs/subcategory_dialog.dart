@@ -38,9 +38,7 @@ class SubcategoryDialog extends StatelessWidget {
                   radius: 16,
                   backgroundColor: accent.withValues(alpha: 0.15),
                   child: Icon(
-                    parent.type == "income"
-                        ? Icons.arrow_downward
-                        : Icons.arrow_upward,
+                    Icons.label_outline,
                     color: accent,
                     size: 16,
                   ),

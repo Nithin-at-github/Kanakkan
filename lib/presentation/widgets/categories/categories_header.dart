@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 
 class CategoriesHeader extends StatelessWidget {
-  final double income;
-  final double expense;
+  final double totalWallet;
+  final String topCategoryName;
+  final double topCategoryAmount;
 
   const CategoriesHeader({
     super.key,
-    required this.income,
-    required this.expense,
+    required this.totalWallet,
+    required this.topCategoryName,
+    required this.topCategoryAmount,
   });
 
   @override
@@ -34,8 +36,16 @@ class CategoriesHeader extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _summaryCard("Income", income, AppTheme.success),
-              _summaryCard("Expense", expense, AppTheme.error),
+              _summaryCard(
+                "Total Wallets",
+                "₹${formatAmt(totalWallet)}",
+                Colors.white,
+              ),
+              _summaryCard(
+                "Top Wallet",
+                "$topCategoryName${topCategoryName.isNotEmpty ? ': ' : ''}₹${formatAmt(topCategoryAmount)}",
+                AppTheme.accent,
+              ),
             ],
           ),
         ],
@@ -43,23 +53,29 @@ class CategoriesHeader extends StatelessWidget {
     );
   }
 
-  Widget _summaryCard(String title, double amount, Color color) {
-    return Column(
-      children: [
-        Text(
-          title.toUpperCase(),
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "₹${formatAmt(amount)}",
-          style: TextStyle(
-            color: color,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+  Widget _summaryCard(String title, String content, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            content,
+            style: TextStyle(
+              color: color,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }

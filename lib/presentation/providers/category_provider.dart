@@ -26,18 +26,28 @@ class CategoryProvider extends ChangeNotifier {
 
   String resolveCategoryName(int? categoryId) {
     final category = resolveCategory(categoryId);
-    return category?.name ?? "Deleted Category";
+    return category?.name ?? 'Deleted Category';
   }
 
   String resolveTransactionCategoryName(TransactionEntity tx) {
-    if (tx.transferGroupId != null) return "Transfer";
+    if (tx.transferGroupId != null) return 'Transfer';
     if (tx.categoryId == null) {
-      if (tx.type == "income") return "Income";
-      if (tx.type == "expense") return "Expense";
-      return "Transaction";
+      if (tx.type == 'income') return 'Income';
+      if (tx.type == 'expense') return 'Expense';
+      return 'Transaction';
     }
     final category = resolveCategory(tx.categoryId);
-    return category?.name ?? "Deleted Category";
+    if (category == null) return 'Deleted Category';
+
+    // If it's a subcategory, show "Parent - Sub" for better context in lists
+    if (category.isSubcategory) {
+      final parent = resolveCategory(category.parentId);
+      if (parent != null) {
+        return '${parent.name} - ${category.name}';
+      }
+    }
+
+    return category.name;
   }
 
   /// O(1) Map lookup — replaces the previous O(N) firstWhereOrNull scan.
@@ -72,18 +82,16 @@ class CategoryProvider extends ChangeNotifier {
   Category? _salaryWalletCategory;
 
   List<Category> _mainCategories = [];
-  List<Category> _incomeCategories = [];
-  List<Category> _expenseCategories = [];
   List<Category> _allSubcategories = [];
-  List<Category> _incomeSubcategories = [];
-  List<Category> _expenseSubcategories = [];
   List<Category> _splitCategories = [];
   Map<int, List<Category>> _subcategoryMap = {}; // parentId → subs
 
-  /// Top-level categories only (no subcategories)
+  /// Top-level categories only (no subcategories).
   List<Category> get mainCategories => _mainCategories;
-  List<Category> get incomeCategories => _incomeCategories;
-  List<Category> get expenseCategories => _expenseCategories;
+
+  /// All main categories eligible as salary split targets.
+  /// Excludes the salary wallet itself — it's the source, not a target.
+  List<Category> get splitCategories => _splitCategories;
 
   /// Subcategories belonging to a specific parent — O(1) map lookup.
   List<Category> subcategoriesOf(int parentId) =>
@@ -100,18 +108,8 @@ class CategoryProvider extends ChangeNotifier {
     return result;
   }
 
-  /// Flat list of all subcategories — income + expense combined.
+  /// Flat list of all subcategories across all parents.
   List<Category> get allSubcategories => _allSubcategories;
-
-  /// Income subcategories only
-  List<Category> get incomeSubcategories => _incomeSubcategories;
-
-  /// Expense subcategories only
-  List<Category> get expenseSubcategories => _expenseSubcategories;
-
-  /// Income main categories available for salary split
-  /// (excludes the salary wallet itself — it's the source, not a target)
-  List<Category> get splitCategories => _splitCategories;
 
   /// Rebuilds all in-memory caches from the raw _categories list.
   /// Called once after each DB load — O(N) total, not O(N) per getter call.
@@ -121,22 +119,13 @@ class CategoryProvider extends ChangeNotifier {
     _mainCategories = _categories.where((c) => c.isMainCategory).toList();
     _allSubcategories = _categories.where((c) => c.isSubcategory).toList();
 
-    _incomeCategories =
-        _mainCategories.where((c) => c.type == "income").toList();
-    _expenseCategories =
-        _mainCategories.where((c) => c.type == "expense").toList();
+    _salaryWalletCategory = _categories.firstWhereOrNull(
+      (c) => c.isSalaryWallet,
+    );
 
-    _incomeSubcategories =
-        _allSubcategories.where((c) => c.type == "income").toList();
-    _expenseSubcategories =
-        _allSubcategories.where((c) => c.type == "expense").toList();
-
+    // Split targets = all main categories except the salary wallet itself
     _splitCategories = _mainCategories
-        .where(
-          (c) =>
-              c.type == "expense" ||
-              (c.type == "income" && !c.isSalaryWallet),
-        )
+        .where((c) => !c.isSalaryWallet)
         .toList();
 
     _subcategoryMap = {};
@@ -145,10 +134,6 @@ class CategoryProvider extends ChangeNotifier {
         (_subcategoryMap[sub.parentId!] ??= []).add(sub);
       }
     }
-
-    _salaryWalletCategory = _categories.firstWhereOrNull(
-      (c) => c.isSalaryWallet,
-    );
   }
 
   // ================= INIT =================
@@ -195,19 +180,15 @@ class CategoryProvider extends ChangeNotifier {
       _setError('Parent category not found');
       return;
     }
-    final subcategory = Category(
-      name: name,
-      type: parent.type, // inherits type from parent
-      parentId: parentId,
-    );
+    final subcategory = Category(name: name, parentId: parentId);
     await addCategory(subcategory);
   }
 
   Future<void> setSalaryWallet(int categoryId) async {
     clearError();
     final category = resolveCategory(categoryId);
-    if (category == null || category.type != "income") {
-      _setError("Only income categories can be the salary wallet");
+    if (category == null) {
+      _setError('Category not found');
       return;
     }
     await _repository.setSalaryWallet(categoryId);
@@ -216,6 +197,12 @@ class CategoryProvider extends ChangeNotifier {
 
   Future<void> clearSalaryWallet() async {
     await _repository.clearSalaryWallet();
+    await loadCategories();
+  }
+
+  Future<void> updateLinkedAccount(int categoryId, int? accountId) async {
+    clearError();
+    await _repository.updateLinkedAccount(categoryId, accountId);
     await loadCategories();
   }
 
@@ -228,15 +215,25 @@ class CategoryProvider extends ChangeNotifier {
     if (category.isMainCategory) {
       final balance = await categoryBalanceRepository.getBalance(id);
       if (balance != 0) {
-        _setError("Category still has wallet balance");
+        _setError('Category still has wallet balance');
         return;
       }
     }
 
-    // Subcategories are deleted via CASCADE in DB,
-    // but we delete explicitly here for clarity
-    await _repository.deleteCategory(id);
-    await loadCategories();
+    try {
+      // Subcategories and associated data are handled via CASCADE or
+      // explicit transaction in the repository.
+      await _repository.deleteCategory(id);
+      await loadCategories();
+    } on DatabaseException catch (e) {
+      if (e.toString().contains('FOREIGN KEY')) {
+        _setError('Category is in use and cannot be deleted');
+        return;
+      }
+      _setError('Failed to delete category');
+    } catch (_) {
+      _setError('Something went wrong');
+    }
   }
 
   Future<void> updateCategory(int id, String newName) async {

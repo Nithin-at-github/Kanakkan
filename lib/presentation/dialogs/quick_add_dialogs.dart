@@ -46,20 +46,20 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
 
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      nameErr = "Account name is required";
+      nameErr = 'Account name is required';
     } else if (name.length < 2) {
-      nameErr = "Name must be at least 2 characters";
+      nameErr = 'Name must be at least 2 characters';
     } else if (name.length > 40) {
-      nameErr = "Name must be under 40 characters";
+      nameErr = 'Name must be under 40 characters';
     }
 
     final balText = _balanceController.text.trim();
     if (balText.isNotEmpty) {
       final val = double.tryParse(balText);
       if (val == null) {
-        balErr = "Enter a valid number";
+        balErr = 'Enter a valid number';
       } else if (val < 0) {
-        balErr = "Balance cannot be negative";
+        balErr = 'Balance cannot be negative';
       }
     }
 
@@ -115,7 +115,7 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                "Add Account",
+                'Add Account',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -123,12 +123,12 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-        
+
               // Name
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: "Account name",
+                  labelText: 'Account name',
                   filled: true,
                   fillColor: Colors.white,
                   errorText: _nameError,
@@ -139,7 +139,7 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                 onChanged: (_) => setState(() => _nameError = null),
               ),
               const SizedBox(height: 14),
-        
+
               // Initial balance
               TextField(
                 controller: _balanceController,
@@ -147,8 +147,8 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                   decimal: true,
                 ),
                 decoration: InputDecoration(
-                  labelText: "Initial balance (optional)",
-                  prefixText: "₹ ",
+                  labelText: 'Initial balance (optional)',
+                  prefixText: '₹ ',
                   filled: true,
                   fillColor: Colors.white,
                   errorText: _balanceError,
@@ -159,13 +159,13 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                 onChanged: (_) => setState(() => _balanceError = null),
               ),
               const SizedBox(height: 24),
-        
+
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context, null),
-                      child: const Text("Cancel"),
+                      child: const Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -184,7 +184,7 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text("Save"),
+                          : const Text('Save'),
                     ),
                   ),
                 ],
@@ -199,24 +199,18 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // QUICK ADD CATEGORY
-// Step 1: pick type (income/expense) + enter name → creates main category
+// Step 1: enter name → creates main category (no type picker needed)
 // Step 2 (optional): pick parent → enter subcategory name
 // Returns newly created Category or null
 // ─────────────────────────────────────────────────────────────────────────────
 
 class QuickAddCategoryDialog extends StatefulWidget {
-  /// Pre-fill the type if known from context (income/expense screen)
-  final String? preselectedType;
+  const QuickAddCategoryDialog({super.key});
 
-  const QuickAddCategoryDialog({super.key, this.preselectedType});
-
-  static Future<Category?> show(
-    BuildContext context, {
-    String? preselectedType,
-  }) {
+  static Future<Category?> show(BuildContext context) {
     return showDialog<Category?>(
       context: context,
-      builder: (_) => QuickAddCategoryDialog(preselectedType: preselectedType),
+      builder: (_) => const QuickAddCategoryDialog(),
     );
   }
 
@@ -226,19 +220,12 @@ class QuickAddCategoryDialog extends StatefulWidget {
 
 class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
   final _nameController = TextEditingController();
-  String? _selectedType;
   // null = adding main category, non-null = adding subcategory under this parent
   Category? _selectedParent;
   bool _isSubcategoryMode = false;
   String? _nameError;
-  String? _typeError;
+  String? _parentError;
   bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedType = widget.preselectedType;
-  }
 
   @override
   void dispose() {
@@ -248,31 +235,27 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
 
   bool _validate() {
     String? nameErr;
-    String? typeErr;
+    String? parentErr;
 
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      nameErr = "Name is required";
+      nameErr = 'Name is required';
     } else if (name.length < 2) {
-      nameErr = "Name must be at least 2 characters";
+      nameErr = 'Name must be at least 2 characters';
     } else if (name.length > 30) {
-      nameErr = "Name must be under 30 characters";
-    }
-
-    if (!_isSubcategoryMode && _selectedType == null) {
-      typeErr = "Select a type";
+      nameErr = 'Name must be under 30 characters';
     }
 
     if (_isSubcategoryMode && _selectedParent == null) {
-      typeErr = "Select a parent category";
+      parentErr = 'Select a parent category';
     }
 
     setState(() {
       _nameError = nameErr;
-      _typeError = typeErr;
+      _parentError = parentErr;
     });
 
-    return nameErr == null && typeErr == null;
+    return nameErr == null && parentErr == null;
   }
 
   Future<void> _save() async {
@@ -289,7 +272,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
       );
     } else {
       await provider.addCategory(
-        Category(name: _nameController.text.trim(), type: _selectedType!),
+        Category(name: _nameController.text.trim()),
       );
     }
 
@@ -309,7 +292,6 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
 
   @override
   Widget build(BuildContext context) {
-
     return Dialog(
       backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -321,7 +303,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Add Category",
+                'Add Category',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -329,80 +311,41 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-        
+
               // ── MODE TOGGLE ──
               Row(
                 children: [
                   _ModeChip(
-                    label: "Main Category",
+                    label: 'Main Category',
                     selected: !_isSubcategoryMode,
                     onTap: () => setState(() {
                       _isSubcategoryMode = false;
                       _selectedParent = null;
-                      _typeError = null;
+                      _parentError = null;
                     }),
                   ),
                   const SizedBox(width: 8),
                   _ModeChip(
-                    label: "Subcategory",
+                    label: 'Subcategory',
                     selected: _isSubcategoryMode,
                     onTap: () => setState(() {
                       _isSubcategoryMode = true;
                       _selectedParent = null;
-                      _typeError = null;
+                      _parentError = null;
                     }),
                   ),
                 ],
               ),
-        
+
               const SizedBox(height: 16),
-        
-              // ── TYPE SELECTOR (main category only) ──
-              if (!_isSubcategoryMode) ...[
-                Row(
-                  children: [
-                    _TypeChip(
-                      label: "Expense",
-                      color: AppTheme.error,
-                      selected: _selectedType == "expense",
-                      onTap: () => setState(() {
-                        _selectedType = "expense";
-                        _typeError = null;
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    _TypeChip(
-                      label: "Income",
-                      color: AppTheme.success,
-                      selected: _selectedType == "income",
-                      onTap: () => setState(() {
-                        _selectedType = "income";
-                        _typeError = null;
-                      }),
-                    ),
-                  ],
-                ),
-                if (_typeError != null && !_isSubcategoryMode) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    _typeError!,
-                    style: const TextStyle(color: AppTheme.error, fontSize: 12),
-                  ),
-                ],
-                const SizedBox(height: 14),
-              ],
-        
+
               // ── PARENT PICKER (subcategory only) ──
               if (_isSubcategoryMode) ...[
                 Builder(
                   builder: (context) {
-                    // Always recompute from provider so list is fresh after quick-add
-                    final allMains = context
-                        .read<CategoryProvider>()
-                        .mainCategories;
-                    // Validate: if _selectedParent no longer in list, reset it
-                    final parentInList =
-                        _selectedParent == null ||
+                    final allMains =
+                        context.read<CategoryProvider>().mainCategories;
+                    final parentInList = _selectedParent == null ||
                         allMains.any((c) => c.id == _selectedParent!.id);
                     if (!parentInList) {
                       WidgetsBinding.instance.addPostFrameCallback(
@@ -412,10 +355,10 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                     return DropdownButtonFormField<Category>(
                       initialValue: parentInList ? _selectedParent : null,
                       decoration: InputDecoration(
-                        labelText: "Parent category",
+                        labelText: 'Parent category',
                         filled: true,
                         fillColor: Colors.white,
-                        errorText: _typeError,
+                        errorText: _parentError,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -426,15 +369,8 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                               value: c,
                               child: Row(
                                 children: [
-                                  Icon(
-                                    c.type == "income"
-                                        ? Icons.arrow_downward
-                                        : Icons.arrow_upward,
-                                    size: 14,
-                                    color: c.type == "income"
-                                        ? AppTheme.success
-                                        : AppTheme.error,
-                                  ),
+                                  const Icon(Icons.label_outline,
+                                      size: 14, color: AppTheme.accent),
                                   const SizedBox(width: 8),
                                   Text(c.name),
                                 ],
@@ -444,22 +380,21 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                           .toList(),
                       onChanged: (val) => setState(() {
                         _selectedParent = val;
-                        _selectedType = val?.type;
-                        _typeError = null;
+                        _parentError = null;
                       }),
                     );
                   },
                 ),
                 const SizedBox(height: 14),
               ],
-        
+
               // ── NAME FIELD ──
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: _isSubcategoryMode
-                      ? "Subcategory name"
-                      : "Category name",
+                      ? 'Subcategory name'
+                      : 'Category name',
                   filled: true,
                   fillColor: Colors.white,
                   errorText: _nameError,
@@ -469,15 +404,15 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                 ),
                 onChanged: (_) => setState(() => _nameError = null),
               ),
-        
+
               const SizedBox(height: 24),
-        
+
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context, null),
-                      child: const Text("Cancel"),
+                      child: const Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -496,7 +431,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text("Save"),
+                          : const Text('Save'),
                     ),
                   ),
                 ],
@@ -542,44 +477,6 @@ class _ModeChip extends StatelessWidget {
           label,
           style: TextStyle(
             color: selected ? Colors.white : Colors.black54,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TypeChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TypeChip({
-    required this.label,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.15) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? color : Colors.black26),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? color : Colors.black54,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),

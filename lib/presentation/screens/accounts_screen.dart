@@ -20,11 +20,11 @@ class AccountsScreen extends StatelessWidget {
     );
 
     final totalIncome = provider.transactions
-        .where((t) => t.type == "income")
+        .where((t) => t.type == "income" && t.transferGroupId == null)
         .fold(0.0, (sum, t) => sum + t.amount);
 
     final totalExpense = provider.transactions
-        .where((t) => t.type == "expense")
+        .where((t) => t.type == "expense" && t.transferGroupId == null)
         .fold(0.0, (sum, t) => sum + t.amount);
 
     return Scaffold(

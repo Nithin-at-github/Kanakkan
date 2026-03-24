@@ -5,6 +5,7 @@ class CategoryBalanceProvider extends ChangeNotifier {
   final CategoryBalanceRepository _repository = CategoryBalanceRepository();
   final Map<int, double> _balances = {};
   Map<int, double> get balances => _balances;
+  double get totalWalletBalance => _balances.values.fold(0, (sum, b) => sum + b);
 
   // ================= LOAD =================
 

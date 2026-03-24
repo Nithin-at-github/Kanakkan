@@ -335,8 +335,26 @@ class AnalysisProvider extends ChangeNotifier {
     List<TransactionEntity> bucket,
   ) {
     return bucket.where((tx) {
-      final accountId = tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
-      return _selectedAccountIds.contains(accountId);
+      int? effectiveAccountId;
+
+      // 1. Priority: Linked account of the category (with parent fallback)
+      if (tx.categoryId != null) {
+        final cat = _categories.resolveCategory(tx.categoryId!);
+        if (cat != null) {
+          effectiveAccountId = cat.linkedAccountId;
+          // If subcategory has no link, check parent
+          if (effectiveAccountId == null && cat.isSubcategory) {
+            final parent = _categories.resolveCategory(cat.parentId!);
+            effectiveAccountId = parent?.linkedAccountId;
+          }
+        }
+      }
+
+      // 2. Fallback: Transaction's actual account
+      effectiveAccountId ??=
+          tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
+
+      return _selectedAccountIds.contains(effectiveAccountId);
     }).toList();
   }
 
@@ -350,9 +368,26 @@ class AnalysisProvider extends ChangeNotifier {
       final bucket = buckets[(year, m)];
       if (bucket == null) continue;
       for (final tx in bucket) {
-        final accountId =
+        int? effectiveAccountId;
+
+        // 1. Priority: Linked account of the category (with parent fallback)
+        if (tx.categoryId != null) {
+          final cat = _categories.resolveCategory(tx.categoryId!);
+          if (cat != null) {
+            effectiveAccountId = cat.linkedAccountId;
+            // If subcategory has no link, check parent
+            if (effectiveAccountId == null && cat.isSubcategory) {
+              final parent = _categories.resolveCategory(cat.parentId!);
+              effectiveAccountId = parent?.linkedAccountId;
+            }
+          }
+        }
+
+        // 2. Fallback: Transaction's actual account
+        effectiveAccountId ??=
             tx.type == 'income' ? tx.toAccountId : tx.fromAccountId;
-        if (_selectedAccountIds.contains(accountId)) result.add(tx);
+
+        if (_selectedAccountIds.contains(effectiveAccountId)) result.add(tx);
       }
     }
     return result;

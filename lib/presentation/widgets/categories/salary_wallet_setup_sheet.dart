@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:provider/provider.dart';
 
 /// Reusable bottom sheet for explaining and designating the salary wallet.
@@ -21,7 +22,8 @@ class SalaryWalletSetupSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CategoryProvider>();
-    final incomeCategories = provider.incomeCategories;
+    final ledger = context.watch<LedgerProvider>();
+    final allCategories = provider.mainCategories;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -77,7 +79,8 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                         color: Colors.amber.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                            color: Colors.amber.withValues(alpha: 0.3)),
+                          color: Colors.amber.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,25 +112,31 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // ── PICK CATEGORY ──
-                    if (incomeCategories.isEmpty) ...[
+                    if (allCategories.isEmpty) ...[
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.orange.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                              color: Colors.orange.withValues(alpha: 0.3)),
+                            color: Colors.orange.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.info_outline,
-                                color: Colors.orange, size: 20),
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.orange,
+                              size: 20,
+                            ),
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'No income categories yet. Add one first from the Categories screen.',
+                                'No categories yet. Add one first from the Categories screen.',
                                 style: TextStyle(
-                                    fontSize: 13, color: Colors.black54),
+                                  fontSize: 13,
+                                  color: Colors.black54,
+                                ),
                               ),
                             ),
                           ],
@@ -137,7 +146,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                       Text(
                         provider.hasSalaryWallet
                             ? 'Current Salary Wallet'
-                            : 'Choose an Income Category',
+                            : 'Choose a Category',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
@@ -150,29 +159,86 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                             ? 'Tap another to switch, or remove the current one.'
                             : 'This category will receive your salary and fund your wallets.',
                         style: const TextStyle(
-                            fontSize: 12, color: Colors.black45),
+                          fontSize: 12,
+                          color: Colors.black45,
+                        ),
                       ),
                       const SizedBox(height: 12),
 
-                      ...incomeCategories.map((cat) =>
-                          _CategoryPickerTile(
-                            category: cat,
-                            isSelected: cat.isSalaryWallet,
-                            onTap: () async {
-                              final confirmed = await confirmWalletChange(
-                                context: context,
-                                provider: provider,
-                                tappedCategory: cat,
-                              );
-                              if (confirmed) {
-                                if (cat.isSalaryWallet) {
-                                  await provider.clearSalaryWallet();
-                                } else {
-                                  await provider.setSalaryWallet(cat.id!);
-                                }
+                      ...allCategories.map(
+                        (cat) => _CategoryPickerTile(
+                          category: cat,
+                          isSelected: cat.isSalaryWallet,
+                          onTap: () async {
+                            // Advisory warning if category has expense transactions
+                            final hasExpenseTx = ledger.transactions.any(
+                              (tx) =>
+                                  tx.categoryId == cat.id &&
+                                  tx.type == 'expense',
+                            );
+                            if (hasExpenseTx && !cat.isSalaryWallet) {
+                              final proceed =
+                                  await showDialog<bool>(
+                                    context: context,
+                                    builder: (_) => AlertDialog(
+                                      backgroundColor: AppTheme.background,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      title: const Text(
+                                        'Unusual Choice',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.primary,
+                                        ),
+                                      ),
+                                      content: Text(
+                                        '"${cat.name}" already has expense transactions. Designating it as the salary wallet is unusual but allowed. Proceed?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppTheme.accent,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                          child: const Text(
+                                            'Proceed',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ) ??
+                                  false;
+                              if (!proceed) return;
+                            }
+
+                            if (!context.mounted) return;
+                            final confirmed = await confirmWalletChange(
+                              context: context,
+                              provider: provider,
+                              tappedCategory: cat,
+                            );
+
+                            if (!context.mounted) return;
+                            if (confirmed) {
+                              if (cat.isSalaryWallet) {
+                                await provider.clearSalaryWallet();
+                              } else {
+                                await provider.setSalaryWallet(cat.id!);
                               }
-                            },
-                          )),
+                            }
+                          },
+                        ),
+                      ),
                     ],
 
                     const SizedBox(height: 16),
@@ -183,15 +249,18 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           side: BorderSide(
-                              color: AppTheme.accent.withValues(alpha: 0.4)),
+                            color: AppTheme.accent.withValues(alpha: 0.4),
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                        child: const Text('Close',
-                            style: TextStyle(color: AppTheme.primary)),
+                        child: const Text(
+                          'Close',
+                          style: TextStyle(color: AppTheme.primary),
+                        ),
                       ),
                     ),
                   ],
@@ -228,12 +297,14 @@ Future<bool> confirmWalletChange({
               _ChangePoint(
                 icon: Icons.block,
                 color: Colors.orange,
-                text: 'Salary distribution dialog will no longer appear when you add income.',
+                text:
+                    'Salary distribution dialog will no longer appear when you add income.',
               ),
               _ChangePoint(
                 icon: Icons.safety_check_outlined,
                 color: Colors.orange,
-                text: 'Expense safety net (auto salary fallback) will be disabled.',
+                text:
+                    'Expense safety net (auto salary fallback) will be disabled.',
               ),
               _ChangePoint(
                 icon: Icons.history,
@@ -260,7 +331,8 @@ Future<bool> confirmWalletChange({
               _ChangePoint(
                 icon: Icons.workspace_premium,
                 color: Colors.amber,
-                text: '"${tappedCategory.name}" will become the new salary wallet.',
+                text:
+                    '"${tappedCategory.name}" will become the new salary wallet.',
               ),
               _ChangePoint(
                 icon: Icons.workspace_premium_outlined,
@@ -270,12 +342,14 @@ Future<bool> confirmWalletChange({
               _ChangePoint(
                 icon: Icons.call_split,
                 color: AppTheme.accent,
-                text: 'Future income added to "${tappedCategory.name}" will trigger wallet distribution.',
+                text:
+                    'Future income added to "${tappedCategory.name}" will trigger wallet distribution.',
               ),
               const _ChangePoint(
                 icon: Icons.history,
                 color: Colors.green,
-                text: 'Past salary transactions and stored splits are unaffected.',
+                text:
+                    'Past salary transactions and stored splits are unaffected.',
               ),
             ],
             confirmLabel: 'Switch',
@@ -311,17 +385,14 @@ class _CategoryPickerTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 10),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
               ? Colors.amber.withValues(alpha: 0.12)
               : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected
-                ? Colors.amber
-                : Colors.black12,
+            color: isSelected ? Colors.amber : Colors.black12,
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
@@ -329,7 +400,7 @@ class _CategoryPickerTile extends StatelessWidget {
                   BoxShadow(
                     color: Colors.amber.withValues(alpha: 0.15),
                     blurRadius: 8,
-                  )
+                  ),
                 ]
               : const [BoxShadow(blurRadius: 4, color: Colors.black12)],
         ),
@@ -363,11 +434,13 @@ class _CategoryPickerTile extends StatelessWidget {
 
             // Check / crown
             if (isSelected)
-              const Icon(Icons.workspace_premium,
-                  color: Colors.amber, size: 22)
+              const Icon(Icons.workspace_premium, color: Colors.amber, size: 22)
             else
-              const Icon(Icons.radio_button_unchecked,
-                  color: Colors.black26, size: 22),
+              const Icon(
+                Icons.radio_button_unchecked,
+                color: Colors.black26,
+                size: 22,
+              ),
           ],
         ),
       ),
@@ -411,8 +484,7 @@ class _WalletChangeDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: AppTheme.background,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -465,7 +537,9 @@ class _WalletChangeDialog extends StatelessWidget {
                           child: Text(
                             p.text,
                             style: const TextStyle(
-                                fontSize: 13, color: Colors.black87),
+                              fontSize: 13,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ],
@@ -487,10 +561,13 @@ class _WalletChangeDialog extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       side: BorderSide(color: Colors.black26),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text('Cancel',
-                        style: TextStyle(color: Colors.black54)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.black54),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -501,13 +578,15 @@ class _WalletChangeDialog extends StatelessWidget {
                       backgroundColor: confirmColor,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: Text(
                       confirmLabel,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -553,15 +632,19 @@ class _FeatureRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: AppTheme.primary)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: AppTheme.primary,
+                ),
+              ),
               const SizedBox(height: 3),
-              Text(body,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.black54)),
+              Text(
+                body,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
             ],
           ),
         ),

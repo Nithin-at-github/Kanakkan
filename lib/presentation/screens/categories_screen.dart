@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/dialogs/move_wallet_dialog.dart';
+import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
-import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/widgets/categories/categories_header.dart';
 import 'package:kanakkan/presentation/widgets/categories/category_section.dart';
 import 'package:kanakkan/presentation/widgets/categories/salary_wallet_setup_sheet.dart';
@@ -15,15 +15,20 @@ class CategoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CategoryProvider>();
-    final ledger = context.watch<LedgerProvider>();
+    final balances = context.watch<CategoryBalanceProvider>();
 
-    final totalIncome = ledger.transactions
-        .where((t) => t.type == "income")
-        .fold(0.0, (sum, t) => sum + t.amount);
+    // Calculate top envelope
+    MapEntry<int, double>? topEntry;
+    for (final entry in balances.balances.entries) {
+      if (topEntry == null || entry.value > topEntry.value) {
+        topEntry = entry;
+      }
+    }
 
-    final totalExpense = ledger.transactions
-        .where((t) => t.type == "expense")
-        .fold(0.0, (sum, t) => sum + t.amount);
+    final topCategory =
+        topEntry != null ? provider.resolveCategory(topEntry.key) : null;
+    final topCategoryName = topCategory?.name ?? 'None';
+    final topCategoryAmount = topEntry?.value ?? 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -59,24 +64,22 @@ class CategoriesScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          CategoriesHeader(income: totalIncome, expense: totalExpense),
+          CategoriesHeader(
+            totalWallet: balances.totalWalletBalance,
+            topCategoryName: topCategoryName,
+            topCategoryAmount: topCategoryAmount,
+          ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(top: 10),
               children: [
                 CategorySection(
-                  title: "Income Categories",
-                  categories: provider.incomeCategories,
-                  accent: AppTheme.success,
-                  // Pass flag so section can show amber banner
+                  title: 'Categories',
+                  categories: provider.mainCategories,
+                  accent: AppTheme.accent,
                   showSalaryWalletBanner:
                       !provider.hasSalaryWallet &&
-                      provider.incomeCategories.isNotEmpty,
-                ),
-                CategorySection(
-                  title: "Expense Categories",
-                  categories: provider.expenseCategories,
-                  accent: AppTheme.error,
+                      provider.mainCategories.isNotEmpty,
                 ),
                 const SizedBox(height: 60),
               ],

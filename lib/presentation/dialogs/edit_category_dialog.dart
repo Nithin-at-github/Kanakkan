@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/validators/category_validator.dart';
 
 void editCategoryDialog(BuildContext context, Category category) {
   final controller = TextEditingController(text: category.name);
-
   String? localError;
+
+  // Track the currently selected linked account, initialised from category
+  final allAccounts = context.read<LedgerProvider>().accounts;
+  Account? currentLinked = allAccounts
+      .where((a) => a.id == category.linkedAccountId)
+      .firstOrNull;
 
   showDialog(
     context: context,
@@ -27,7 +34,7 @@ void editCategoryDialog(BuildContext context, Category category) {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  "Edit Category",
+                  'Edit Category',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -40,7 +47,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                 TextField(
                   controller: controller,
                   decoration: InputDecoration(
-                    labelText: "Category name",
+                    labelText: 'Category name',
                     filled: true,
                     fillColor: Colors.white,
                     errorText: localError,
@@ -54,6 +61,45 @@ void editCategoryDialog(BuildContext context, Category category) {
                     }
                   },
                 ),
+
+                const SizedBox(height: 16),
+
+                /// LINKED ACCOUNT DROPDOWN
+                if (category.isMainCategory)
+                  DropdownButtonFormField<Account?>(
+                    initialValue: currentLinked,
+                    decoration: InputDecoration(
+                      labelText: 'Linked account (optional)',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: [
+                      const DropdownMenuItem<Account?>(
+                        value: null,
+                        child: Text(
+                          'None',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      ),
+                      ...allAccounts.map(
+                        (a) => DropdownMenuItem<Account?>(
+                          value: a,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.account_balance,
+                                  size: 16, color: AppTheme.accent),
+                              const SizedBox(width: 8),
+                              Text(a.name),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) => setState(() => currentLinked = val),
+                  ),
 
                 if (provider.lastError != null) ...[
                   const SizedBox(height: 16),
@@ -84,7 +130,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                           provider.clearError();
                           Navigator.pop(context);
                         },
-                        child: const Text("Cancel"),
+                        child: const Text('Cancel'),
                       ),
                     ),
 
@@ -98,7 +144,8 @@ void editCategoryDialog(BuildContext context, Category category) {
                         onPressed: () async {
                           final name = controller.text.trim();
 
-                          final validationError = validateSubcategoryName(name);
+                          final validationError =
+                              validateSubcategoryName(name);
 
                           if (validationError != null) {
                             setState(() => localError = validationError);
@@ -109,11 +156,20 @@ void editCategoryDialog(BuildContext context, Category category) {
 
                           await provider.updateCategory(category.id!, name);
 
+                          // Update linked account if it's a main category
+                          if (category.isMainCategory &&
+                              provider.lastError == null) {
+                            await provider.updateLinkedAccount(
+                              category.id!,
+                              currentLinked?.id,
+                            );
+                          }
+
                           if (provider.lastError == null && context.mounted) {
                             Navigator.pop(context);
                           }
                         },
-                        child: const Text("Save"),
+                        child: const Text('Save'),
                       ),
                     ),
                   ],
