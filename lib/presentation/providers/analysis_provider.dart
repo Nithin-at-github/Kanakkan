@@ -246,6 +246,7 @@ class AnalysisProvider extends ChangeNotifier {
     for (final tx in all) {
       if (tx.note == 'Opening_Balance') continue;
       if (tx.transferGroupId != null) continue;
+      if (_categories.isExcluded(tx.categoryId)) continue;
       final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       final key = (date.year, date.month);
       (map[key] ??= []).add(tx);

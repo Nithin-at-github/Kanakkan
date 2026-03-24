@@ -7,6 +7,7 @@ class CategoryModel extends Category {
     super.parentId,
     super.isSalaryWallet = false,
     super.linkedAccountId,
+    super.excludeFromAnalysis = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -15,6 +16,7 @@ class CategoryModel extends Category {
       'name': name,
       'parentId': parentId,
       if (linkedAccountId != null) 'linkedAccountId': linkedAccountId,
+      'excludeFromAnalysis': excludeFromAnalysis ? 1 : 0,
       // isSalaryWallet is intentionally excluded from INSERT/UPDATE here.
       // It is managed exclusively via CategoryRepository.setSalaryWallet()
       // and cleared via clearSalaryWallet(). The DB DEFAULT 0 handles new rows.
@@ -28,6 +30,7 @@ class CategoryModel extends Category {
       parentId: map['parentId'] as int?,
       isSalaryWallet: (map['isSalaryWallet'] as int? ?? 0) == 1,
       linkedAccountId: map['linkedAccountId'] as int?,
+      excludeFromAnalysis: (map['excludeFromAnalysis'] as int? ?? 0) == 1,
     );
   }
 }

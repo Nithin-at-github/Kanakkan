@@ -13,6 +13,7 @@ class CategoryRepository {
       name: category.name,
       parentId: category.parentId,
       linkedAccountId: category.linkedAccountId,
+      excludeFromAnalysis: category.excludeFromAnalysis,
     );
     return db.insert(
       'categories',
@@ -27,11 +28,14 @@ class CategoryRepository {
     return result.map((e) => CategoryModel.fromMap(e)).toList();
   }
 
-  Future<void> updateCategory(int id, String newName) async {
+  Future<void> updateCategory(int id, String newName, bool excludeFromAnalysis) async {
     final db = await _dbHelper.database;
     await db.update(
       'categories',
-      {'name': newName},
+      {
+        'name': newName,
+        'excludeFromAnalysis': excludeFromAnalysis ? 1 : 0,
+      },
       where: 'id = ?',
       whereArgs: [id],
     );

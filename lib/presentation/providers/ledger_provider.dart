@@ -131,6 +131,7 @@ class LedgerProvider extends ChangeNotifier {
 
     for (final tx in _transactions) {
       if (tx.type != "expense" || tx.transferGroupId != null) continue;
+      if (categoryProvider.isExcluded(tx.categoryId)) continue;
       final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       if (date.month != month || date.year != year) continue;
       final categoryId = tx.categoryId;

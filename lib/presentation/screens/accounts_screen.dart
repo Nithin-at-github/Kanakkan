@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/domain/entities/account.dart';
+import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ class AccountsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<LedgerProvider>();
+    final categoryProvider = context.watch<CategoryProvider>();
     final accounts = provider.accounts;
 
     final totalBalance = accounts.fold(
@@ -20,16 +22,22 @@ class AccountsScreen extends StatelessWidget {
     );
 
     final totalIncome = provider.transactions
-        .where((t) => t.type == "income" && t.transferGroupId == null)
+        .where((t) =>
+            t.type == "income" &&
+            t.transferGroupId == null &&
+            !categoryProvider.isExcluded(t.categoryId))
         .fold(0.0, (sum, t) => sum + t.amount);
 
     final totalExpense = provider.transactions
-        .where((t) => t.type == "expense" && t.transferGroupId == null)
+        .where((t) =>
+            t.type == "expense" &&
+            t.transferGroupId == null &&
+            !categoryProvider.isExcluded(t.categoryId))
         .fold(0.0, (sum, t) => sum + t.amount);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: ReusableAppBar(),
+      appBar: const ReusableAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -102,7 +110,6 @@ class AccountsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -235,8 +242,26 @@ class AccountsScreen extends StatelessWidget {
               }
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: "edit", child: Text("Edit")),
-              PopupMenuItem(value: "delete", child: Text("Delete")),
+              PopupMenuItem(
+                value: "edit",
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 18, color: AppTheme.primary),
+                    SizedBox(width: 10),
+                    Text("Edit"),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: "delete",
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 18, color: AppTheme.error),
+                    SizedBox(width: 10),
+                    Text("Delete", style: TextStyle(color: AppTheme.error)),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -409,4 +434,10 @@ class AccountsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+String formatAmt(double v) {
+  if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
+  if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
+  return v.toStringAsFixed(0);
 }

@@ -12,6 +12,7 @@ class AddCategoryDialog {
     final controller = TextEditingController();
     String? nameError;
     Account? selectedAccount;
+    bool excludeFromAnalysis = false;
 
     showDialog(
       context: context,
@@ -65,7 +66,7 @@ class AddCategoryDialog {
 
                         /// LINKED ACCOUNT DROPDOWN
                         DropdownButtonFormField<Account?>(
-                          initialValue: selectedAccount,
+                          value: selectedAccount,
                           decoration: InputDecoration(
                             labelText: 'Linked account (optional)',
                             filled: true,
@@ -100,9 +101,28 @@ class AddCategoryDialog {
                               setState(() => selectedAccount = val),
                         ),
 
+                        const SizedBox(height: 8),
+
+                        /// EXCLUDE FROM ANALYSIS TOGGLE
+                        SwitchListTile(
+                          title: const Text(
+                            'Exclude from Analysis',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          subtitle: const Text(
+                            'Hide from all summaries and charts',
+                            style: TextStyle(fontSize: 11),
+                          ),
+                          value: excludeFromAnalysis,
+                          onChanged: (val) =>
+                              setState(() => excludeFromAnalysis = val),
+                          activeColor: AppTheme.accent,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+
                         /// ERROR MESSAGE
                         if (provider.lastError != null) ...[
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
@@ -160,6 +180,7 @@ class AddCategoryDialog {
                                     Category(
                                       name: name,
                                       linkedAccountId: selectedAccount?.id,
+                                      excludeFromAnalysis: excludeFromAnalysis,
                                     ),
                                   );
 

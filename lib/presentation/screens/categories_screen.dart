@@ -17,9 +17,13 @@ class CategoriesScreen extends StatelessWidget {
     final provider = context.watch<CategoryProvider>();
     final balances = context.watch<CategoryBalanceProvider>();
 
-    // Calculate top envelope
+    // Calculate filtered metrics
     MapEntry<int, double>? topEntry;
+    double totalWallet = 0;
     for (final entry in balances.balances.entries) {
+      if (provider.isExcluded(entry.key)) continue;
+
+      totalWallet += entry.value;
       if (topEntry == null || entry.value > topEntry.value) {
         topEntry = entry;
       }
@@ -65,7 +69,7 @@ class CategoriesScreen extends StatelessWidget {
       body: Column(
         children: [
           CategoriesHeader(
-            totalWallet: balances.totalWalletBalance,
+            totalWallet: totalWallet,
             topCategoryName: topCategoryName,
             topCategoryAmount: topCategoryAmount,
           ),

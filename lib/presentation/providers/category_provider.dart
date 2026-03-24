@@ -148,7 +148,20 @@ class CategoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ================= CRUD =================
+  /// Returns true if the category OR its parent is set to be excluded from analysis.
+  bool isExcluded(int? categoryId) {
+    if (categoryId == null) return false;
+    final cat = resolveCategory(categoryId);
+    if (cat == null) return false;
+    if (cat.excludeFromAnalysis) return true;
+    if (cat.isSubcategory) {
+      final parent = resolveCategory(cat.parentId!);
+      return parent?.excludeFromAnalysis ?? false;
+    }
+    return false;
+  }
+
+  // ================= CORE DATA =================
 
   Future<void> addCategory(Category category) async {
     clearError();
@@ -173,6 +186,7 @@ class CategoryProvider extends ChangeNotifier {
   Future<void> addSubcategory({
     required String name,
     required int parentId,
+    bool excludeFromAnalysis = false,
   }) async {
     clearError();
     final parent = resolveCategory(parentId);
@@ -180,7 +194,11 @@ class CategoryProvider extends ChangeNotifier {
       _setError('Parent category not found');
       return;
     }
-    final subcategory = Category(name: name, parentId: parentId);
+    final subcategory = Category(
+      name: name,
+      parentId: parentId,
+      excludeFromAnalysis: excludeFromAnalysis,
+    );
     await addCategory(subcategory);
   }
 
@@ -236,10 +254,10 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateCategory(int id, String newName) async {
+  Future<void> updateCategory(int id, String newName, bool excludeFromAnalysis) async {
     clearError();
     try {
-      await _repository.updateCategory(id, newName);
+      await _repository.updateCategory(id, newName, excludeFromAnalysis);
       await loadCategories();
     } on DatabaseException catch (e) {
       if (e.toString().contains('UNIQUE')) {

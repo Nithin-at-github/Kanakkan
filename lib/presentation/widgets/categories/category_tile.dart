@@ -7,6 +7,7 @@ import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
+import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/dialogs/subcategory_dialog.dart';
 
 class CategoryTile extends StatelessWidget {
@@ -18,6 +19,7 @@ class CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<CategoryProvider>();
+    final ledger = context.read<LedgerProvider>(); // Added for unusual choice check
     final balances = context.watch<CategoryBalanceProvider>();
     final subcategories = provider.subcategoriesOf(category.id!);
     final isSalaryWallet = category.isSalaryWallet;
@@ -119,14 +121,16 @@ class CategoryTile extends StatelessWidget {
               if (value == 'set_salary') {
                 final confirmed = await confirmWalletChange(
                   context: context,
-                  provider: provider,
+                  categoryProvider: provider,
+                  ledgerProvider: ledger,
                   tappedCategory: category,
                 );
                 if (confirmed) await provider.setSalaryWallet(category.id!);
               } else if (value == 'clear_salary') {
                 final confirmed = await confirmWalletChange(
                   context: context,
-                  provider: provider,
+                  categoryProvider: provider,
+                  ledgerProvider: ledger,
                   tappedCategory: category,
                 );
                 if (confirmed) await provider.clearSalaryWallet();
@@ -179,7 +183,16 @@ class CategoryTile extends StatelessWidget {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_outlined, size: 18, color: AppTheme.primary),
+                    SizedBox(width: 10),
+                    Text('Edit'),
+                  ],
+                ),
+              ),
               // Any main category can become the salary wallet (no type guard)
               if (!isSalaryWallet)
                 const PopupMenuItem(
@@ -188,10 +201,10 @@ class CategoryTile extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.workspace_premium,
-                        size: 16,
+                        size: 18,
                         color: Colors.amber,
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 10),
                       Text('Set as Salary Wallet'),
                     ],
                   ),
@@ -203,15 +216,24 @@ class CategoryTile extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.workspace_premium_outlined,
-                        size: 16,
+                        size: 18,
                         color: Colors.black45,
                       ),
-                      SizedBox(width: 8),
+                      SizedBox(width: 10),
                       Text('Remove Salary Wallet'),
                     ],
                   ),
                 ),
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_outline, size: 18, color: AppTheme.error),
+                    SizedBox(width: 10),
+                    Text('Delete', style: TextStyle(color: AppTheme.error)),
+                  ],
+                ),
+              ),
             ],
           ),
         ],

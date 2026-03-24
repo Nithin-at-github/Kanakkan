@@ -16,6 +16,7 @@ void editCategoryDialog(BuildContext context, Category category) {
   Account? currentLinked = allAccounts
       .where((a) => a.id == category.linkedAccountId)
       .firstOrNull;
+  bool excludeFromAnalysis = category.excludeFromAnalysis;
 
   showDialog(
     context: context,
@@ -67,7 +68,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                 /// LINKED ACCOUNT DROPDOWN
                 if (category.isMainCategory)
                   DropdownButtonFormField<Account?>(
-                    initialValue: currentLinked,
+                    value: currentLinked,
                     decoration: InputDecoration(
                       labelText: 'Linked account (optional)',
                       filled: true,
@@ -101,8 +102,26 @@ void editCategoryDialog(BuildContext context, Category category) {
                     onChanged: (val) => setState(() => currentLinked = val),
                   ),
 
+                const SizedBox(height: 8),
+
+                /// EXCLUDE FROM ANALYSIS TOGGLE
+                SwitchListTile(
+                  title: const Text(
+                    'Exclude from Analysis',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  subtitle: const Text(
+                    'Hide from all summaries and charts',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                  value: excludeFromAnalysis,
+                  onChanged: (val) => setState(() => excludeFromAnalysis = val),
+                  activeColor: AppTheme.accent,
+                  contentPadding: EdgeInsets.zero,
+                ),
+
                 if (provider.lastError != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(10),
@@ -144,8 +163,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                         onPressed: () async {
                           final name = controller.text.trim();
 
-                          final validationError =
-                              validateSubcategoryName(name);
+                          final validationError = validateSubcategoryName(name);
 
                           if (validationError != null) {
                             setState(() => localError = validationError);
@@ -154,7 +172,11 @@ void editCategoryDialog(BuildContext context, Category category) {
 
                           provider.clearError();
 
-                          await provider.updateCategory(category.id!, name);
+                          await provider.updateCategory(
+                            category.id!,
+                            name,
+                            excludeFromAnalysis,
+                          );
 
                           // Update linked account if it's a main category
                           if (category.isMainCategory &&

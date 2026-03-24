@@ -4,6 +4,7 @@ class Category {
   final int? parentId;
   final bool isSalaryWallet;
   final int? linkedAccountId;
+  final bool excludeFromAnalysis;
 
   const Category({
     this.id,
@@ -11,6 +12,7 @@ class Category {
     this.parentId,
     this.isSalaryWallet = false,
     this.linkedAccountId,
+    this.excludeFromAnalysis = false,
   });
 
   bool get isSubcategory => parentId != null;
@@ -24,6 +26,7 @@ class Category {
     bool? isSalaryWallet,
     int? linkedAccountId,
     bool clearLinkedAccount = false,
+    bool? excludeFromAnalysis,
   }) {
     return Category(
       id: id ?? this.id,
@@ -32,6 +35,7 @@ class Category {
       isSalaryWallet: isSalaryWallet ?? this.isSalaryWallet,
       linkedAccountId:
           clearLinkedAccount ? null : (linkedAccountId ?? this.linkedAccountId),
+      excludeFromAnalysis: excludeFromAnalysis ?? this.excludeFromAnalysis,
     );
   }
 
@@ -45,5 +49,5 @@ class Category {
 
   @override
   String toString() =>
-      'Category(id: $id, name: $name, parentId: $parentId, linkedAccountId: $linkedAccountId)';
+      'Category(id: $id, name: $name, parentId: $parentId, linkedAccountId: $linkedAccountId, excludeFromAnalysis: $excludeFromAnalysis)';
 }

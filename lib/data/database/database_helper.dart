@@ -7,8 +7,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Bumped to 8: fixed self-referencing FK in categories migration
-  static const int _dbVersion = 8;
+  // Bumped to 9: added excludeFromAnalysis to categories
+  static const int _dbVersion = 9;
   static int get dbVersion => _dbVersion;
 
   Future<Database> get database async {
@@ -62,6 +62,7 @@ class DatabaseHelper {
         parentId INTEGER,
         isSalaryWallet INTEGER NOT NULL DEFAULT 0,
         linkedAccountId INTEGER,
+        excludeFromAnalysis INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY(parentId) REFERENCES categories(id) ON DELETE CASCADE
       )
     ''');
@@ -321,6 +322,12 @@ class DatabaseHelper {
       ''');
 
       await db.execute('PRAGMA foreign_keys = ON');
+    }
+
+    if (oldVersion < 9) {
+      await db.execute(
+        'ALTER TABLE categories ADD COLUMN excludeFromAnalysis INTEGER NOT NULL DEFAULT 0',
+      );
     }
   }
 

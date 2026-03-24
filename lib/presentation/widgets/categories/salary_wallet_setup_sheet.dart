@@ -170,61 +170,11 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                           category: cat,
                           isSelected: cat.isSalaryWallet,
                           onTap: () async {
-                            // Advisory warning if category has expense transactions
-                            final hasExpenseTx = ledger.transactions.any(
-                              (tx) =>
-                                  tx.categoryId == cat.id &&
-                                  tx.type == 'expense',
-                            );
-                            if (hasExpenseTx && !cat.isSalaryWallet) {
-                              final proceed =
-                                  await showDialog<bool>(
-                                    context: context,
-                                    builder: (_) => AlertDialog(
-                                      backgroundColor: AppTheme.background,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      title: const Text(
-                                        'Unusual Choice',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppTheme.primary,
-                                        ),
-                                      ),
-                                      content: Text(
-                                        '"${cat.name}" already has expense transactions. Designating it as the salary wallet is unusual but allowed. Proceed?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context, false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.accent,
-                                          ),
-                                          onPressed: () =>
-                                              Navigator.pop(context, true),
-                                          child: const Text(
-                                            'Proceed',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ) ??
-                                  false;
-                              if (!proceed) return;
-                            }
-
                             if (!context.mounted) return;
                             final confirmed = await confirmWalletChange(
                               context: context,
-                              provider: provider,
+                              categoryProvider: provider,
+                              ledgerProvider: ledger,
                               tappedCategory: cat,
                             );
 
@@ -280,10 +230,61 @@ class SalaryWalletSetupSheet extends StatelessWidget {
 
 Future<bool> confirmWalletChange({
   required BuildContext context,
-  required CategoryProvider provider,
+  required CategoryProvider categoryProvider,
+  required LedgerProvider ledgerProvider,
   required Category tappedCategory,
 }) async {
-  final current = provider.salaryWalletCategory;
+  // --- UNUSUAL CHOICE CHECK ---
+  // If the category being set as salary wallet already has expense transactions,
+  // we show a warning (but only if it's not already the salary wallet).
+  final hasExpenseTx = ledgerProvider.transactions.any(
+    (tx) => tx.categoryId == tappedCategory.id && tx.type == 'expense',
+  );
+
+  if (hasExpenseTx && !tappedCategory.isSalaryWallet) {
+    if (!context.mounted) return false;
+    final proceed = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: AppTheme.background,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Unusual Choice',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+            content: Text(
+              '"${tappedCategory.name}" already has expense transactions. Designating it as the salary wallet is unusual but allowed. Proceed?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accent,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  'Proceed',
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!proceed) return false;
+  }
+
+  final current = categoryProvider.salaryWalletCategory;
 
   // Case 1: tapping the currently active wallet → removing it
   if (tappedCategory.isSalaryWallet) {

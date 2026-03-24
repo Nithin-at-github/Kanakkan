@@ -7,6 +7,7 @@ import 'package:kanakkan/core/utils/app_theme.dart';
 
 void editSubcategoryDialog(BuildContext context, Category sub) {
   final controller = TextEditingController(text: sub.name);
+  bool excludeFromAnalysis = sub.excludeFromAnalysis;
 
   String? error;
 
@@ -38,6 +39,23 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
                 ),
               ),
 
+              const SizedBox(height: 8),
+
+              SwitchListTile(
+                title: const Text(
+                  'Exclude from Analysis',
+                  style: TextStyle(fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Hide from all summaries and charts',
+                  style: TextStyle(fontSize: 11),
+                ),
+                value: excludeFromAnalysis,
+                onChanged: (val) => setState(() => excludeFromAnalysis = val),
+                activeColor: AppTheme.accent,
+                contentPadding: EdgeInsets.zero,
+              ),
+
               if (provider.lastError != null) ...[
                 const SizedBox(height: 10),
                 Text(
@@ -55,7 +73,6 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
               },
               child: const Text("Cancel"),
             ),
-
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),
               onPressed: () async {
@@ -70,7 +87,11 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
 
                 provider.clearError();
 
-                await provider.updateCategory(sub.id!, name);
+                await provider.updateCategory(
+                  sub.id!,
+                  name,
+                  excludeFromAnalysis,
+                );
 
                 if (provider.lastError == null && context.mounted) {
                   Navigator.pop(context);
