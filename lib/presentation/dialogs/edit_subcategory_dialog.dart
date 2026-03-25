@@ -52,7 +52,7 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
                 ),
                 value: excludeFromAnalysis,
                 onChanged: (val) => setState(() => excludeFromAnalysis = val),
-                activeColor: AppTheme.accent,
+                activeThumbColor: AppTheme.accent,
                 contentPadding: EdgeInsets.zero,
               ),
 

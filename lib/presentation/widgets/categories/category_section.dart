@@ -22,7 +22,7 @@ class CategorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

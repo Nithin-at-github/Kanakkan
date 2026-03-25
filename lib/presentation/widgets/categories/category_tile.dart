@@ -3,12 +3,12 @@ import 'package:kanakkan/presentation/dialogs/edit_category_dialog.dart';
 import 'package:kanakkan/presentation/widgets/categories/salary_wallet_setup_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/domain/entities/category.dart';
-import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/dialogs/subcategory_dialog.dart';
+import 'package:kanakkan/presentation/dialogs/safe_delete_dialog.dart';
 
 class CategoryTile extends StatelessWidget {
   final Category category;
@@ -25,6 +25,7 @@ class CategoryTile extends StatelessWidget {
     final isSalaryWallet = category.isSalaryWallet;
 
     return ListTile(
+      contentPadding: const EdgeInsets.only(left: 16, right: 8),
       onTap: () => showDialog(
         context: context,
         builder: (_) => SubcategoryDialog(parent: category, accent: accent),
@@ -89,6 +90,32 @@ class CategoryTile extends StatelessWidget {
               ),
             ),
           ],
+          if (category.excludeFromAnalysis) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.visibility_off_outlined,
+                      size: 10, color: Colors.black45),
+                  SizedBox(width: 4),
+                  Text(
+                    'Ignored',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.black45,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
 
@@ -103,7 +130,7 @@ class CategoryTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '₹${formatAmt(balances.getBalance(category.id!), decimals: false)}',
+            '₹${formatAmt(balances.getBalance(category.id!))}',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -116,8 +143,6 @@ class CategoryTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             onSelected: (value) async {
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-
               if (value == 'set_salary') {
                 final confirmed = await confirmWalletChange(
                   context: context,
@@ -137,49 +162,7 @@ class CategoryTile extends StatelessWidget {
               } else if (value == 'edit') {
                 editCategoryDialog(context, category);
               } else if (value == 'delete') {
-                final confirm = await ConfirmDeleteDialog.show(
-                  context: context,
-                  title: 'Delete Category',
-                  message: subcategories.isNotEmpty
-                      ? 'This will also delete all ${subcategories.length} subcategories permanently.'
-                      : 'This will remove the category permanently.',
-                );
-
-                if (!confirm) return;
-
-                await provider.deleteCategory(category.id!);
-
-                if (provider.lastError != null) {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        provider.lastError!,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      backgroundColor: AppTheme.error,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                } else {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Category deleted',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      backgroundColor: AppTheme.error,
-                      behavior: SnackBarBehavior.floating,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
+                await SafeDeleteDialog.show(context, category);
               }
             },
             itemBuilder: (_) => [

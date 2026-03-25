@@ -282,6 +282,7 @@ Future<bool> confirmWalletChange({
         ) ??
         false;
     if (!proceed) return false;
+    if (!context.mounted) return false;
   }
 
   final current = categoryProvider.salaryWalletCategory;
@@ -322,6 +323,7 @@ Future<bool> confirmWalletChange({
 
   // Case 2: switching from one wallet to another
   if (current != null) {
+    if (!context.mounted) return false;
     return await showDialog<bool>(
           context: context,
           builder: (_) => _WalletChangeDialog(

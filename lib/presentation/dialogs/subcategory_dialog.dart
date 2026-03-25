@@ -105,9 +105,40 @@ class SubcategoryDialog extends StatelessWidget {
                         color: accent,
                         size: 18,
                       ),
-                      title: Text(
-                        sub.name,
-                        style: const TextStyle(fontSize: 14),
+                      title: Row(
+                        children: [
+                          Text(
+                            sub.name,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          if (sub.excludeFromAnalysis) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: Colors.black12),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.visibility_off_outlined,
+                                      size: 8, color: Colors.black45),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'Ignored',
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      color: Colors.black45,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

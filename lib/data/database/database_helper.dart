@@ -199,7 +199,7 @@ class DatabaseHelper {
         )
       ''');
       await db.execute(
-        'INSERT INTO accounts_new(id,name) SELECT id,name FROM accounts',
+        'INSERT OR IGNORE INTO accounts_new(id,name) SELECT id,name FROM accounts',
       );
       await db.execute("DROP TABLE accounts");
       await db.execute("ALTER TABLE accounts_new RENAME TO accounts");
@@ -309,7 +309,7 @@ class DatabaseHelper {
       // We check if 'type' column exists by querying the table info or just trying a safe SELECT.
       // Since version 7 might have already removed it, we select only the needed columns.
       await db.execute('''
-        INSERT INTO categories(id, name, parentId, isSalaryWallet)
+        INSERT OR IGNORE INTO categories(id, name, parentId, isSalaryWallet)
         SELECT id, name, parentId, isSalaryWallet FROM categories_old
       ''');
 

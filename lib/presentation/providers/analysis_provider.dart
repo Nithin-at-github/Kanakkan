@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
@@ -113,6 +114,27 @@ class AnalysisProvider extends ChangeNotifier {
   List<CategoryBreakdown> incomeBreakdown = [];
   Map<int, double> dailySpend = {};
   List<AnalysisInsight> insights = [];
+
+  List<TransactionEntity> _currentPeriodTxs = [];
+  List<TransactionEntity> get currentPeriodTxs => _currentPeriodTxs;
+
+  List<TransactionEntity> getTransactionsForCategory(int categoryId) {
+    final cat = _categories.resolveCategory(categoryId);
+    if (cat == null) return [];
+
+    if (cat.isMainCategory) {
+      final subIds = _categories.subcategoriesOf(categoryId).map((s) => s.id).toSet();
+      final list = _currentPeriodTxs.where((tx) {
+        return tx.categoryId == categoryId || subIds.contains(tx.categoryId);
+      }).toList();
+      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return list;
+    } else {
+      final list = _currentPeriodTxs.where((tx) => tx.categoryId == categoryId).toList();
+      list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return list;
+    }
+  }
 
   // ── COMPUTED — YEARLY ──
 
@@ -278,6 +300,7 @@ class AnalysisProvider extends ChangeNotifier {
     incomeBreakdown = _buildBreakdown(monthTx, 'income', totalIncome);
     dailySpend = _buildDailySpend(monthTx);
     insights = _buildInsights();
+    _currentPeriodTxs = monthTx;
   }
 
   void _computeYearly(
@@ -327,6 +350,7 @@ class AnalysisProvider extends ChangeNotifier {
 
     yearExpenseBreakdown = _buildBreakdown(yearTx, 'expense', yearTotalExpense);
     yearIncomeBreakdown = _buildBreakdown(yearTx, 'income', yearTotalIncome);
+    _currentPeriodTxs = yearTx;
   }
 
   // ── FILTER HELPERS (bucket-based) ──
@@ -552,7 +576,7 @@ class AnalysisProvider extends ChangeNotifier {
           emoji: '🎯',
           title: 'Almost There',
           body:
-              'Reduce spending by ₹${_fmt(needed)} more to reach the 20% savings target.',
+              'Reduce spending by ₹${formatAmt(needed)} more to reach the 20% savings target.',
           level: InsightLevel.warning,
         ),
       );
@@ -562,7 +586,7 @@ class AnalysisProvider extends ChangeNotifier {
           emoji: '🚨',
           title: 'Overspending Alert',
           body:
-              'You spent ₹${_fmt(totalExpense - totalIncome)} more than you earned.',
+              'You spent ₹${formatAmt(totalExpense - totalIncome)} more than you earned.',
           level: InsightLevel.danger,
         ),
       );
@@ -610,14 +634,4 @@ class AnalysisProvider extends ChangeNotifier {
 
     return result;
   }
-}
-
-// ─────────────────────────────────────────
-// HELPER
-// ─────────────────────────────────────────
-
-String _fmt(double v) {
-  if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
-  if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-  return v.toStringAsFixed(0);
 }

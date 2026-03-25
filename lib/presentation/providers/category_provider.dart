@@ -114,6 +114,11 @@ class CategoryProvider extends ChangeNotifier {
   /// Rebuilds all in-memory caches from the raw _categories list.
   /// Called once after each DB load — O(N) total, not O(N) per getter call.
   void _rebuildCache() {
+    _categories.sort((a, b) {
+      if (a.isSalaryWallet) return -1;
+      if (b.isSalaryWallet) return 1;
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
     _categoryMap = {for (final c in _categories) c.id!: c};
 
     _mainCategories = _categories.where((c) => c.isMainCategory).toList();
@@ -229,15 +234,6 @@ class CategoryProvider extends ChangeNotifier {
     final category = resolveCategory(id);
     if (category == null) return;
 
-    // For main categories, check wallet balance
-    if (category.isMainCategory) {
-      final balance = await categoryBalanceRepository.getBalance(id);
-      if (balance != 0) {
-        _setError('Category still has wallet balance');
-        return;
-      }
-    }
-
     try {
       // Subcategories and associated data are handled via CASCADE or
       // explicit transaction in the repository.
@@ -267,6 +263,38 @@ class CategoryProvider extends ChangeNotifier {
       _setError('Failed to update category');
     } catch (_) {
       _setError('Something went wrong');
+    }
+  }
+
+  Future<void> mergeCategories(List<int> sourceIds, String newName) async {
+    clearError();
+    if (sourceIds.isEmpty) {
+      _setError('No categories selected to merge');
+      return;
+    }
+    try {
+      await _repository.mergeCategories(sourceIds, newName);
+      await loadCategories();
+    } on DatabaseException catch (e) {
+      if (e.toString().contains('UNIQUE')) {
+        _setError('A category with that name already exists');
+        return;
+      }
+      _setError('Failed to merge categories');
+    } catch (_) {
+      _setError('Something went wrong');
+    }
+  }
+
+  Future<void> mergeInto(int sourceId, int targetId) async {
+    clearError();
+    try {
+      await _repository.mergeInto(sourceId, targetId);
+      await loadCategories();
+    } on DatabaseException catch (e) {
+      _setError('Failed to migrate data: ${e.toString()}');
+    } catch (_) {
+      _setError('Something went wrong during migration');
     }
   }
 }

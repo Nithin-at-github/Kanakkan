@@ -29,8 +29,7 @@ class CategoryBalanceProvider extends ChangeNotifier {
   Future<void> setBalance(int categoryId, double amount) async {
     _balances[categoryId] = amount;
     await _repository.setBalance(categoryId, amount);
-    // No notifyListeners() here — caller (LedgerProvider._reloadAll)
-    // triggers a full reload which notifies once at the end.
+    notifyListeners();
   }
 
   // ================= ALLOCATE =================
@@ -39,7 +38,7 @@ class CategoryBalanceProvider extends ChangeNotifier {
     final current = _balances[categoryId] ?? 0;
     _balances[categoryId] = current + amount;
     await _repository.addToBalance(categoryId, amount);
-    // Silent update — LedgerProvider._reloadAll notifies once after all effects
+    notifyListeners();
   }
 
   // ================= SPEND =================
@@ -48,7 +47,7 @@ class CategoryBalanceProvider extends ChangeNotifier {
     final current = _balances[categoryId] ?? 0;
     _balances[categoryId] = current - amount;
     await _repository.subtractFromBalance(categoryId, amount);
-    // Silent update — LedgerProvider._reloadAll notifies once after all effects
+    notifyListeners();
   }
 
   // ================= RESET =================

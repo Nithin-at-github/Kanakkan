@@ -68,7 +68,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                 /// LINKED ACCOUNT DROPDOWN
                 if (category.isMainCategory)
                   DropdownButtonFormField<Account?>(
-                    value: currentLinked,
+                    initialValue: currentLinked,
                     decoration: InputDecoration(
                       labelText: 'Linked account (optional)',
                       filled: true,
@@ -90,8 +90,11 @@ void editCategoryDialog(BuildContext context, Category category) {
                           value: a,
                           child: Row(
                             children: [
-                              const Icon(Icons.account_balance,
-                                  size: 16, color: AppTheme.accent),
+                              const Icon(
+                                Icons.account_balance,
+                                size: 16,
+                                color: AppTheme.accent,
+                              ),
                               const SizedBox(width: 8),
                               Text(a.name),
                             ],
@@ -116,7 +119,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                   ),
                   value: excludeFromAnalysis,
                   onChanged: (val) => setState(() => excludeFromAnalysis = val),
-                  activeColor: AppTheme.accent,
+                  activeThumbColor: AppTheme.accent,
                   contentPadding: EdgeInsets.zero,
                 ),
 
@@ -144,11 +147,18 @@ void editCategoryDialog(BuildContext context, Category category) {
                 Row(
                   children: [
                     Expanded(
+                      flex: 2,
                       child: OutlinedButton(
                         onPressed: () {
                           provider.clearError();
                           Navigator.pop(context);
                         },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                         child: const Text('Cancel'),
                       ),
                     ),
@@ -156,9 +166,14 @@ void editCategoryDialog(BuildContext context, Category category) {
                     const SizedBox(width: 12),
 
                     Expanded(
+                      flex: 3,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accent,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         onPressed: () async {
                           final name = controller.text.trim();

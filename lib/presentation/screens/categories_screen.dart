@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/dialogs/merge_categories_dialog.dart';
 import 'package:kanakkan/presentation/dialogs/move_wallet_dialog.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
@@ -52,6 +53,15 @@ class CategoriesScreen extends StatelessWidget {
                 ? 'Manage Salary Wallet'
                 : 'Set up Salary Wallet',
             onPressed: () => SalaryWalletSetupSheet.show(context),
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.call_merge,
+              color: AppTheme.accent,
+              size: 28,
+            ),
+            tooltip: 'Merge Categories',
+            onPressed: () => MergeCategoriesDialog.show(context),
           ),
           IconButton(
             icon: const Icon(

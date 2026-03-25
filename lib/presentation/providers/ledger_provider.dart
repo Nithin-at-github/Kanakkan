@@ -600,7 +600,12 @@ class LedgerProvider extends ChangeNotifier {
     bool reverse = false,
     int? transactionId,
   }) async {
-    if (tx.categoryId == null) return;
+    // If category is null, we treat this transaction as belonging to the
+    // "Salary Wallet" (the pool for unassigned funds). This ensures 100%
+    // reconciliation between accounts and wallets even for orphaned items.
+    final targetCategoryId = tx.categoryId ?? salaryCategoryId;
+    if (targetCategoryId == null) return; // No wallet system established yet
+
     final amount = reverse ? -tx.amount : tx.amount;
 
     if (tx.type == "expense") {
@@ -618,10 +623,10 @@ class LedgerProvider extends ChangeNotifier {
           }
         }
         // Fallback for old transactions with no split record
-        await balanceProvider.allocate(tx.categoryId!, tx.amount);
+        await balanceProvider.allocate(targetCategoryId, tx.amount);
       } else {
         final splits = await _spendWithSalaryFallback(
-          categoryId: tx.categoryId!,
+          categoryId: targetCategoryId,
           amount: tx.amount,
         );
         // Persist splits so detail screen and reversal can read them
@@ -636,7 +641,7 @@ class LedgerProvider extends ChangeNotifier {
     }
 
     if (tx.type == "income") {
-      await balanceProvider.allocate(tx.categoryId!, amount);
+      await balanceProvider.allocate(targetCategoryId, amount);
     }
   }
 

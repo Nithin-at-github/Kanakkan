@@ -549,7 +549,7 @@ class _StatCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '₹${_fmt(value.abs())}',
+            '₹${formatAmt(value.abs())}',
               style: TextStyle(
                 color: color,
                 fontSize: 20,
@@ -651,7 +651,7 @@ class _SmallStatCard extends StatelessWidget {
               style: const TextStyle(
                   color: Colors.black54, fontSize: 11)),
           const SizedBox(height: 6),
-          Text('₹${_fmt(value)}',
+          Text('₹${formatAmt(value)}',
               style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.bold,
@@ -694,7 +694,7 @@ class _BestMonthCard extends StatelessWidget {
                       color: Colors.black54,
                       fontSize: 12)),
               Text(
-                '$label — ₹${_fmt(savings)}',
+                '$label — ₹${formatAmt(savings)}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
@@ -791,7 +791,7 @@ class _BreakdownPreview extends StatelessWidget {
                             fontWeight: FontWeight.w500)),
                   ),
                   Text(
-                    '₹${_fmt(item.amount)}',
+                    '₹${formatAmt(item.amount)}',
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: color,
@@ -1022,14 +1022,4 @@ class _DailySpendChart extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─────────────────────────────────────────
-// HELPER
-// ─────────────────────────────────────────
-
-String _fmt(double v) {
-  if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
-  if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-  return v.toStringAsFixed(0);
 }

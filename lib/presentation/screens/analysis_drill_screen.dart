@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
+import 'package:kanakkan/presentation/screens/analysis_transactions_screen.dart';
 import 'package:provider/provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -186,20 +187,27 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
             children: [
               // Main category row
               GestureDetector(
-                onTap: item.subcategories.isNotEmpty
-                    ? () => setState(() {
-                        if (isExpanded) {
-                          _expandedIds.remove(item.categoryId);
-                        } else {
-                          _expandedIds.add(item.categoryId);
-                        }
-                      })
-                    : null,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AnalysisTransactionsScreen(
+                      categoryId: item.categoryId,
+                      categoryName: item.name,
+                    ),
+                  ),
+                ),
                 child: _CategoryRow(
                   item: item,
                   color: color,
                   isExpanded: isExpanded,
                   hasChildren: item.subcategories.isNotEmpty,
+                  onToggleExpand: () => setState(() {
+                    if (isExpanded) {
+                      _expandedIds.remove(item.categoryId);
+                    } else {
+                      _expandedIds.add(item.categoryId);
+                    }
+                  }),
                 ),
               ),
 
@@ -240,7 +248,7 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
           ),
           const SizedBox(height: 4),
           Text(
-            '₹${_fmt(total)}',
+            '₹${formatAmt(total)}',
             style: TextStyle(
               color: widget.color,
               fontSize: 28,
@@ -323,12 +331,13 @@ class _CategoryRow extends StatelessWidget {
   final Color color;
   final bool isExpanded;
   final bool hasChildren;
-
+  final VoidCallback? onToggleExpand;
   const _CategoryRow({
     required this.item,
     required this.color,
     required this.isExpanded,
     required this.hasChildren,
+    this.onToggleExpand,
   });
 
   @override
@@ -361,7 +370,7 @@ class _CategoryRow extends StatelessWidget {
                 ),
               const SizedBox(width: 8),
               Text(
-                '₹${_fmt(item.amount)}',
+                '₹${formatAmt(item.amount)}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: color,
@@ -369,13 +378,20 @@ class _CategoryRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              const SizedBox(width: 8),
               if (hasChildren)
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  size: 18,
-                  color: Colors.black45,
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 24,
+                    color: Colors.black45,
+                  ),
+                  onPressed: onToggleExpand,
                 ),
             ],
           ),
@@ -431,55 +447,66 @@ class _SubcategoryList extends StatelessWidget {
       ),
       child: Column(
         children: subcategories.map((sub) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.subdirectory_arrow_right,
-                      size: 14,
-                      color: parentColor.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        sub.name,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                    Text(
-                      '₹${_fmt(sub.amount)}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: parentColor,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${sub.percentage.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black45,
-                      ),
-                    ),
-                  ],
+          return InkWell(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AnalysisTransactionsScreen(
+                  categoryId: sub.categoryId,
+                  categoryName: sub.name,
                 ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: (sub.percentage / 100).clamp(0.0, 1.0),
-                    backgroundColor: parentColor.withValues(alpha: 0.08),
-                    valueColor: AlwaysStoppedAnimation(
-                      parentColor.withValues(alpha: 0.6),
-                    ),
-                    minHeight: 4,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.subdirectory_arrow_right,
+                        size: 14,
+                        color: parentColor.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          sub.name,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                      Text(
+                        '₹${formatAmt(sub.amount)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: parentColor,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${sub.percentage.toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black45,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: (sub.percentage / 100).clamp(0.0, 1.0),
+                      backgroundColor: parentColor.withValues(alpha: 0.08),
+                      valueColor: AlwaysStoppedAnimation(
+                        parentColor.withValues(alpha: 0.6),
+                      ),
+                      minHeight: 4,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }).toList(),
@@ -655,14 +682,14 @@ class _SavingsDrill extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                '₹${_fmt(t.income)}',
+                                '₹${formatAmt(t.income)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.success,
                                 ),
                               ),
                               Text(
-                                '₹${_fmt(t.expense)}',
+                                '₹${formatAmt(t.expense)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.error,
@@ -689,7 +716,7 @@ class _SavingsDrill extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      '${isSaving ? '+' : ''}₹${_fmt(t.savings)}',
+                      '${isSaving ? '+' : ''}₹${formatAmt(t.savings)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: isSaving ? AppTheme.success : AppTheme.error,
@@ -758,7 +785,7 @@ class _TrendDrill extends StatelessWidget {
                       final label = rodIdx == 0 ? 'Income' : 'Expense';
                       final val = rodIdx == 0 ? t.income : t.expense;
                       return BarTooltipItem(
-                        '$label\n₹${_fmt(val)}',
+                        '$label\n₹${formatAmt(val)}',
                         const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -774,7 +801,7 @@ class _TrendDrill extends StatelessWidget {
                       showTitles: true,
                       reservedSize: 44,
                       getTitlesWidget: (v, meta) => Text(
-                        _fmt(v),
+                        formatAmt(v),
                         style: const TextStyle(
                           fontSize: 9,
                           color: Colors.black45,
@@ -885,10 +912,10 @@ class _TrendDrill extends StatelessWidget {
                 return TableRow(
                   children: [
                     _tableCell(t.label),
-                    _tableCell('₹${_fmt(t.income)}', color: AppTheme.success),
-                    _tableCell('₹${_fmt(t.expense)}', color: AppTheme.error),
+                    _tableCell('₹${formatAmt(t.income)}', color: AppTheme.success),
+                    _tableCell('₹${formatAmt(t.expense)}', color: AppTheme.error),
                     _tableCell(
-                      '${saving >= 0 ? '+' : ''}₹${_fmt(saving)}',
+                      '${saving >= 0 ? '+' : ''}₹${formatAmt(saving)}',
                       color: saving >= 0 ? AppTheme.success : AppTheme.error,
                     ),
                   ],
@@ -979,7 +1006,7 @@ class _DailyDrill extends StatelessWidget {
                     getTooltipItems: (spots) => spots
                         .map(
                           (s) => LineTooltipItem(
-                            'Day ${s.x.toInt()}\n₹${_fmt(s.y)}',
+                            'Day ${s.x.toInt()}\n₹${formatAmt(s.y)}',
                             const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -1004,7 +1031,7 @@ class _DailyDrill extends StatelessWidget {
                       showTitles: true,
                       reservedSize: 44,
                       getTitlesWidget: (v, meta) => Text(
-                        '₹${_fmt(v)}',
+                        '₹${formatAmt(v)}',
                         style: const TextStyle(
                           fontSize: 9,
                           color: Colors.black45,
@@ -1117,7 +1144,7 @@ class _DailyDrill extends StatelessWidget {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              '₹${_fmt(e.value)}',
+                              '₹${formatAmt(e.value)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
@@ -1208,7 +1235,7 @@ class _DrillSummaryRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '₹${_fmt(item.value.abs())}',
+                      '₹${formatAmt(item.value.abs())}',
                       style: TextStyle(
                         color: item.color,
                         fontWeight: FontWeight.bold,
@@ -1364,8 +1391,4 @@ class _LegendDot extends StatelessWidget {
 // HELPER
 // ─────────────────────────────────────────
 
-String _fmt(double v) {
-  if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
-  if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
-  return v.toStringAsFixed(0);
-}
+

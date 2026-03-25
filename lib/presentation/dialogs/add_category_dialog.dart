@@ -66,7 +66,7 @@ class AddCategoryDialog {
 
                         /// LINKED ACCOUNT DROPDOWN
                         DropdownButtonFormField<Account?>(
-                          value: selectedAccount,
+                          initialValue: selectedAccount,
                           decoration: InputDecoration(
                             labelText: 'Linked account (optional)',
                             filled: true,
@@ -116,7 +116,7 @@ class AddCategoryDialog {
                           value: excludeFromAnalysis,
                           onChanged: (val) =>
                               setState(() => excludeFromAnalysis = val),
-                          activeColor: AppTheme.accent,
+                          activeThumbColor: AppTheme.accent,
                           contentPadding: EdgeInsets.zero,
                         ),
 

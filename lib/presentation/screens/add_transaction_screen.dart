@@ -1087,8 +1087,12 @@ class _AmountDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final val = double.tryParse(amount) ?? 0.0;
+    final formatted = formatAmt(val);
+    final display = amount.endsWith('.') ? '$formatted.' : formatted;
+
     return Text(
-      "₹${formatAmt(double.parse(amount))}",
+      "₹$display",
       style: const TextStyle(
         fontSize: 48,
         color: AppTheme.accent,
