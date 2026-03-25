@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ExportService {
   static final ExportService instance = ExportService._();
@@ -17,6 +18,7 @@ class ExportService {
     required List<TransactionEntity> transactions,
     required LedgerProvider ledger,
     required CategoryProvider categories,
+    bool saveToStorage = false,
   }) async {
     final rows = <List<String>>[];
     
@@ -58,15 +60,27 @@ class ExportService {
     final file = File('${temp.path}/$fileName');
     
     await file.writeAsString(csvString);
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(file.path)], subject: 'Kanakkan Export (CSV)'),
-    );
+
+    if (saveToStorage) {
+      final bytes = await file.readAsBytes();
+      await FilePicker.platform.saveFile(
+        dialogTitle: 'Save CSV Export',
+        fileName: fileName,
+        bytes: bytes,
+        type: FileType.any,
+      );
+    } else {
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], subject: 'Kanakkan Export (CSV)'),
+      );
+    }
   }
 
   Future<void> exportToPdf({
     required List<TransactionEntity> transactions,
     required LedgerProvider ledger,
     required CategoryProvider categories,
+    bool saveToStorage = false,
   }) async {
     final pdf = pw.Document();
 
@@ -142,9 +156,20 @@ class ExportService {
     final fileName = 'kanakkan_export_$timestamp.pdf';
     final file = File('${temp.path}/$fileName');
     
-    await file.writeAsBytes(await pdf.save());
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(file.path)], subject: 'Kanakkan Export (PDF)'),
-    );
+    final pdfBytes = await pdf.save();
+    await file.writeAsBytes(pdfBytes);
+
+    if (saveToStorage) {
+      await FilePicker.platform.saveFile(
+        dialogTitle: 'Save PDF Export',
+        fileName: fileName,
+        bytes: pdfBytes,
+        type: FileType.any,
+      );
+    } else {
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], subject: 'Kanakkan Export (PDF)'),
+      );
+    }
   }
 }

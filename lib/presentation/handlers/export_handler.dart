@@ -107,6 +107,10 @@ class ExportHandler {
     String format,
     DateTimeRange? range,
   ) async {
+    // Step 1 — Show choice dialog
+    final choice = await _showSaveChoiceDialog(context);
+    if (choice == null || !context.mounted) return; // cancelled or dismissed
+
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
@@ -135,6 +139,7 @@ class ExportHandler {
     );
 
     try {
+      if (!context.mounted) return;
       final ledger = context.read<LedgerProvider>();
       final categories = context.read<CategoryProvider>();
 
@@ -166,17 +171,21 @@ class ExportHandler {
         return;
       }
 
+      final bool saveToStorage = choice == 'storage';
+
       if (format == 'csv') {
         await ExportService.instance.exportToCsv(
           transactions: txs,
           ledger: ledger,
           categories: categories,
+          saveToStorage: saveToStorage,
         );
       } else {
         await ExportService.instance.exportToPdf(
           transactions: txs,
           ledger: ledger,
           categories: categories,
+          saveToStorage: saveToStorage,
         );
       }
     } catch (e) {
@@ -193,6 +202,72 @@ class ExportHandler {
     } finally {
       navigator.pop();
     }
+  }
+
+  // ── SAVE CHOICE DIALOG ───────────────────────────────────────────────────────
+
+  static Future<String?> _showSaveChoiceDialog(BuildContext context) async {
+    return await showDialog<String>(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: AppTheme.background,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
+                child: const Icon(
+                  Icons.save_outlined,
+                  color: AppTheme.primary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Save Options',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'How would you like to save your export?',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 24),
+              _ChoiceTile(
+                icon: Icons.save_alt_rounded,
+                title: 'Save to Device Storage',
+                subtitle: 'Choose a folder on your phone',
+                onTap: () => Navigator.pop(context, 'storage'),
+              ),
+              const SizedBox(height: 12),
+              _ChoiceTile(
+                icon: Icons.share_outlined,
+                title: 'Share / Send File',
+                subtitle: 'Send via WhatsApp, Drive, etc.',
+                onTap: () => Navigator.pop(context, 'share'),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.black54),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -440,6 +515,73 @@ class _ExportSheetState extends State<_ExportSheet> {
               const SizedBox(height: 8),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHOICE TILE
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ChoiceTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ChoiceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black12),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: AppTheme.primary, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 12, color: Colors.black45),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.black12),
+          ],
         ),
       ),
     );

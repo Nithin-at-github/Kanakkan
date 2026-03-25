@@ -51,13 +51,17 @@ class BackupService {
   ];
 
   // ── BACKUP ──────────────────────────────────────────────────────────────────
+  
+  /// Flushes all WAL data to the main DB file.
+  Future<void> _checkpoint() async {
+    final db = await _db.database;
+    await db.rawQuery('PRAGMA wal_checkpoint(FULL)');
+  }
 
   /// Copies the DB to a temp file then shares it via the system share sheet.
   Future<BackupResult> backup() async {
     try {
-      // Checkpoint WAL so all data is flushed to the main DB file
-      final db = await _db.database;
-      await db.rawQuery('PRAGMA wal_checkpoint(FULL)');
+      await _checkpoint();
 
       final dbPath = await _db.getDatabasePath();
       final source = File(dbPath);
@@ -74,7 +78,7 @@ class BackupService {
 
       await source.copy(dest.path);
 
-      // Share via system sheet — user chooses where to save
+      // Share via system sheet — user chooses where to send/share
       final result = await SharePlus.instance.share(
         ShareParams(
           files: [XFile(dest.path, mimeType: 'application/octet-stream')],
@@ -92,6 +96,42 @@ class BackupService {
       return BackupResult.success(backupName);
     } catch (e) {
       return BackupResult.error('Backup failed: $e');
+    }
+  }
+
+  /// Copies the DB and saves it to a user-picked location using the native file saver.
+  Future<BackupResult> backupToStorage() async {
+    try {
+      await _checkpoint();
+
+      final dbPath = await _db.getDatabasePath();
+      final source = File(dbPath);
+
+      if (!await source.exists()) {
+        return BackupResult.error('Database file not found.');
+      }
+
+      final timestamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
+      final backupName = 'kanakkan_backup_$timestamp.db';
+      
+      // We read the bytes first as FilePicker.saveFile expects them
+      final bytes = await source.readAsBytes();
+
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Kanakkan Backup',
+        fileName: backupName,
+        bytes: bytes,
+        type: FileType.any,
+      );
+
+      // On Android, if the user cancels, it returns null
+      if (result == null) {
+        return BackupResult.cancelled();
+      }
+
+      return BackupResult.success(backupName);
+    } catch (e) {
+      return BackupResult.error('Save to storage failed: $e');
     }
   }
 

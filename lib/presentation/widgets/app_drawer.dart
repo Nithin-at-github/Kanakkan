@@ -7,6 +7,8 @@ import 'package:kanakkan/presentation/handlers/export_handler.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'package:kanakkan/presentation/screens/update_notes_screen.dart';
+
 /// The app-wide navigation drawer.
 /// Attach via `drawer: const AppDrawer()` on RootScaffold's Scaffold.
 class AppDrawer extends StatelessWidget {
@@ -77,6 +79,21 @@ class AppDrawer extends StatelessWidget {
                       final ctx = rootScaffoldKey.currentContext;
                       if (ctx == null) return;
                       ExportHandler.showExportOptions(ctx);
+                    },
+                  ),
+
+                  _DrawerTile(
+                    icon: Icons.new_releases_outlined,
+                    label: "Update Notes",
+                    subtitle: "See what's new in Kanakkan",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const UpdateNotesScreen(),
+                        ),
+                      );
                     },
                   ),
 

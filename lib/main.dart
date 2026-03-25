@@ -8,6 +8,7 @@ import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/widgets/app_initializer.dart';
 import 'package:kanakkan/presentation/providers/salary_allocation_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'presentation/providers/ledger_provider.dart';
 import 'presentation/providers/app_state_provider.dart';
@@ -103,12 +104,18 @@ class KanakkanApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: GoogleFonts.lato().fontFamily,
+        textTheme: GoogleFonts.latoTextTheme(),
         scaffoldBackgroundColor: AppTheme.primary,
         canvasColor: Colors.white,
         dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
         colorScheme: ColorScheme.light(
           surface: AppTheme.primary,
           primary: AppTheme.primary,
+          secondary: AppTheme.accent,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
           surfaceContainer: Colors.white,
           surfaceContainerHigh: Colors.white,
           surfaceContainerHighest: Colors.white,

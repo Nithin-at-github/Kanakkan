@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   /// Core Palette
@@ -11,6 +12,8 @@ class AppTheme {
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
+    fontFamily: GoogleFonts.lato().fontFamily,
+    textTheme: GoogleFonts.latoTextTheme(),
 
     scaffoldBackgroundColor: background,
 
