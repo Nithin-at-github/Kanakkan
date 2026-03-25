@@ -355,6 +355,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         controller: _noteController,
         maxLines: 2,
         style: const TextStyle(color: Colors.white),
+        cursorColor: AppTheme.accent,
         decoration: InputDecoration(
           hintText: "Add notes",
           hintStyle: const TextStyle(color: Colors.white54),

@@ -105,25 +105,12 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context, false),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                     child: const Text('Cancel'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                     onPressed: _targetId == null
                         ? null
                         : () async {
@@ -143,10 +130,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                               setState(() => _errorText = provider.lastError);
                             }
                           },
-                    child: const Text(
-                      'Move & Delete',
-                      style: TextStyle(color: AppTheme.background),
-                    ),
+                    child: const Text('Move & Delete'),
                   ),
                 ),
               ],
@@ -155,20 +139,6 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
             Center(
               child: Column(
                 children: [
-                  if (hasBalance)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Note: This category has a balance of ₹${formatAmt(currentBalance, decimals: false)}. It will be automatically moved to your Salary Wallet (Ready to Assign) to maintain balance integrity.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppTheme.accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
                   TextButton(
                     onPressed: () async {
                       try {
@@ -196,10 +166,28 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                       }
                     },
                     child: const Text(
-                      'Just Delete (Keep as Deleted Category)',
-                      style: TextStyle(color: AppTheme.error, fontSize: 13),
+                      'Keep as Deleted Category',
+                      style: TextStyle(
+                        color: AppTheme.error,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  if (hasBalance)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Note: This category has a balance of ₹${formatAmt(currentBalance, decimals: false)}. It will be automatically moved to your Salary Wallet (Ready to Assign) to maintain balance integrity.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppTheme.accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

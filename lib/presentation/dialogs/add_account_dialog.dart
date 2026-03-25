@@ -120,10 +120,6 @@ class AddAccountDialog {
                   
                             Expanded(
                               child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.accent,
-                                  minimumSize: const Size(double.infinity, 48),
-                                ),
                                 onPressed: () async {
                                   ledger.clearError();
                   
@@ -156,10 +152,7 @@ class AddAccountDialog {
                                     if (context.mounted) Navigator.pop(context);
                                   }
                                 },
-                                child: const Text(
-                                  "Add Account",
-                                  style: TextStyle(fontSize: 13),
-                                ),
+                                child: const Text("Add Account"),
                               ),
                             ),
                           ],

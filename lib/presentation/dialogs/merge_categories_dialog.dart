@@ -170,12 +170,6 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       child: const Text('Cancel'),
                     ),
                   ),
@@ -183,14 +177,6 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _handleMerge,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: AppTheme.background,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                       child: const Text('Merge'),
                     ),
                   ),

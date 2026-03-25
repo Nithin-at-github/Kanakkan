@@ -64,7 +64,7 @@ class UpdateNotesScreen extends StatelessWidget {
               stretch: true,
               backgroundColor: AppTheme.background,
               elevation: 0,
-              centerTitle: true,
+              centerTitle: false,
               leading: Center(
                 child: IconButton(
                   onPressed: () => Navigator.pop(context),
@@ -89,16 +89,16 @@ class UpdateNotesScreen extends StatelessWidget {
                   StretchMode.zoomBackground,
                   StretchMode.blurBackground,
                 ],
-                titlePadding: const EdgeInsets.only(bottom: 16),
+                titlePadding: const EdgeInsets.only(bottom: 16, left: 72), // Offset for leading icon
                 title: const Text(
                   'Update Notes',
                   style: TextStyle(
                     color: AppTheme.primary,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500, // Medium weight instead of bold
                     fontSize: 18,
                   ),
                 ),
-                centerTitle: true,
+                centerTitle: false,
                 background: Stack(
                   fit: StackFit.expand,
                   children: [

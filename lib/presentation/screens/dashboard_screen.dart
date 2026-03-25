@@ -90,17 +90,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final filtered = _filterTransactions(provider.transactions);
 
     final totalExpense = filtered
-        .where((e) =>
-            e.type == "expense" &&
-            e.transferGroupId == null &&
-            !categoryProvider.isExcluded(e.categoryId))
+        .where(
+          (e) =>
+              e.type == "expense" &&
+              e.transferGroupId == null &&
+              !categoryProvider.isExcluded(e.categoryId),
+        )
         .fold(0.0, (sum, e) => sum + e.amount);
 
     final totalIncome = filtered
-        .where((e) =>
-            e.type == "income" &&
-            e.transferGroupId == null &&
-            !categoryProvider.isExcluded(e.categoryId))
+        .where(
+          (e) =>
+              e.type == "income" &&
+              e.transferGroupId == null &&
+              !categoryProvider.isExcluded(e.categoryId),
+        )
         .fold(0.0, (sum, e) => sum + e.amount);
 
     return Scaffold(
@@ -159,8 +163,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: DateFilterMode.daily,
                             child: Row(
                               children: [
-                                Icon(Icons.calendar_view_day_outlined,
-                                    size: 18, color: AppTheme.primary),
+                                Icon(
+                                  Icons.calendar_view_day_outlined,
+                                  size: 18,
+                                  color: AppTheme.primary,
+                                ),
                                 SizedBox(width: 10),
                                 Text("Daily"),
                               ],
@@ -170,8 +177,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: DateFilterMode.weekly,
                             child: Row(
                               children: [
-                                Icon(Icons.calendar_view_week_outlined,
-                                    size: 18, color: AppTheme.primary),
+                                Icon(
+                                  Icons.calendar_view_week_outlined,
+                                  size: 18,
+                                  color: AppTheme.primary,
+                                ),
                                 SizedBox(width: 10),
                                 Text("Weekly"),
                               ],
@@ -181,8 +191,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: DateFilterMode.monthly,
                             child: Row(
                               children: [
-                                Icon(Icons.calendar_view_month_outlined,
-                                    size: 18, color: AppTheme.primary),
+                                Icon(
+                                  Icons.calendar_view_month_outlined,
+                                  size: 18,
+                                  color: AppTheme.primary,
+                                ),
                                 SizedBox(width: 10),
                                 Text("Monthly"),
                               ],
@@ -192,8 +205,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             value: DateFilterMode.yearly,
                             child: Row(
                               children: [
-                                Icon(Icons.event_note_outlined,
-                                    size: 18, color: AppTheme.primary),
+                                Icon(
+                                  Icons.event_note_outlined,
+                                  size: 18,
+                                  color: AppTheme.primary,
+                                ),
                                 SizedBox(width: 10),
                                 Text("Yearly"),
                               ],
@@ -441,13 +457,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 14, color: Colors.white70),
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
         const SizedBox(height: 4),
         Text(
           "₹${formatAmt(amount)}",
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             color: color,
             fontWeight: FontWeight.bold,
           ),

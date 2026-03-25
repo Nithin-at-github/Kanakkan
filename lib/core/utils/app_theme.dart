@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   /// Core Palette
@@ -12,46 +11,97 @@ class AppTheme {
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    fontFamily: GoogleFonts.lato().fontFamily,
-    textTheme: GoogleFonts.latoTextTheme(),
+    fontFamily: 'Lato',
 
-    scaffoldBackgroundColor: background,
+    // Refined Text Theme
+    textTheme: const TextTheme(
+      headlineLarge: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      headlineMedium: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      titleLarge: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+      bodyLarge: TextStyle(fontSize: 16, color: Colors.black87),
+      bodyMedium: TextStyle(fontSize: 14, color: Colors.black87),
+    ),
 
-    colorScheme: const ColorScheme(
-      brightness: Brightness.light,
+    scaffoldBackgroundColor: primary,
+    canvasColor: Colors.white,
+
+    colorScheme: const ColorScheme.light(
       primary: primary,
-      onPrimary: Colors.white,
       secondary: accent,
+      surface: primary,
+      onPrimary: Colors.white,
       onSecondary: Colors.white,
-      error: error,
-      onError: Colors.white,
-      surface: Colors.white,
-      onSurface: Colors.black,
+      onSurface: Colors.black87,
+      surfaceContainer: Colors.white,
+      surfaceContainerHigh: Colors.white,
+      surfaceContainerHighest: Colors.white,
+    ),
+
+    dialogTheme: const DialogThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+    ),
+
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: accent,
+      selectionColor: Color(0x40C5A059), // 25% opacity accent
+      selectionHandleColor: accent,
     ),
 
     appBarTheme: const AppBarTheme(
       backgroundColor: primary,
       foregroundColor: Colors.white,
       elevation: 0,
+      centerTitle: false, // Left align title
+      titleTextStyle: TextStyle(
+        fontFamily: 'Lato',
+        fontSize: 20,
+        fontWeight: FontWeight.normal, // Remove bold
+        color: Colors.white,
+      ),
+    ),
+
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Colors.white,
+      selectedItemColor: accent,
+      unselectedItemColor: Colors.black45,
+    ),
+
+    popupMenuTheme: const PopupMenuThemeData(
+      color: Colors.white,
     ),
 
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: accent,
         foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        elevation: 0, // Flat design for modern look
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.black54, // Muted color for "Cancel"
+        side: const BorderSide(color: Colors.black12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 15),
       ),
     ),
 
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: accent,
       foregroundColor: Colors.white,
+      elevation: 4,
     ),
 
     cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
   );
 }

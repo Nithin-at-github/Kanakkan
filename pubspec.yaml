@@ -52,7 +52,6 @@ dependencies:
   pdf: ^3.11.3
   url_launcher: ^6.3.2
   local_auth_platform_interface: ^1.1.0
-  google_fonts: ^6.2.1
 
 flutter_native_splash:
   color: "#2D2438"
@@ -101,6 +100,9 @@ flutter:
     - family: 'Ravivarma'
       fonts:
         - asset: assets/fonts/Ravivarma_Normal.ttf
+    - family: 'Lato'
+      fonts:
+        - asset: assets/fonts/Lato-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

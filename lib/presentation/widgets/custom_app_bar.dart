@@ -10,6 +10,7 @@ class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: AppTheme.primary,
+      centerTitle: false,
       leading: IconButton(
         icon: const Icon(Icons.menu, color: AppTheme.accent),
         // Use the global key — always opens RootScaffold's drawer

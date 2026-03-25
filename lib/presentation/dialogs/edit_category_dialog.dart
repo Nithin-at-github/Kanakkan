@@ -153,12 +153,6 @@ void editCategoryDialog(BuildContext context, Category category) {
                           provider.clearError();
                           Navigator.pop(context);
                         },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
                         child: const Text('Cancel'),
                       ),
                     ),
@@ -168,13 +162,6 @@ void editCategoryDialog(BuildContext context, Category category) {
                     Expanded(
                       flex: 3,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accent,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
                         onPressed: () async {
                           final name = controller.text.trim();
 

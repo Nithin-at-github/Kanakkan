@@ -69,7 +69,7 @@ class CategoryTile extends StatelessWidget {
         children: [
           Text(
             category.name,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           if (isSalaryWallet) ...[
             const SizedBox(width: 6),
