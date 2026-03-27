@@ -12,12 +12,12 @@ class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: AppTheme.primary,
       centerTitle: false,
       leading: IconButton(
-        icon: const Icon(Icons.menu, color: AppTheme.accent),
+        icon: Icon(Icons.menu, color: AppTheme.accent),
         // Use the global key — always opens RootScaffold's drawer
         // regardless of which screen's Scaffold this AppBar is inside.
         onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
       ),
-      title: const Text(
+      title: Text(
         "I-W-¡-³-",
         style: TextStyle(
           fontFamily: 'Ravivarma',

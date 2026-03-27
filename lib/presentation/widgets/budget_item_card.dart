@@ -66,7 +66,7 @@ class BudgetItemCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       categoryName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                         color: AppTheme.primary,
@@ -76,7 +76,7 @@ class BudgetItemCard extends StatelessWidget {
 
                   Text(
                     "Limit ₹${formatAmt(budget.allocatedAmount, decimals: false)}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.accent,
                     ),

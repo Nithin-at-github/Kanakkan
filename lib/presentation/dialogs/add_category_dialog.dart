@@ -32,7 +32,7 @@ class AddCategoryDialog {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         /// TITLE
-                        const Text(
+                        Text(
                           'New Category',
                           style: TextStyle(
                             fontSize: 20,
@@ -88,7 +88,7 @@ class AddCategoryDialog {
                                 value: a,
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.account_balance,
+                                    Icon(Icons.account_balance,
                                         size: 16, color: AppTheme.accent),
                                     const SizedBox(width: 8),
                                     Text(a.name),
@@ -132,7 +132,7 @@ class AddCategoryDialog {
                             ),
                             child: Text(
                               provider.lastError!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.error,
                                 fontWeight: FontWeight.w500,
                               ),

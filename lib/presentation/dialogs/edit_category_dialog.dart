@@ -34,7 +34,7 @@ void editCategoryDialog(BuildContext context, Category category) {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Edit Category',
                   style: TextStyle(
                     fontSize: 20,
@@ -90,7 +90,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                           value: a,
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.account_balance,
                                 size: 16,
                                 color: AppTheme.accent,
@@ -134,7 +134,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                     ),
                     child: Text(
                       provider.lastError!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.error,
                         fontWeight: FontWeight.w500,
                       ),

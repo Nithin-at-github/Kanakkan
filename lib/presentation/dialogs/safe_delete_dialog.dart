@@ -53,7 +53,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.warning_amber_rounded,
                   color: Colors.amber,
                   size: 28,
@@ -62,7 +62,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                 Expanded(
                   child: Text(
                     'Delete ${widget.category.name}?',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
@@ -72,7 +72,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
               ],
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'To preserve your financial history, please choose a destination for all existing transactions and subcategories.',
               style: TextStyle(fontSize: 14, color: Colors.black87),
             ),
@@ -96,7 +96,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
               const SizedBox(height: 8),
               Text(
                 _errorText!,
-                style: const TextStyle(color: AppTheme.error, fontSize: 12),
+                style: TextStyle(color: AppTheme.error, fontSize: 12),
               ),
             ],
             const SizedBox(height: 24),
@@ -165,7 +165,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                         setState(() => _errorText = e.toString());
                       }
                     },
-                    child: const Text(
+                    child: Text(
                       'Keep as Deleted Category',
                       style: TextStyle(
                         color: AppTheme.error,
@@ -181,7 +181,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                       child: Text(
                         'Note: This category has a balance of ₹${formatAmt(currentBalance, decimals: false)}. It will be automatically moved to your Salary Wallet (Ready to Assign) to maintain balance integrity.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.accent,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,

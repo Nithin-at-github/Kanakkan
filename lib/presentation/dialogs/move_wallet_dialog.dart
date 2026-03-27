@@ -35,7 +35,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               /// TITLE
-              const Text(
+              Text(
                 "Move Wallet Money",
                 style: TextStyle(
                   fontSize: 20,
@@ -132,7 +132,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   ),
                   child: Text(
                     errorText!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.error,
                       fontWeight: FontWeight.w500,
                     ),
@@ -228,7 +228,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text("Money moved successfully!",
               style: TextStyle(
                 fontWeight: FontWeight.bold,

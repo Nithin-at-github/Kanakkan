@@ -109,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: const ReusableAppBar(),
+      appBar: ReusableAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -124,7 +124,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_left,
                           color: AppTheme.accent,
                         ),
@@ -133,7 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       Text(
                         _formatDate(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           color: AppTheme.accent,
                           fontWeight: FontWeight.bold,
@@ -141,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
 
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_right,
                           color: AppTheme.accent,
                         ),
@@ -151,14 +151,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(width: 10),
 
                       PopupMenuButton<DateFilterMode>(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.filter_list,
                           color: AppTheme.accent,
                         ),
                         onSelected: (mode) {
                           setState(() => filterMode = mode);
                         },
-                        itemBuilder: (_) => const [
+                        itemBuilder: (_) => [
                           PopupMenuItem(
                             value: DateFilterMode.daily,
                             child: Row(
@@ -168,8 +168,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   size: 18,
                                   color: AppTheme.primary,
                                 ),
-                                SizedBox(width: 10),
-                                Text("Daily"),
+                                const SizedBox(width: 10),
+                                const Text("Daily"),
                               ],
                             ),
                           ),
@@ -182,8 +182,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   size: 18,
                                   color: AppTheme.primary,
                                 ),
-                                SizedBox(width: 10),
-                                Text("Weekly"),
+                                const SizedBox(width: 10),
+                                const Text("Weekly"),
                               ],
                             ),
                           ),
@@ -196,8 +196,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   size: 18,
                                   color: AppTheme.primary,
                                 ),
-                                SizedBox(width: 10),
-                                Text("Monthly"),
+                                const SizedBox(width: 10),
+                                const Text("Monthly"),
                               ],
                             ),
                           ),
@@ -210,8 +210,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   size: 18,
                                   color: AppTheme.primary,
                                 ),
-                                SizedBox(width: 10),
-                                Text("Yearly"),
+                                const SizedBox(width: 10),
+                                const Text("Yearly"),
                               ],
                             ),
                           ),
@@ -232,7 +232,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         totalIncome - totalExpense,
                         (totalIncome - totalExpense) < 0
                             ? AppTheme.error
-                            : Colors.white,
+                            : Colors.white70,
                       ),
                     ],
                   ),
@@ -247,7 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -331,7 +331,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       children: [
                                         Text(
                                           categoryName,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 15,
                                             color: AppTheme.primary,
@@ -340,9 +340,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           "$accountName • ${DateFormat("MMM d").format(date)}",
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.black54,
+                                            color: AppTheme.onSurfaceVariant,
                                           ),
                                         ),
                                       ],

@@ -20,16 +20,16 @@ class TransactionTopBar extends StatelessWidget {
         children: [
           TextButton.icon(
             onPressed: onCancel,
-            icon: const Icon(Icons.close, color: AppTheme.accent),
-            label: const Text(
+            icon: Icon(Icons.close, color: AppTheme.accent),
+            label: Text(
               "CANCEL",
               style: TextStyle(color: AppTheme.accent),
             ),
           ),
           TextButton.icon(
             onPressed: onSave,
-            icon: const Icon(Icons.check, color: AppTheme.accent),
-            label: const Text("SAVE", style: TextStyle(color: AppTheme.accent)),
+            icon: Icon(Icons.check, color: AppTheme.accent),
+            label: Text("SAVE", style: TextStyle(color: AppTheme.accent)),
           ),
         ],
       ),

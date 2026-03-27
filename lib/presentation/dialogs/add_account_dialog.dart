@@ -31,7 +31,7 @@ class AddAccountDialog {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           "New Account",
                           style: TextStyle(
                             fontSize: 20,
@@ -93,7 +93,7 @@ class AddAccountDialog {
                             ),
                             child: Text(
                               ledger.lastError!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.error,
                                 fontWeight: FontWeight.w500,
                               ),

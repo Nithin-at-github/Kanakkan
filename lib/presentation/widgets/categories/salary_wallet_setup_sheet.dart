@@ -32,9 +32,9 @@ class SalaryWalletSetupSheet extends StatelessWidget {
       maxChildSize: 0.92,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppTheme.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
@@ -61,7 +61,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                       style: TextStyle(fontSize: 40),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Salary Wallet',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -147,7 +147,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                         provider.hasSalaryWallet
                             ? 'Current Salary Wallet'
                             : 'Choose a Category',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                           color: AppTheme.primary,
@@ -207,7 +207,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Close',
                           style: TextStyle(color: AppTheme.primary),
                         ),
@@ -250,7 +250,7 @@ Future<bool> confirmWalletChange({
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            title: const Text(
+            title: Text(
               'Unusual Choice',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -505,7 +505,7 @@ class _WalletChangeDialog extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.primary,
@@ -637,7 +637,7 @@ class _FeatureRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                   color: AppTheme.primary,

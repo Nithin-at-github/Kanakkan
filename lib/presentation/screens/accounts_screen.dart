@@ -22,22 +22,26 @@ class AccountsScreen extends StatelessWidget {
     );
 
     final totalIncome = provider.transactions
-        .where((t) =>
-            t.type == "income" &&
-            t.transferGroupId == null &&
-            !categoryProvider.isExcluded(t.categoryId))
+        .where(
+          (t) =>
+              t.type == "income" &&
+              t.transferGroupId == null &&
+              !categoryProvider.isExcluded(t.categoryId),
+        )
         .fold(0.0, (sum, t) => sum + t.amount);
 
     final totalExpense = provider.transactions
-        .where((t) =>
-            t.type == "expense" &&
-            t.transferGroupId == null &&
-            !categoryProvider.isExcluded(t.categoryId))
+        .where(
+          (t) =>
+              t.type == "expense" &&
+              t.transferGroupId == null &&
+              !categoryProvider.isExcluded(t.categoryId),
+        )
         .fold(0.0, (sum, t) => sum + t.amount);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: const ReusableAppBar(),
+      appBar: ReusableAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -45,15 +49,15 @@ class AccountsScreen extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTheme.primary,
-                borderRadius: BorderRadius.vertical(
+                borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(15),
                 ),
               ),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     "Accounts",
                     style: TextStyle(
                       color: AppTheme.accent,
@@ -66,7 +70,7 @@ class AccountsScreen extends StatelessWidget {
 
                   Text(
                     "Total Balance → ₹${formatAmt(totalBalance)}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.accent,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -100,7 +104,7 @@ class AccountsScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.only(top: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -128,8 +132,8 @@ class AccountsScreen extends StatelessWidget {
                       ),
                     ),
                   ] else ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -186,7 +190,7 @@ class AccountsScreen extends StatelessWidget {
               children: [
                 Text(
                   acc.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primary,
@@ -210,7 +214,7 @@ class AccountsScreen extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            icon: const Icon(Icons.more_vert, color: AppTheme.primary),
+            icon: Icon(Icons.more_vert, color: AppTheme.primary),
             onSelected: (value) async {
               if (value == "edit") {
                 _editAccount(context, acc);
@@ -225,7 +229,7 @@ class AccountsScreen extends StatelessWidget {
                 provider.deleteAccount(acc.id!);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
                         "Account deleted",
                         style: TextStyle(
@@ -235,19 +239,23 @@ class AccountsScreen extends StatelessWidget {
                       ),
                       backgroundColor: AppTheme.error,
                       behavior: SnackBarBehavior.floating,
-                      duration: Duration(seconds: 1),
+                      duration: const Duration(seconds: 1),
                     ),
                   );
                 }
               }
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: "edit",
                 child: Row(
                   children: [
-                    Icon(Icons.edit_outlined, size: 18, color: AppTheme.primary),
-                    SizedBox(width: 10),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: AppTheme.primary,
+                    ),
+                    const SizedBox(width: 10),
                     Text("Edit"),
                   ],
                 ),
@@ -257,7 +265,7 @@ class AccountsScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(Icons.delete_outline, size: 18, color: AppTheme.error),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Text("Delete", style: TextStyle(color: AppTheme.error)),
                   ],
                 ),
@@ -306,7 +314,7 @@ class AccountsScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     "Edit Account",
                     style: TextStyle(
                       fontSize: 20,
@@ -371,7 +379,7 @@ class AccountsScreen extends StatelessWidget {
                       ),
                       child: Text(
                         ledger.lastError!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.error,
                           fontWeight: FontWeight.w500,
                         ),
@@ -390,7 +398,7 @@ class AccountsScreen extends StatelessWidget {
                             ledger.clearError();
                             Navigator.pop(context);
                           },
-                          child: const Text("Cancel"),
+                          child: Text("Cancel"),
                         ),
                       ),
 
@@ -421,7 +429,7 @@ class AccountsScreen extends StatelessWidget {
                               if (context.mounted) Navigator.pop(context);
                             }
                           },
-                          child: const Text("Save"),
+                          child: Text("Save"),
                         ),
                       ),
                     ],

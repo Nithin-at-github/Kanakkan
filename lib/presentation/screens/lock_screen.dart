@@ -43,12 +43,12 @@ class _LockScreenState extends State<LockScreen> {
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid PIN",
+      ).showSnackBar(SnackBar(content: const Text("Invalid PIN",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
         backgroundColor: AppTheme.error,
         behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 1),
+        duration: const Duration(seconds: 1),
       ));
     }
   }
@@ -64,7 +64,7 @@ class _LockScreenState extends State<LockScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+        borderSide: BorderSide(color: AppTheme.accent, width: 2),
       ),
     );
   }
@@ -84,7 +84,7 @@ class _LockScreenState extends State<LockScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   /// ================= LOGO =================
-                  const Text(
+                  Text(
                     "I-W-¡-³-",
                     style: TextStyle(
                       fontFamily: 'Ravivarma',
@@ -93,9 +93,9 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                   ),
 
-                  const Text(
+                  Text(
                     "Unlock your finances",
-                    style: TextStyle(color: Colors.black54, fontSize: 14),
+                    style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 14),
                   ),
 
                   const SizedBox(height: 20),
@@ -104,7 +104,7 @@ class _LockScreenState extends State<LockScreen> {
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppTheme.surface,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: const [
                         BoxShadow(
@@ -155,7 +155,7 @@ class _LockScreenState extends State<LockScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     "Unlock",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
@@ -170,12 +170,12 @@ class _LockScreenState extends State<LockScreen> {
                         /// BIOMETRIC BUTTON
                         TextButton.icon(
                           onPressed: _tryBiometric,
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.fingerprint,
                             size: 26,
                             color: AppTheme.accent,
                           ),
-                          label: const Text(
+                          label: Text(
                             "Unlock with biometric",
                             style: TextStyle(
                               color: AppTheme.accent,

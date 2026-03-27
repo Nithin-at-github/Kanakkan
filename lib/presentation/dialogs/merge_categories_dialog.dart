@@ -72,7 +72,7 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Merge Categories',
                 style: TextStyle(
                   fontSize: 20,
@@ -159,7 +159,7 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
                 const SizedBox(height: 12),
                 Text(
                   _errorText!,
-                  style: const TextStyle(color: AppTheme.error, fontSize: 12),
+                  style: TextStyle(color: AppTheme.error, fontSize: 12),
                 ),
               ],
 

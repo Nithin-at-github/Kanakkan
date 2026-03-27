@@ -12,9 +12,9 @@ class UniversalCreateSheet {
       builder: (_) {
         return Container(
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppTheme.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

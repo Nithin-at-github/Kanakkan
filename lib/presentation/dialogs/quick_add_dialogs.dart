@@ -114,7 +114,7 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Add Account',
                 style: TextStyle(
                   fontSize: 20,
@@ -302,7 +302,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Add Category',
                 style: TextStyle(
                   fontSize: 20,
@@ -369,7 +369,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                               value: c,
                               child: Row(
                                 children: [
-                                  const Icon(Icons.label_outline,
+                                  Icon(Icons.label_outline,
                                       size: 14, color: AppTheme.accent),
                                   const SizedBox(width: 8),
                                   Text(c.name),

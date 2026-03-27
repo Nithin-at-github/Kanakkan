@@ -71,7 +71,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+        borderSide: BorderSide(color: AppTheme.accent, width: 2),
       ),
     );
   }
@@ -88,7 +88,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 /// ================= LOGO =================
-                const Text(
+                Text(
                   "I-W-¡-³-",
                   style: TextStyle(
                     fontFamily: 'Ravivarma',

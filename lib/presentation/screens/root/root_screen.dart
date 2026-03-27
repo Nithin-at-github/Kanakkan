@@ -15,7 +15,7 @@ class RootScreen extends StatelessWidget {
 
     switch (appState.status) {
       case AppLockStatus.loading:
-        return const Scaffold(
+        return Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -28,7 +28,7 @@ class RootScreen extends StatelessWidget {
                     color: AppTheme.accent,
                   ),
                 ),
-                CircularProgressIndicator(),
+                const CircularProgressIndicator(),
               ],
             ),
           ),

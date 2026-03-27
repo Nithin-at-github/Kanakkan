@@ -120,12 +120,12 @@ class ExportHandler {
       builder: (_) => Dialog(
         backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
           child: Row(
             children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
               Expanded(
                 child: Text(
                   'Generating document…',
@@ -159,7 +159,7 @@ class ExportHandler {
       if (txs.isEmpty) {
         navigator.pop();
         messenger.showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
               'No transactions found in selected date range.',
               style: TextStyle(color: Colors.white),
@@ -193,7 +193,7 @@ class ExportHandler {
         SnackBar(
           content: Text(
             'Export failed: $e',
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.white),
           ),
           backgroundColor: AppTheme.error,
           behavior: SnackBarBehavior.floating,
@@ -220,14 +220,14 @@ class ExportHandler {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
-                child: const Icon(
+                child: Icon(
                   Icons.save_outlined,
                   color: AppTheme.primary,
                   size: 28,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Save Options',
                 style: TextStyle(
                   fontSize: 18,
@@ -236,7 +236,7 @@ class ExportHandler {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'How would you like to save your export?',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Colors.black54),
@@ -258,10 +258,7 @@ class ExportHandler {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.black54),
-                ),
+                child: Text('Cancel', style: TextStyle(color: Colors.black54)),
               ),
             ],
           ),
@@ -328,15 +325,13 @@ class _ExportSheetState extends State<_ExportSheet> {
         builder: (context, child) => Theme(
           data: ThemeData(
             useMaterial3: false,
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppTheme.primary,
               onPrimary: AppTheme.accent,
               onSurface: Colors.black,
               surface: AppTheme.background,
             ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: AppTheme.background,
-            ),
+            dialogTheme: DialogThemeData(backgroundColor: AppTheme.background),
           ),
           child: child!,
         ),
@@ -373,13 +368,13 @@ class _ExportSheetState extends State<_ExportSheet> {
               // ── Header ──
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.file_download_outlined,
                     color: AppTheme.primary,
                     size: 22,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Export Records',
                     style: TextStyle(
                       fontSize: 18,
@@ -401,7 +396,7 @@ class _ExportSheetState extends State<_ExportSheet> {
               const Divider(height: 20),
 
               // ── Date Range Presets ──
-              const Text(
+              Text(
                 'DATE RANGE',
                 style: TextStyle(
                   fontSize: 11,
@@ -456,7 +451,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today_outlined,
                       size: 16,
                       color: AppTheme.primary,
@@ -465,7 +460,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                     Expanded(
                       child: Text(
                         _rangeSummary,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.primary,
                           fontWeight: FontWeight.w500,
@@ -477,7 +472,7 @@ class _ExportSheetState extends State<_ExportSheet> {
               ),
 
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'FORMAT',
                 style: TextStyle(
                   fontSize: 11,
@@ -566,7 +561,7 @@ class _ChoiceTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
@@ -575,7 +570,7 @@ class _ChoiceTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 12, color: Colors.black45),
+                    style: TextStyle(fontSize: 12, color: Colors.black45),
                   ),
                 ],
               ),
@@ -638,7 +633,7 @@ class _FormatButton extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.black45),
+                    style: TextStyle(fontSize: 11, color: Colors.black45),
                   ),
                 ],
               ),

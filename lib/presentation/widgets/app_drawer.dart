@@ -5,7 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/handlers/export_handler.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
+import 'package:kanakkan/presentation/providers/theme_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 
 import 'package:kanakkan/presentation/screens/update_notes_screen.dart';
 
@@ -137,6 +139,17 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
 
+                  _DrawerTile(
+                    icon: context.watch<ThemeProvider>().themeMode == ThemeMode.dark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                    label: "Theme Mode",
+                    subtitle: "Switch to ${context.watch<ThemeProvider>().themeMode == ThemeMode.dark ? 'Day' : 'Night'} Mode",
+                    onTap: () {
+                      context.read<ThemeProvider>().toggleTheme();
+                    },
+                  ),
+
                   const Spacer(),
 
                   // ── FOOTER ──
@@ -169,14 +182,14 @@ class AppDrawer extends StatelessWidget {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppTheme.error.withValues(alpha: 0.1),
-                child: const Icon(
+                child: Icon(
                   Icons.delete_forever,
                   color: AppTheme.error,
                   size: 28,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 "Delete & Reset?",
                 style: TextStyle(
                   fontSize: 18,
@@ -192,7 +205,7 @@ class AppDrawer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
                     _WarningPoint(
                       text: "All transactions will be permanently deleted.",
@@ -287,9 +300,9 @@ class _DrawerHeaderState extends State<_DrawerHeader> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.primary,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -306,7 +319,7 @@ class _DrawerHeaderState extends State<_DrawerHeader> {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
             ),
-            child: const Center(
+            child: Center(
               child: Text(
                 "₹",
                 style: TextStyle(
@@ -318,7 +331,7 @@ class _DrawerHeaderState extends State<_DrawerHeader> {
             ),
           ),
 
-          const Text(
+          Text(
             "I-W-¡-³-",
             style: TextStyle(
               fontFamily: 'Ravivarma',
@@ -457,14 +470,19 @@ class _DrawerFooter extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Made with ♥ in Keralam",
-            style: TextStyle(fontSize: 11, color: Colors.black26),
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white24
+                  : Colors.black26,
+            ),
           ),
           const SizedBox(height: 4),
           GestureDetector(
             onTap: _openLinkedIn,
-            child: const Text(
+            child: Text(
               "by Nithin JK",
               style: TextStyle(
                 fontSize: 12,
@@ -493,7 +511,7 @@ class _WarningPoint extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(
+        Icon(
           Icons.warning_amber_rounded,
           color: AppTheme.error,
           size: 16,

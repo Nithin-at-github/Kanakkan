@@ -25,7 +25,7 @@ class CategorySection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surface,
           borderRadius: BorderRadius.circular(18),
           boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
         ),
@@ -37,7 +37,7 @@ class CategorySection extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primary,
                   fontSize: 17,
@@ -45,7 +45,7 @@ class CategorySection extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1, color: AppTheme.accent),
+            Divider(height: 1, color: AppTheme.accent),
 
             // ── SALARY WALLET BANNER ──
             if (showSalaryWalletBanner) _SalaryWalletBanner(),
@@ -96,10 +96,10 @@ class _SalaryWalletBanner extends StatelessWidget {
         children: [
           const Icon(Icons.workspace_premium, color: Colors.amber, size: 20),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'No salary wallet set. Designate one to enable automatic wallet distribution.',
-              style: TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(width: 8),

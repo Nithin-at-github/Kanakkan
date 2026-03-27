@@ -18,13 +18,13 @@ class CategoriesHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.primary,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             "Categories",
             style: TextStyle(
               color: AppTheme.accent,

@@ -43,7 +43,7 @@ class TransactionTypeSelector extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           border: selected
-              ? const Border(
+              ? Border(
                   bottom: BorderSide(color: AppTheme.accent, width: 2),
                 )
               : null,

@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 
 import 'presentation/providers/ledger_provider.dart';
 import 'presentation/providers/app_state_provider.dart';
+import 'presentation/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,6 +91,9 @@ void main() async {
 
         /// App auth / lock state
         ChangeNotifierProvider(create: (_) => AppStateProvider()..initialize()),
+
+        /// Theme State
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
       ],
       child: const KanakkanApp(),
     ),
@@ -101,8 +105,18 @@ class KanakkanApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    
+    // Sync static AppTheme flag for legacy code that doesn't use context
+    final isDark = themeProvider.themeMode == ThemeMode.dark || 
+        (themeProvider.themeMode == ThemeMode.system && 
+         MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+    themeProvider.updateAppThemeStatic(isDark);
+
     return MaterialApp(
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       debugShowCheckedModeBanner: false,
       title: 'Kanakkan',
       home: const AppInitializer(),

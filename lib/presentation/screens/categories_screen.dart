@@ -55,7 +55,7 @@ class CategoriesScreen extends StatelessWidget {
             onPressed: () => SalaryWalletSetupSheet.show(context),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.call_merge,
               color: AppTheme.accent,
               size: 28,
@@ -64,7 +64,7 @@ class CategoriesScreen extends StatelessWidget {
             onPressed: () => MergeCategoriesDialog.show(context),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.swap_horiz,
               color: AppTheme.accent,
               size: 35,

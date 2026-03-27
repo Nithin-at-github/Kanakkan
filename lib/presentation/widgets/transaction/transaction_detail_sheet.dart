@@ -78,9 +78,9 @@ class _TransactionDetailSheetContentState
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -108,7 +108,7 @@ class _TransactionDetailSheetContentState
           // ── CATEGORY NAME ──
           Text(
             categoryName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppTheme.primary,
@@ -272,7 +272,7 @@ class _TransactionDetailSheetContentState
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
             "Transaction deleted",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),

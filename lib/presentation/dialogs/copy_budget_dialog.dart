@@ -54,7 +54,7 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             /// TITLE
-            const Text(
+            Text(
               "Copy budget",
               style: TextStyle(
                 fontSize: 20,

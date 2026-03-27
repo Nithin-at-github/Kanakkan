@@ -137,7 +137,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
         if (!mounted) return;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
               'PIN changed successfully! 🔒',
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
@@ -180,9 +180,9 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
       padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottom),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -234,7 +234,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
               children: [
                 Text(
                   _title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primary,
@@ -280,13 +280,13 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline,
+                        Icon(Icons.error_outline,
                             color: AppTheme.error, size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 color: AppTheme.error,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500),
@@ -385,7 +385,7 @@ class _PinField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+          borderSide: BorderSide(color: AppTheme.accent, width: 2),
         ),
       ),
       onSubmitted: onSubmitted,

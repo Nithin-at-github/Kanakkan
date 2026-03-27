@@ -19,7 +19,8 @@ class CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<CategoryProvider>();
-    final ledger = context.read<LedgerProvider>(); // Added for unusual choice check
+    final ledger = context
+        .read<LedgerProvider>(); // Added for unusual choice check
     final balances = context.watch<CategoryBalanceProvider>();
     final subcategories = provider.subcategoriesOf(category.id!);
     final isSalaryWallet = category.isSalaryWallet;
@@ -38,11 +39,7 @@ class CategoryTile extends StatelessWidget {
           CircleAvatar(
             radius: 18,
             backgroundColor: accent.withValues(alpha: 0.15),
-            child: Icon(
-              Icons.label_outline,
-              color: accent,
-              size: 18,
-            ),
+            child: Icon(Icons.label_outline, color: accent, size: 18),
           ),
           if (isSalaryWallet)
             Positioned(
@@ -101,8 +98,11 @@ class CategoryTile extends StatelessWidget {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.visibility_off_outlined,
-                      size: 10, color: Colors.black45),
+                  Icon(
+                    Icons.visibility_off_outlined,
+                    size: 10,
+                    color: Colors.black45,
+                  ),
                   SizedBox(width: 4),
                   Text(
                     'Ignored',
@@ -122,7 +122,7 @@ class CategoryTile extends StatelessWidget {
       subtitle: subcategories.isNotEmpty
           ? Text(
               '${subcategories.length} subcategor${subcategories.length == 1 ? 'y' : 'ies'}',
-              style: const TextStyle(fontSize: 12, color: Colors.black45),
+              style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
             )
           : null,
 
@@ -131,10 +131,10 @@ class CategoryTile extends StatelessWidget {
         children: [
           Text(
             '₹${formatAmt(balances.getBalance(category.id!))}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.black54,
+              color: AppTheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(width: 6),
@@ -166,13 +166,17 @@ class CategoryTile extends StatelessWidget {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(Icons.edit_outlined, size: 18, color: AppTheme.primary),
-                    SizedBox(width: 10),
-                    Text('Edit'),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: AppTheme.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    const Text('Edit'),
                   ],
                 ),
               ),
@@ -207,12 +211,12 @@ class CategoryTile extends StatelessWidget {
                     ],
                   ),
                 ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
                     Icon(Icons.delete_outline, size: 18, color: AppTheme.error),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Text('Delete', style: TextStyle(color: AppTheme.error)),
                   ],
                 ),

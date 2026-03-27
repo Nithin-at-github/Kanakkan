@@ -48,7 +48,7 @@ class SubcategoryDialog extends StatelessWidget {
                 Expanded(
                   child: Text(
                     parent.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,

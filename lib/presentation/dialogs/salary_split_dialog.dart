@@ -71,7 +71,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
               // HEADER
               Column(
                 children: [
-                  const Text(
+                  Text(
                     "Split Salary",
                     style: TextStyle(
                       fontSize: 22,
@@ -82,7 +82,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                   const SizedBox(height: 6),
                   Text(
                     "₹${formatAmt(widget.salaryAmount, decimals: false)}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.success,

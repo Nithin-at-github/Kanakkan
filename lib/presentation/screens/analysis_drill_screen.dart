@@ -56,14 +56,14 @@ class AnalysisDrillScreen extends StatelessWidget {
           children: [
             Text(
               type.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
             Text(
               p.periodLabel,
-              style: const TextStyle(color: Colors.white60, fontSize: 12),
+              style: TextStyle(color: Colors.white60, fontSize: 12),
             ),
           ],
         ),
@@ -317,7 +317,7 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
             const SizedBox(width: 4),
             Text(
               e.value.name,
-              style: const TextStyle(fontSize: 11, color: Colors.black54),
+              style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
             ),
           ],
         );
@@ -357,16 +357,13 @@ class _CategoryRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
               ),
               if (item.subcategories.isNotEmpty)
                 Text(
                   '${item.subcategories.length} sub',
-                  style: const TextStyle(fontSize: 11, color: Colors.black45),
+                  style: TextStyle(fontSize: 11, color: Colors.black45),
                 ),
               const SizedBox(width: 8),
               Text(
@@ -412,7 +409,7 @@ class _CategoryRow extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 '${item.percentage.toStringAsFixed(1)}%',
-                style: const TextStyle(fontSize: 12, color: Colors.black45),
+                style: TextStyle(fontSize: 12, color: Colors.black45),
               ),
             ],
           ),
@@ -470,10 +467,7 @@ class _SubcategoryList extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: Text(
-                          sub.name,
-                          style: const TextStyle(fontSize: 13),
-                        ),
+                        child: Text(sub.name, style: TextStyle(fontSize: 13)),
                       ),
                       Text(
                         '₹${formatAmt(sub.amount)}',
@@ -486,10 +480,7 @@ class _SubcategoryList extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         '${sub.percentage.toStringAsFixed(1)}%',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.black45,
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.black45),
                       ),
                     ],
                   ),
@@ -616,9 +607,9 @@ class _SavingsDrill extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             trend[idx].label,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
-                              color: Colors.black45,
+                              color: AppTheme.onSurfaceVariant,
                             ),
                           ),
                         );
@@ -667,7 +658,7 @@ class _SavingsDrill extends StatelessWidget {
                       width: 36,
                       child: Text(
                         t.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -683,14 +674,14 @@ class _SavingsDrill extends StatelessWidget {
                             children: [
                               Text(
                                 '₹${formatAmt(t.income)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.success,
                                 ),
                               ),
                               Text(
                                 '₹${formatAmt(t.expense)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.error,
                                 ),
@@ -704,7 +695,9 @@ class _SavingsDrill extends StatelessWidget {
                               value: t.income > 0
                                   ? (t.expense / t.income).clamp(0.0, 1.0)
                                   : 0,
-                              backgroundColor: AppTheme.success.withValues(alpha: 0.2),
+                              backgroundColor: AppTheme.success.withValues(
+                                alpha: 0.2,
+                              ),
                               valueColor: AlwaysStoppedAnimation(
                                 AppTheme.error.withValues(alpha: 0.7),
                               ),
@@ -786,7 +779,7 @@ class _TrendDrill extends StatelessWidget {
                       final val = rodIdx == 0 ? t.income : t.expense;
                       return BarTooltipItem(
                         '$label\n₹${formatAmt(val)}',
-                        const TextStyle(
+                        TextStyle(
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -802,9 +795,9 @@ class _TrendDrill extends StatelessWidget {
                       reservedSize: 44,
                       getTitlesWidget: (v, meta) => Text(
                         formatAmt(v),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 9,
-                          color: Colors.black45,
+                          color: AppTheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -828,9 +821,9 @@ class _TrendDrill extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 4),
                           child: Text(
                             trend[idx].label,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
-                              color: Colors.black54,
+                              color: AppTheme.onSurfaceVariant,
                             ),
                           ),
                         );
@@ -897,7 +890,7 @@ class _TrendDrill extends StatelessWidget {
                         ),
                         child: Text(
                           h,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                             color: AppTheme.primary,
@@ -912,8 +905,14 @@ class _TrendDrill extends StatelessWidget {
                 return TableRow(
                   children: [
                     _tableCell(t.label),
-                    _tableCell('₹${formatAmt(t.income)}', color: AppTheme.success),
-                    _tableCell('₹${formatAmt(t.expense)}', color: AppTheme.error),
+                    _tableCell(
+                      '₹${formatAmt(t.income)}',
+                      color: AppTheme.success,
+                    ),
+                    _tableCell(
+                      '₹${formatAmt(t.expense)}',
+                      color: AppTheme.error,
+                    ),
                     _tableCell(
                       '${saving >= 0 ? '+' : ''}₹${formatAmt(saving)}',
                       color: saving >= 0 ? AppTheme.success : AppTheme.error,
@@ -1032,9 +1031,9 @@ class _DailyDrill extends StatelessWidget {
                       reservedSize: 44,
                       getTitlesWidget: (v, meta) => Text(
                         '₹${formatAmt(v)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 9,
-                          color: Colors.black45,
+                          color: AppTheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -1052,10 +1051,7 @@ class _DailyDrill extends StatelessWidget {
                       reservedSize: 22,
                       getTitlesWidget: (v, meta) => Text(
                         '${v.toInt()}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.black45,
-                        ),
+                        style: TextStyle(fontSize: 10, color: Colors.black45),
                       ),
                     ),
                   ),
@@ -1122,7 +1118,7 @@ class _DailyDrill extends StatelessWidget {
                               width: 32,
                               child: Text(
                                 '${e.key}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
                                   color: Colors.black54,
@@ -1134,9 +1130,13 @@ class _DailyDrill extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
                                   value: pct.clamp(0.0, 1.0),
-                                  backgroundColor: AppTheme.error.withValues(alpha: 0.1),
+                                  backgroundColor: AppTheme.error.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   valueColor: AlwaysStoppedAnimation(
-                                    AppTheme.error.withValues(alpha: 0.7 + pct * 0.3),
+                                    AppTheme.error.withValues(
+                                      alpha: 0.7 + pct * 0.3,
+                                    ),
                                   ),
                                   minHeight: 8,
                                 ),
@@ -1145,7 +1145,7 @@ class _DailyDrill extends StatelessWidget {
                             const SizedBox(width: 10),
                             Text(
                               '₹${formatAmt(e.value)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
                                 color: AppTheme.error,
@@ -1179,7 +1179,7 @@ class _ChartCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
       ),
@@ -1188,7 +1188,7 @@ class _ChartCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
               color: AppTheme.primary,
@@ -1227,9 +1227,9 @@ class _DrillSummaryRow extends StatelessWidget {
                   children: [
                     Text(
                       item.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: Colors.black54,
+                        color: AppTheme.onSurfaceVariant,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -1282,7 +1282,7 @@ class _SavingsGauge extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
       ),
@@ -1291,7 +1291,7 @@ class _SavingsGauge extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Savings Rate',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
@@ -1335,7 +1335,10 @@ class _SavingsGauge extends StatelessWidget {
             children: [
               Text(
                 '0%',
-                style: const TextStyle(fontSize: 11, color: Colors.black45),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               Text(
                 '${rate.toStringAsFixed(1)}%',
@@ -1347,7 +1350,10 @@ class _SavingsGauge extends StatelessWidget {
               ),
               Text(
                 '100%',
-                style: const TextStyle(fontSize: 11, color: Colors.black45),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -1380,7 +1386,7 @@ class _LegendDot extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
+          style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
         ),
       ],
     );
@@ -1390,5 +1396,3 @@ class _LegendDot extends StatelessWidget {
 // ─────────────────────────────────────────
 // HELPER
 // ─────────────────────────────────────────
-
-

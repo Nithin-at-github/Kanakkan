@@ -135,16 +135,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
           children: [
             /// ================= HEADER =================
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTheme.primary,
-                borderRadius: BorderRadius.vertical(
+                borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(15),
                 ),
               ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     "Budgets",
                     style: TextStyle(
                       color: AppTheme.accent,
@@ -158,7 +158,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_left,
                           color: AppTheme.accent,
                         ),
@@ -167,7 +167,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
                       Text(
                         _formatMonth(budgetProvider),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           color: AppTheme.accent,
                           fontWeight: FontWeight.bold,
@@ -175,7 +175,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
 
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_right,
                           color: AppTheme.accent,
                         ),
@@ -210,7 +210,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.surface,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -266,13 +266,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.copy_rounded,
                           size: 20,
                           color: AppTheme.primary,
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Text(
                           "Copy from previous months",
                           style: TextStyle(

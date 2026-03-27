@@ -75,8 +75,9 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
     }
 
     if (!_isEdit && categoryErr == null && _selectedCategoryId != null) {
-      final alreadyExists = budgetProvider.budgets
-          .any((b) => b.categoryId == _selectedCategoryId);
+      final alreadyExists = budgetProvider.budgets.any(
+        (b) => b.categoryId == _selectedCategoryId,
+      );
       if (alreadyExists) {
         categoryErr = 'A budget for this category already exists this month';
       }
@@ -102,15 +103,20 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
       );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          _isEdit ? 'Budget updated' : 'Budget created',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEdit ? 'Budget updated' : 'Budget created',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: AppTheme.success,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
         ),
-        backgroundColor: AppTheme.success,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ));
+      );
     } catch (_) {
       setState(() => _amountError = 'Failed to save budget. Please try again.');
     } finally {
@@ -129,25 +135,31 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
     if (!confirm || !mounted) return;
 
     try {
-      await context
-          .read<BudgetProvider>()
-          .deleteBudget(widget.existingBudget!.id!);
+      await context.read<BudgetProvider>().deleteBudget(
+        widget.existingBudget!.id!,
+      );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Budget deleted',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: AppTheme.error,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 1),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Budget deleted',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Failed to delete budget. Please try again.'),
-        backgroundColor: AppTheme.error,
-        behavior: SnackBarBehavior.floating,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete budget. Please try again.'),
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -189,7 +201,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                 // Title
                 Text(
                   _isEdit ? 'Edit Budget' : 'Set Monthly Budget',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primary,
@@ -218,9 +230,13 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                         children: [
                           Expanded(child: Text(c.name)),
                           if (isUsed)
-                            const Text('• set',
-                                style: TextStyle(
-                                    fontSize: 11, color: Colors.black38)),
+                            const Text(
+                              '• set',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.black38,
+                              ),
+                            ),
                         ],
                       ),
                     );
@@ -228,9 +244,9 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                   onChanged: _isEdit
                       ? null
                       : (value) => setState(() {
-                            _selectedCategoryId = value;
-                            _categoryError = null;
-                          }),
+                          _selectedCategoryId = value;
+                          _categoryError = null;
+                        }),
                 ),
 
                 const SizedBox(height: 18),
@@ -241,7 +257,8 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d*\.?\d{0,2}')),
+                      RegExp(r'^\d*\.?\d{0,2}'),
+                    ),
                   ],
                   autofocus: true,
                   onChanged: (_) {
@@ -263,12 +280,14 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                   Divider(color: Colors.red.withValues(alpha: .3)),
                   TextButton.icon(
                     onPressed: _loading ? null : _confirmDelete,
-                    icon:
-                        const Icon(Icons.delete_outline, color: Colors.red),
-                    label: const Text('Delete this budget',
-                        style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.w600)),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    label: const Text(
+                      'Delete this budget',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
 
@@ -282,16 +301,23 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                       onPressed: () => Navigator.of(context).maybePop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 20),
+                          vertical: 12,
+                          horizontal: 20,
+                        ),
                         side: BorderSide(
-                            color: AppTheme.accent.withValues(alpha: .5)),
+                          color: AppTheme.accent.withValues(alpha: .5),
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text('Cancel',
-                          style: TextStyle(
-                              color: AppTheme.primary,
-                              fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
@@ -299,21 +325,29 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.accent,
                         padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 20),
+                          vertical: 12,
+                          horizontal: 20,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: _loading
                           ? const SizedBox(
                               height: 18,
                               width: 18,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : const Text('Save',
+                          : const Text(
+                              'Save',
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ],
                 ),

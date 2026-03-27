@@ -42,7 +42,6 @@ class BulkEntryList extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (_, index) {
-
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
@@ -65,13 +64,11 @@ class BulkEntryList extends StatelessWidget {
                           prefixStyle: const TextStyle(color: Colors.white),
                           isDense: true,
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: AppTheme.accent,
-                            ),
+                            borderSide: BorderSide(color: AppTheme.accent),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
+                            borderSide: BorderSide(
                               color: AppTheme.accent,
                               width: 2,
                             ),
@@ -101,13 +98,11 @@ class BulkEntryList extends StatelessWidget {
                           hintStyle: const TextStyle(color: Colors.white54),
                           isDense: true,
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: AppTheme.accent,
-                            ),
+                            borderSide: BorderSide(color: AppTheme.accent),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
+                            borderSide: BorderSide(
                               color: AppTheme.accent,
                               width: 2,
                             ),
@@ -122,10 +117,7 @@ class BulkEntryList extends StatelessWidget {
                     /// DELETE
                     if (items.length > 1)
                       IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: AppTheme.error,
-                        ),
+                        icon: Icon(Icons.delete_outline, color: AppTheme.error),
                         onPressed: () => onDelete(index),
                       ),
                   ],
@@ -139,7 +131,7 @@ class BulkEntryList extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 "Total",
                 style: TextStyle(
                   color: AppTheme.accent,
@@ -148,7 +140,7 @@ class BulkEntryList extends StatelessWidget {
               ),
               Text(
                 "₹${formatAmt(total, decimals: false)}",
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.accent,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -165,9 +157,9 @@ class BulkEntryList extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: onCancel,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.accent),
+                    side: BorderSide(color: AppTheme.accent),
                   ),
-                  child: const Text(
+                  child: Text(
                     "Cancel",
                     style: TextStyle(color: AppTheme.accent),
                   ),
@@ -180,7 +172,7 @@ class BulkEntryList extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.accent,
                   ),
-                  child: const Text(
+                  child: Text(
                     "Save All",
                     style: TextStyle(
                       color: AppTheme.primary,

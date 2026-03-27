@@ -110,8 +110,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   void dispose() {
-    for (final node in _amountFocusNodes) { node.dispose(); }
-    for (final node in _noteFocusNodes) { node.dispose(); }
+    for (final node in _amountFocusNodes) {
+      node.dispose();
+    }
+    for (final node in _noteFocusNodes) {
+      node.dispose();
+    }
     _noteController.dispose();
     _amountNotifier.dispose();
     _multiModeNotifier.dispose();
@@ -321,13 +325,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             onTap: _pickDate,
             child: Text(
               DateFormat("MMM d, yyyy").format(_selectedDateTime),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.accent,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 13),
             child: Text("|", style: TextStyle(color: Colors.white54)),
           ),
@@ -335,7 +339,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             onTap: _pickTime,
             child: Text(
               DateFormat("hh:mm a").format(_selectedDateTime),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.accent,
                 fontWeight: FontWeight.bold,
               ),
@@ -354,7 +358,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: TextField(
         controller: _noteController,
         maxLines: 2,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: Colors.white),
         cursorColor: AppTheme.accent,
         decoration: InputDecoration(
           hintText: "Add notes",
@@ -364,7 +368,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: AppTheme.accent, width: 2),
+            borderSide: BorderSide(color: AppTheme.accent, width: 2),
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -461,10 +465,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       SnackBar(
         content: Text(
           "${validItems.length} transaction${validItems.length > 1 ? 's' : ''} saved",
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: AppTheme.success,
         behavior: SnackBarBehavior.floating,
@@ -480,10 +481,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       SnackBar(
         content: Text(
           message,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: isError ? AppTheme.error : AppTheme.success,
         behavior: SnackBarBehavior.floating,
@@ -669,9 +667,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           maxChildSize: 0.85,
           builder: (context, scrollController) {
             return Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTheme.background,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -680,7 +680,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Select Account",
                         style: TextStyle(
                           fontSize: 18,
@@ -690,7 +690,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ),
                       TextButton.icon(
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text("New"),
+                        label: Text("New"),
                         style: TextButton.styleFrom(
                           foregroundColor: AppTheme.accent,
                         ),
@@ -759,9 +759,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           maxChildSize: 0.9,
           builder: (context, scrollController) {
             return Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTheme.background,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -770,7 +772,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         "Select Subcategory",
                         style: TextStyle(
                           fontSize: 18,
@@ -780,7 +782,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ),
                       TextButton.icon(
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text("New"),
+                        label: Text("New"),
                         style: TextButton.styleFrom(
                           foregroundColor: AppTheme.accent,
                         ),
@@ -836,7 +838,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                                 child: Text(
                                   main.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                     color: Colors.black54,
@@ -886,8 +888,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-
-
             return DraggableScrollableSheet(
               expand: false,
               initialChildSize: 0.6,
@@ -896,9 +896,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               builder: (context, scrollController) {
                 return Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppTheme.background,
-                    borderRadius: BorderRadius.vertical(
+                    borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(24),
                     ),
                   ),
@@ -908,7 +908,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             "Select Category",
                             style: TextStyle(
                               fontSize: 18,
@@ -918,7 +918,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           TextButton.icon(
                             icon: const Icon(Icons.add, size: 18),
-                            label: const Text("New"),
+                            label: Text("New"),
                             style: TextButton.styleFrom(
                               foregroundColor: AppTheme.accent,
                             ),
@@ -947,7 +947,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: searchController,
-                        style: const TextStyle(color: Colors.black),
+                        style: TextStyle(color: Colors.black),
                         cursorColor: AppTheme.accent,
                         decoration: InputDecoration(
                           hintText: "Search category",
@@ -957,13 +957,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             color: Colors.black54,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: AppTheme.accent,
-                            ),
+                            borderSide: BorderSide(color: AppTheme.accent),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
+                            borderSide: BorderSide(
                               color: AppTheme.accent,
                               width: 2,
                             ),
@@ -1001,10 +999,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                                       // ── ACCOUNT AUTO-LINK ──
                                       if (c.linkedAccountId != null) {
-                                        final ledger =
-                                            context.read<LedgerProvider>();
-                                        final linkedAcc = ledger
-                                            .resolveAccount(c.linkedAccountId);
+                                        final ledger = context
+                                            .read<LedgerProvider>();
+                                        final linkedAcc = ledger.resolveAccount(
+                                          c.linkedAccountId,
+                                        );
                                         if (linkedAcc != null) {
                                           if (_type ==
                                               TransactionType.transfer) {
@@ -1026,7 +1025,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                             ],
                             if (filtered.isEmpty)
-                              const Padding(
+                              Padding(
                                 padding: EdgeInsets.all(20),
                                 child: Center(
                                   child: Text(
@@ -1076,8 +1075,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
-
-
 }
 
 // Isolated widget — only rebuilds when ValueNotifier fires
@@ -1094,7 +1091,7 @@ class _AmountDisplay extends StatelessWidget {
 
     return Text(
       "₹$display",
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 48,
         color: AppTheme.accent,
         fontWeight: FontWeight.bold,

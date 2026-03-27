@@ -60,7 +60,7 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
                 const SizedBox(height: 10),
                 Text(
                   provider.lastError!,
-                  style: const TextStyle(color: AppTheme.error, fontSize: 13),
+                  style: TextStyle(color: AppTheme.error, fontSize: 13),
                 ),
               ],
             ],

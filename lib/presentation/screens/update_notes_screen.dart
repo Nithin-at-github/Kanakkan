@@ -80,7 +80,7 @@ class UpdateNotesScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 16, color: AppTheme.primary),
+                    child: Icon(Icons.arrow_back_ios_new, size: 16, color: AppTheme.primary),
                   ),
                 ),
               ),
@@ -90,7 +90,7 @@ class UpdateNotesScreen extends StatelessWidget {
                   StretchMode.blurBackground,
                 ],
                 titlePadding: const EdgeInsets.only(bottom: 16, left: 72), // Offset for leading icon
-                title: const Text(
+                title: Text(
                   'Update Notes',
                   style: TextStyle(
                     color: AppTheme.primary,
@@ -236,9 +236,9 @@ class _UpdateCard extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppTheme.accent,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
                 ),

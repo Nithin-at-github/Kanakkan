@@ -69,7 +69,7 @@ class BackupRestoreHandler {
                 Expanded(
                   child: Text(
                     result.message ?? 'Backup failed.',
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],
@@ -91,7 +91,7 @@ class BackupRestoreHandler {
               Expanded(
                 child: Text(
                   'Backup error: $e',
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -180,14 +180,14 @@ class BackupRestoreHandler {
                   CircleAvatar(
                     radius: 28,
                     backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                    child: const Icon(
+                    child: Icon(
                       Icons.cloud_download_outlined,
                       color: Colors.orange,
                       size: 28,
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     'Restore from Backup?',
                     style: TextStyle(
                       fontSize: 18,
@@ -205,7 +205,7 @@ class BackupRestoreHandler {
                         color: Colors.orange.withValues(alpha: 0.25),
                       ),
                     ),
-                    child: const Column(
+                    child: Column(
                       children: [
                         _InfoPoint(
                           icon: Icons.folder_open_outlined,
@@ -249,7 +249,7 @@ class BackupRestoreHandler {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Cancel',
                             style: TextStyle(color: Colors.black54),
                           ),
@@ -266,7 +266,7 @@ class BackupRestoreHandler {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Pick File',
                             style: TextStyle(
                               color: Colors.white,
@@ -301,14 +301,14 @@ class BackupRestoreHandler {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppTheme.accent.withValues(alpha: 0.1),
-                child: const Icon(
+                child: Icon(
                   Icons.backup_outlined,
                   color: AppTheme.accent,
                   size: 28,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Backup Options',
                 style: TextStyle(
                   fontSize: 18,
@@ -317,7 +317,7 @@ class BackupRestoreHandler {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'How would you like to save your backup?',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Colors.black54),
@@ -339,10 +339,7 @@ class BackupRestoreHandler {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.black54),
-                ),
+                child: Text('Cancel', style: TextStyle(color: Colors.black54)),
               ),
             ],
           ),
@@ -395,7 +392,7 @@ class BackupRestoreHandler {
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(fontSize: 14, color: AppTheme.primary),
+                  style: TextStyle(fontSize: 14, color: AppTheme.primary),
                 ),
               ),
             ],
@@ -419,14 +416,14 @@ class BackupRestoreHandler {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: AppTheme.error.withValues(alpha: 0.1),
-                child: const Icon(
+                child: Icon(
                   Icons.error_outline,
                   color: AppTheme.error,
                   size: 24,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Restore Failed',
                 style: TextStyle(
                   fontSize: 17,
@@ -438,7 +435,7 @@ class BackupRestoreHandler {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -451,10 +448,7 @@ class BackupRestoreHandler {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'OK',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: Text('OK', style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -478,14 +472,14 @@ class BackupRestoreHandler {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppTheme.success.withValues(alpha: 0.1),
-                child: const Icon(
+                child: Icon(
                   Icons.check_circle_outline,
                   color: AppTheme.success,
                   size: 28,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Restore Complete',
                 style: TextStyle(
                   fontSize: 18,
@@ -494,7 +488,7 @@ class BackupRestoreHandler {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Your data has been restored successfully. Everything is up to date.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Colors.black54),
@@ -510,7 +504,7 @@ class BackupRestoreHandler {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Great!',
                     style: TextStyle(
                       color: Colors.white,
@@ -540,14 +534,14 @@ class BackupRestoreHandler {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppTheme.success.withValues(alpha: 0.1),
-                child: const Icon(
+                child: Icon(
                   Icons.delete_sweep,
                   color: AppTheme.success,
                   size: 28,
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Data Reset Successfully',
                 style: TextStyle(
                   fontSize: 18,
@@ -556,7 +550,7 @@ class BackupRestoreHandler {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'All your data has been permanently deleted. Start fresh!',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Colors.black54),
@@ -572,7 +566,7 @@ class BackupRestoreHandler {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'OK',
                     style: TextStyle(
                       color: Colors.white,
@@ -634,7 +628,7 @@ class _BackupOptionTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primary,
@@ -643,7 +637,7 @@ class _BackupOptionTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 12, color: Colors.black45),
+                    style: TextStyle(fontSize: 12, color: Colors.black45),
                   ),
                 ],
               ),
@@ -680,7 +674,7 @@ class _InfoPoint extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(fontSize: 13, color: Colors.black87),
           ),
         ),
       ],
