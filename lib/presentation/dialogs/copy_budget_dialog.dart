@@ -26,7 +26,7 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
   List<BudgetModel> previousBudgets = [];
   bool loading = true;
 
- @override
+  @override
   void initState() {
     super.initState();
 
@@ -46,7 +46,6 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
     final budgetProvider = context.watch<BudgetProvider>();
 
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: Padding(
         padding: const EdgeInsets.all(22),
@@ -59,7 +58,7 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primary,
+                color: AppTheme.onSurface,
               ),
             ),
 
@@ -67,7 +66,7 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
 
             Text(
               "Select a previous month to copy from:",
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: AppTheme.onSurfaceVariant),
             ),
 
             const SizedBox(height: 20),
@@ -109,7 +108,12 @@ class _CopyBudgetDialogState extends State<CopyBudgetDialog> {
               child: loading
                   ? const Center(child: CircularProgressIndicator())
                   : previousBudgets.isEmpty
-                  ? const Center(child: Text("No budgets found"))
+                  ? Center(
+                      child: Text(
+                        "No budgets found",
+                        style: TextStyle(color: AppTheme.onSurfaceVariant),
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: previousBudgets.length,
                       itemBuilder: (_, i) {

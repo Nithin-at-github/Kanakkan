@@ -43,7 +43,6 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
         .toList();
 
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24),

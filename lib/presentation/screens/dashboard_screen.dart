@@ -108,7 +108,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .fold(0.0, (sum, e) => sum + e.amount);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: ReusableAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -124,10 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: Icon(
-                          Icons.arrow_left,
-                          color: AppTheme.accent,
-                        ),
+                        icon: Icon(Icons.arrow_left, color: AppTheme.accent),
                         onPressed: _previousPeriod,
                       ),
 
@@ -141,20 +137,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
 
                       IconButton(
-                        icon: Icon(
-                          Icons.arrow_right,
-                          color: AppTheme.accent,
-                        ),
+                        icon: Icon(Icons.arrow_right, color: AppTheme.accent),
                         onPressed: _nextPeriod,
                       ),
 
                       const SizedBox(width: 10),
 
                       PopupMenuButton<DateFilterMode>(
-                        icon: Icon(
-                          Icons.filter_list,
-                          color: AppTheme.accent,
-                        ),
+                        icon: Icon(Icons.filter_list, color: AppTheme.accent),
                         onSelected: (mode) {
                           setState(() => filterMode = mode);
                         },
@@ -166,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Icon(
                                   Icons.calendar_view_day_outlined,
                                   size: 18,
-                                  color: AppTheme.primary,
+                                  color: AppTheme.onSurface,
                                 ),
                                 const SizedBox(width: 10),
                                 const Text("Daily"),
@@ -180,7 +170,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Icon(
                                   Icons.calendar_view_week_outlined,
                                   size: 18,
-                                  color: AppTheme.primary,
+                                  color: AppTheme.onSurface,
                                 ),
                                 const SizedBox(width: 10),
                                 const Text("Weekly"),
@@ -194,7 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Icon(
                                   Icons.calendar_view_month_outlined,
                                   size: 18,
-                                  color: AppTheme.primary,
+                                  color: AppTheme.onSurface,
                                 ),
                                 const SizedBox(width: 10),
                                 const Text("Monthly"),
@@ -208,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Icon(
                                   Icons.event_note_outlined,
                                   size: 18,
-                                  color: AppTheme.primary,
+                                  color: AppTheme.onSurface,
                                 ),
                                 const SizedBox(width: 10),
                                 const Text("Yearly"),
@@ -247,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -334,7 +324,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 15,
-                                            color: AppTheme.primary,
+                                            color: AppTheme.onSurface,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -437,14 +427,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _emptyTransactions() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 40),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Text(
           "No transactions yet",
           style: TextStyle(
             fontSize: 16,
-            color: Colors.black54,
+            color: AppTheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),

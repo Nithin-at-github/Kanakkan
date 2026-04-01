@@ -179,7 +179,6 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
     // flow naturally — no IntrinsicHeight, no mainAxisSize.min fighting
     // unbounded constraints from the dialog surface.
     return Dialog(
-      backgroundColor: AppTheme.background,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 70),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SizedBox(
@@ -204,7 +203,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                    color: AppTheme.onSurface,
                   ),
                 ),
 
@@ -230,11 +229,11 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                         children: [
                           Expanded(child: Text(c.name)),
                           if (isUsed)
-                            const Text(
+                            Text(
                               '• set',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.black38,
+                                color: AppTheme.onSurfaceVariant,
                               ),
                             ),
                         ],
@@ -314,7 +313,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                       child: Text(
                         'Cancel',
                         style: TextStyle(
-                          color: AppTheme.primary,
+                          color: AppTheme.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

@@ -47,7 +47,6 @@ class AnalysisDrillScreen extends StatelessWidget {
     final p = context.watch<AnalysisProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
@@ -150,12 +149,12 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
   @override
   Widget build(BuildContext context) {
     if (widget.items.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
           child: Text(
             'No data for this period.',
-            style: TextStyle(color: Colors.black45),
+            style: TextStyle(color: AppTheme.onSurfaceVariant),
           ),
         ),
       );
@@ -219,7 +218,7 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
                   parentTotal: item.amount,
                 ),
 
-              const Divider(height: 1, color: Colors.black12),
+              Divider(height: 1, color: AppTheme.divider),
             ],
           );
         }),
@@ -363,7 +362,7 @@ class _CategoryRow extends StatelessWidget {
               if (item.subcategories.isNotEmpty)
                 Text(
                   '${item.subcategories.length} sub',
-                  style: TextStyle(fontSize: 11, color: Colors.black45),
+                  style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
                 ),
               const SizedBox(width: 8),
               Text(
@@ -386,7 +385,7 @@ class _CategoryRow extends StatelessWidget {
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
                     size: 24,
-                    color: Colors.black45,
+                    color: AppTheme.onSurfaceVariant,
                   ),
                   onPressed: onToggleExpand,
                 ),
@@ -409,7 +408,7 @@ class _CategoryRow extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 '${item.percentage.toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 12, color: Colors.black45),
+                style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -480,7 +479,7 @@ class _SubcategoryList extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         '${sub.percentage.toStringAsFixed(1)}%',
-                        style: TextStyle(fontSize: 11, color: Colors.black45),
+                        style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -578,7 +577,7 @@ class _SavingsDrill extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxY / 4,
                   getDrawingHorizontalLine: (val) => FlLine(
-                    color: val == 0 ? Colors.black26 : Colors.black12,
+                    color: val == 0 ? AppTheme.onSurfaceVariant : AppTheme.divider,
                     strokeWidth: val == 0 ? 1.5 : 0.8,
                     dashArray: val == 0 ? null : [4, 4],
                   ),
@@ -739,8 +738,8 @@ class _TrendDrill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (trend.isEmpty) {
-      return const Center(
-        child: Text('No data', style: TextStyle(color: Colors.black45)),
+      return Center(
+        child: Text('No data', style: TextStyle(color: AppTheme.onSurfaceVariant)),
       );
     }
 
@@ -836,7 +835,7 @@ class _TrendDrill extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxVal / 4,
                   getDrawingHorizontalLine: (_) =>
-                      const FlLine(color: Colors.black12, strokeWidth: 0.8),
+                      FlLine(color: AppTheme.divider, strokeWidth: 0.8),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: List.generate(trend.length, (i) {
@@ -893,7 +892,7 @@ class _TrendDrill extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
-                            color: AppTheme.primary,
+                            color: AppTheme.onSurface,
                           ),
                         ),
                       ),
@@ -934,7 +933,7 @@ class _TrendDrill extends StatelessWidget {
         text,
         style: TextStyle(
           fontSize: 12,
-          color: color ?? Colors.black87,
+          color: color ?? AppTheme.onSurface,
           fontWeight: color != null ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
@@ -954,10 +953,10 @@ class _DailyDrill extends StatelessWidget {
   Widget build(BuildContext context) {
     final daily = provider.dailySpend;
     if (daily.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No expense data this month.',
-          style: TextStyle(color: Colors.black45),
+          style: TextStyle(color: AppTheme.onSurfaceVariant),
         ),
       );
     }
@@ -982,7 +981,7 @@ class _DailyDrill extends StatelessWidget {
             _SummaryItem(
               'Peak Day ${peakDay.key}',
               peakDay.value,
-              AppTheme.primary,
+              AppTheme.onSurface,
             ),
           ],
         ),
@@ -1021,7 +1020,7 @@ class _DailyDrill extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: maxVal / 3,
                   getDrawingHorizontalLine: (_) =>
-                      const FlLine(color: Colors.black12, strokeWidth: 0.8),
+                      FlLine(color: AppTheme.divider, strokeWidth: 0.8),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
@@ -1051,7 +1050,7 @@ class _DailyDrill extends StatelessWidget {
                       reservedSize: 22,
                       getTitlesWidget: (v, meta) => Text(
                         '${v.toInt()}',
-                        style: TextStyle(fontSize: 10, color: Colors.black45),
+                        style: TextStyle(fontSize: 10, color: AppTheme.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -1121,7 +1120,7 @@ class _DailyDrill extends StatelessWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
-                                  color: Colors.black54,
+                                  color: AppTheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -1191,7 +1190,7 @@ class _ChartCard extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
-              color: AppTheme.primary,
+              color: AppTheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -1296,7 +1295,7 @@ class _SavingsGauge extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               Container(
@@ -1360,7 +1359,7 @@ class _SavingsGauge extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Target: 20% or more',
-            style: TextStyle(fontSize: 11, color: Colors.black45),
+            style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
           ),
         ],
       ),

@@ -92,7 +92,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
   };
 
   Color get _stepColor => switch (_step) {
-    _Step.current => AppTheme.primary,
+    _Step.current => AppTheme.isDarkMode ? AppTheme.onSurface : AppTheme.primary,
     _Step.newPin  => AppTheme.accent,
     _Step.confirm => AppTheme.success,
   };
@@ -165,7 +165,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
             ? AppTheme.success
             : active
                 ? _stepColor
-                : Colors.black12,
+                : AppTheme.divider,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -192,7 +192,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.black12,
+              color: AppTheme.divider,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -237,13 +237,13 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                    color: AppTheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _subtitle,
-                  style: const TextStyle(fontSize: 13, color: Colors.black45),
+                  style: TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -258,6 +258,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
               key: ValueKey(_step),
               controller: _activeCtrl,
               focusNode: _activeFocus,
+              stepColor: _stepColor,
               onSubmitted: (_) => _onPrimary(),
               autofocus: _step == _Step.current,
             ),
@@ -312,17 +313,22 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
                     borderRadius: BorderRadius.circular(14)),
               ),
               child: _loading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: _stepColor.computeLuminance() > 0.5
+                              ? AppTheme.primary
+                              : Colors.white))
                   : Text(
                       _buttonLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: Colors.white),
+                          color: _stepColor.computeLuminance() > 0.5
+                              ? AppTheme.primary
+                              : Colors.white),
                     ),
             ),
           ),
@@ -332,8 +338,8 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
           // ── Cancel ───────────────────────────────────────────────────────
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.black45, fontSize: 13)),
+            child: Text('Cancel',
+                style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 13)),
           ),
         ],
       ),
@@ -348,6 +354,7 @@ class _ChangePinSheetState extends State<ChangePinSheet> {
 class _PinField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
+  final Color stepColor;
   final ValueChanged<String>? onSubmitted;
   final bool autofocus;
 
@@ -355,6 +362,7 @@ class _PinField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.focusNode,
+    required this.stepColor,
     this.onSubmitted,
     this.autofocus = false,
   });
@@ -369,23 +377,28 @@ class _PinField extends StatelessWidget {
       obscureText: true,
       textAlign: TextAlign.center,
       maxLength: 4,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 20,
         letterSpacing: 10,
         fontWeight: FontWeight.bold,
+        color: AppTheme.onSurface,
       ),
       decoration: InputDecoration(
         hintText: '••••',
         counterText: '',
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppTheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppTheme.accent.withValues(alpha: 0.4)),
+          borderSide: BorderSide(color: stepColor.withValues(alpha: 0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: stepColor.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppTheme.accent, width: 2),
+          borderSide: BorderSide(color: stepColor, width: 2),
         ),
       ),
       onSubmitted: onSubmitted,

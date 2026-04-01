@@ -91,7 +91,7 @@ class _TransactionDetailSheetContentState
             height: 4,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade400,
+              color: AppTheme.divider,
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -100,7 +100,7 @@ class _TransactionDetailSheetContentState
           Align(
             alignment: Alignment.centerRight,
             child: IconButton(
-              icon: const Icon(Icons.close),
+              icon: Icon(Icons.close, color: AppTheme.onSurfaceVariant),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -111,7 +111,7 @@ class _TransactionDetailSheetContentState
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppTheme.primary,
+              color: AppTheme.onSurface,
             ),
           ),
 
@@ -296,7 +296,7 @@ class _TransactionDetailSheetContentState
         children: [
           Text(
             label,
-            style: const TextStyle(color: Colors.black54, fontSize: 14),
+            style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 14),
           ),
           Flexible(
             child: Text(
@@ -428,7 +428,7 @@ class _WalletImpactSkeleton extends StatelessWidget {
       child: Container(
         height: 46,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.05),
+          color: AppTheme.onSurface.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(10),
         ),
       ),

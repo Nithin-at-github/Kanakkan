@@ -15,6 +15,10 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // This simple read binds the entire screen layout to theme changes.
+    // It guarantees icons inside the Scaffold (which use AppTheme directly) will rebuild.
+    final theme = Theme.of(context); 
+    
     final provider = context.watch<CategoryProvider>();
     final balances = context.watch<CategoryBalanceProvider>();
 
@@ -36,7 +40,6 @@ class CategoriesScreen extends StatelessWidget {
     final topCategoryAmount = topEntry?.value ?? 0.0;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: ReusableAppBar(
         actions: [
           // Crown button — always visible, opens setup/management sheet
@@ -45,8 +48,8 @@ class CategoriesScreen extends StatelessWidget {
               Icons.workspace_premium,
               // Amber when designated, muted when not
               color: provider.hasSalaryWallet
-                  ? Colors.amber
-                  : AppTheme.accent.withValues(alpha: 0.5),
+                  ? theme.colorScheme.secondary
+                  : theme.colorScheme.secondary.withValues(alpha: 0.5),
               size: 28,
             ),
             tooltip: provider.hasSalaryWallet
@@ -57,7 +60,7 @@ class CategoriesScreen extends StatelessWidget {
           IconButton(
             icon: Icon(
               Icons.call_merge,
-              color: AppTheme.accent,
+              color: theme.colorScheme.secondary,
               size: 28,
             ),
             tooltip: 'Merge Categories',
@@ -66,7 +69,7 @@ class CategoriesScreen extends StatelessWidget {
           IconButton(
             icon: Icon(
               Icons.swap_horiz,
-              color: AppTheme.accent,
+              color: theme.colorScheme.secondary,
               size: 35,
             ),
             onPressed: () => showDialog(

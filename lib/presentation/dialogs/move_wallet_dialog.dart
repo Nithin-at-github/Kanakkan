@@ -26,7 +26,6 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
     final balances = context.watch<CategoryBalanceProvider>();
 
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: SingleChildScrollView(
         child: Padding(
@@ -40,12 +39,12 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
-        
+
               const SizedBox(height: 18),
-        
+
               /// FROM WALLET
               DropdownButtonFormField<int>(
                 initialValue: fromCategoryId,
@@ -57,10 +56,12 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                 ),
                 items: categories.map((c) {
                   final balance = balances.getBalance(c.id!);
-        
+
                   return DropdownMenuItem(
                     value: c.id,
-                    child: Text("${c.name} (₹${formatAmt(balance, decimals: false)})"),
+                    child: Text(
+                      "${c.name} (₹${formatAmt(balance, decimals: false)})",
+                    ),
                   );
                 }).toList(),
                 onChanged: (v) {
@@ -70,9 +71,9 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   });
                 },
               ),
-        
+
               const SizedBox(height: 14),
-        
+
               /// TO WALLET
               DropdownButtonFormField<int>(
                 initialValue: toCategoryId,
@@ -84,10 +85,12 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                 ),
                 items: categories.map((c) {
                   final balance = balances.getBalance(c.id!);
-        
+
                   return DropdownMenuItem(
                     value: c.id,
-                    child: Text("${c.name} (₹${formatAmt(balance, decimals: false)})"),
+                    child: Text(
+                      "${c.name} (₹${formatAmt(balance, decimals: false)})",
+                    ),
                   );
                 }).toList(),
                 onChanged: (v) {
@@ -97,9 +100,9 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   });
                 },
               ),
-        
+
               const SizedBox(height: 14),
-        
+
               /// AMOUNT
               TextField(
                 controller: amountController,
@@ -119,7 +122,7 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   });
                 },
               ),
-        
+
               /// ERROR MESSAGE
               if (errorText != null) ...[
                 const SizedBox(height: 14),
@@ -139,9 +142,9 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   ),
                 ),
               ],
-        
+
               const SizedBox(height: 20),
-        
+
               /// ACTIONS
               Row(
                 children: [
@@ -151,9 +154,9 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                       child: const Text("Cancel"),
                     ),
                   ),
-        
+
                   const SizedBox(width: 10),
-        
+
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -229,15 +232,16 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Money moved successfully!",
+            content: const Text(
+              "Money moved successfully!",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
 

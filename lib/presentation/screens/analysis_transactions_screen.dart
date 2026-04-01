@@ -27,7 +27,6 @@ class AnalysisTransactionsScreen extends StatelessWidget {
     final transactions = analysis.getTransactionsForCategory(categoryId);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
@@ -59,10 +58,10 @@ class AnalysisTransactionsScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Text(
         'No transactions found for this category.',
-        style: TextStyle(color: Colors.black45),
+        style: TextStyle(color: AppTheme.onSurfaceVariant),
       ),
     );
   }
@@ -87,9 +86,7 @@ class AnalysisTransactionsScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppTheme.accent.withValues(alpha: .2),
-            ),
+            border: Border.all(color: AppTheme.accent.withValues(alpha: .2)),
           ),
           child: Row(
             children: [
@@ -116,13 +113,16 @@ class AnalysisTransactionsScreen extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
-                        color: AppTheme.primary,
+                        color: AppTheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "$accountName • ${DateFormat("MMM d").format(date)}",
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),

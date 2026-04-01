@@ -47,8 +47,8 @@ class CategoryTile extends StatelessWidget {
               top: -4,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.amber,
+                decoration: BoxDecoration(
+                  color: AppTheme.accent,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -73,15 +73,15 @@ class CategoryTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.15),
+                color: AppTheme.accent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4)),
               ),
-              child: const Text(
+              child: Text(
                 'Salary Wallet',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.amber,
+                  color: AppTheme.accent,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -89,32 +89,32 @@ class CategoryTile extends StatelessWidget {
           ],
           if (category.excludeFromAnalysis) ...[
             const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.visibility_off_outlined,
-                    size: 10,
-                    color: Colors.black45,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Ignored',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.black45,
-                      fontWeight: FontWeight.w500,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.onSurface.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.divider),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.visibility_off_outlined,
+                      size: 10,
+                      color: AppTheme.onSurfaceVariant,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      'Ignored',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppTheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ],
       ),
@@ -173,7 +173,7 @@ class CategoryTile extends StatelessWidget {
                     Icon(
                       Icons.edit_outlined,
                       size: 18,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                     const SizedBox(width: 10),
                     const Text('Edit'),
@@ -182,14 +182,14 @@ class CategoryTile extends StatelessWidget {
               ),
               // Any main category can become the salary wallet (no type guard)
               if (!isSalaryWallet)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'set_salary',
                   child: Row(
                     children: [
                       Icon(
                         Icons.workspace_premium,
                         size: 18,
-                        color: Colors.amber,
+                        color: AppTheme.accent,
                       ),
                       SizedBox(width: 10),
                       Text('Set as Salary Wallet'),
@@ -197,14 +197,14 @@ class CategoryTile extends StatelessWidget {
                   ),
                 ),
               if (isSalaryWallet)
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'clear_salary',
                   child: Row(
                     children: [
                       Icon(
                         Icons.workspace_premium_outlined,
                         size: 18,
-                        color: Colors.black45,
+                        color: AppTheme.onSurfaceVariant,
                       ),
                       SizedBox(width: 10),
                       Text('Remove Salary Wallet'),

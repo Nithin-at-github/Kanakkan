@@ -18,7 +18,6 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
         final provider = context.watch<CategoryProvider>();
 
         return AlertDialog(
-          backgroundColor: AppTheme.background,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -31,7 +30,7 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
                 decoration: InputDecoration(
                   labelText: "Subcategory name",
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppTheme.surface,
                   errorText: error,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -71,7 +70,10 @@ void editSubcategoryDialog(BuildContext context, Category sub) {
                 provider.clearError();
                 Navigator.pop(context);
               },
-              child: const Text("Cancel"),
+              child: Text(
+                "Cancel",
+                style: TextStyle(color: AppTheme.onSurface),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accent),

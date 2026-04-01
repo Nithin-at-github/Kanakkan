@@ -23,7 +23,6 @@ class SubcategoryDialog extends StatelessWidget {
     final subcategories = provider.subcategoriesOf(parent.id!);
 
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -37,11 +36,7 @@ class SubcategoryDialog extends StatelessWidget {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: accent.withValues(alpha: 0.15),
-                  child: Icon(
-                    Icons.label_outline,
-                    color: accent,
-                    size: 16,
-                  ),
+                  child: Icon(Icons.label_outline, color: accent, size: 16),
                 ),
                 const SizedBox(width: 10),
 
@@ -51,7 +46,7 @@ class SubcategoryDialog extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                 ),
@@ -67,22 +62,25 @@ class SubcategoryDialog extends StatelessWidget {
 
             const SizedBox(height: 4),
 
-            const Text(
+            Text(
               "Subcategories",
-              style: TextStyle(color: Colors.black54, fontSize: 13),
+              style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 13),
             ),
 
             const SizedBox(height: 12),
 
             /// SUBCATEGORY LIST
             if (subcategories.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Center(
                   child: Text(
                     "No subcategories yet.\nTap + to add one.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black45, fontSize: 13),
+                    style: TextStyle(
+                      color: AppTheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               )
@@ -93,7 +91,7 @@ class SubcategoryDialog extends StatelessWidget {
                   shrinkWrap: true,
                   itemCount: subcategories.length,
                   separatorBuilder: (_, _) =>
-                      const Divider(height: 1, color: Colors.black12),
+                      Divider(height: 1, color: AppTheme.divider),
                   itemBuilder: (context, i) {
                     final sub = subcategories[i];
 
@@ -107,30 +105,34 @@ class SubcategoryDialog extends StatelessWidget {
                       ),
                       title: Row(
                         children: [
-                          Text(
-                            sub.name,
-                            style: const TextStyle(fontSize: 14),
-                          ),
+                          Text(sub.name, style: const TextStyle(fontSize: 14)),
                           if (sub.excludeFromAnalysis) ...[
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.black12),
+                                horizontal: 4,
+                                vertical: 1,
                               ),
-                              child: const Row(
+                              decoration: BoxDecoration(
+                                color: AppTheme.onSurface.withValues(
+                                  alpha: 0.05,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppTheme.divider),
+                              ),
+                              child: Row(
                                 children: [
-                                  Icon(Icons.visibility_off_outlined,
-                                      size: 8, color: Colors.black45),
+                                  Icon(
+                                    Icons.visibility_off_outlined,
+                                    size: 8,
+                                    color: AppTheme.onSurfaceVariant,
+                                  ),
                                   SizedBox(width: 3),
                                   Text(
                                     'Ignored',
                                     style: TextStyle(
                                       fontSize: 8,
-                                      color: Colors.black45,
+                                      color: AppTheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -144,10 +146,10 @@ class SubcategoryDialog extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.edit,
                               size: 18,
-                              color: Colors.black45,
+                              color: AppTheme.onSurfaceVariant,
                             ),
                             onPressed: () =>
                                 editSubcategoryDialog(context, sub),
@@ -173,7 +175,8 @@ class SubcategoryDialog extends StatelessWidget {
                               if (!confirm) return;
 
                               if (!context.mounted) return;
-                              final catProvider = context.read<CategoryProvider>();
+                              final catProvider = context
+                                  .read<CategoryProvider>();
                               await catProvider.deleteCategory(sub.id!);
                               // No further context usage needed after await
                               // (dialog auto-rebuilds via provider watch)

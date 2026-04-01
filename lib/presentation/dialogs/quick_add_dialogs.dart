@@ -106,7 +106,6 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         child: Padding(
@@ -119,7 +118,7 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),
@@ -129,8 +128,6 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Account name',
-                  filled: true,
-                  fillColor: Colors.white,
                   errorText: _nameError,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -149,8 +146,6 @@ class _QuickAddAccountDialogState extends State<QuickAddAccountDialog> {
                 decoration: InputDecoration(
                   labelText: 'Initial balance (optional)',
                   prefixText: '₹ ',
-                  filled: true,
-                  fillColor: Colors.white,
                   errorText: _balanceError,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -293,7 +288,6 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SingleChildScrollView(
         child: Padding(
@@ -307,7 +301,7 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),
@@ -356,8 +350,6 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                       initialValue: parentInList ? _selectedParent : null,
                       decoration: InputDecoration(
                         labelText: 'Parent category',
-                        filled: true,
-                        fillColor: Colors.white,
                         errorText: _parentError,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -395,8 +387,6 @@ class _QuickAddCategoryDialogState extends State<QuickAddCategoryDialog> {
                   labelText: _isSubcategoryMode
                       ? 'Subcategory name'
                       : 'Category name',
-                  filled: true,
-                  fillColor: Colors.white,
                   errorText: _nameError,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -467,16 +457,16 @@ class _ModeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppTheme.primary : Colors.white,
+          color: selected ? AppTheme.primary : AppTheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppTheme.primary : Colors.black26,
+            color: selected ? AppTheme.primary : AppTheme.divider,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : Colors.black54,
+            color: selected ? Colors.white : AppTheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),

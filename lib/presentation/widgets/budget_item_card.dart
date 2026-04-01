@@ -41,7 +41,7 @@ class BudgetItemCard extends StatelessWidget {
     if (isOverspent) {
       progressColor = AppTheme.error;
     } else if (progress > 0.8) {
-      progressColor = Colors.orange;
+      progressColor = AppTheme.warning;
     } else {
       progressColor = AppTheme.success;
     }
@@ -69,7 +69,7 @@ class BudgetItemCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
-                        color: AppTheme.primary,
+                        color: AppTheme.onSurface,
                       ),
                     ),
                   ),
@@ -117,15 +117,15 @@ class BudgetItemCard extends StatelessWidget {
                         : "Remaining ₹${formatAmt(budget.allocatedAmount - spent, decimals: false)}",
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      color: isOverspent ? AppTheme.error : Colors.black87,
+                      color: isOverspent ? AppTheme.error : AppTheme.onSurface,
                     ),
                   ),
 
                   Text(
                     "Wallet ₹${formatAmt(balance, decimals: false)}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      color: Colors.black54,
+                      color: AppTheme.onSurfaceVariant,
                     ),
                   ),
                 ],

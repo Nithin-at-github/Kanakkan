@@ -21,7 +21,6 @@ class AddAccountDialog {
           return StatefulBuilder(
             builder: (context, setState) {
               return Dialog(
-                backgroundColor: AppTheme.background,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -36,12 +35,12 @@ class AddAccountDialog {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
+                            color: AppTheme.onSurface,
                           ),
                         ),
-                  
+
                         const SizedBox(height: 20),
-                  
+
                         /// ACCOUNT NAME
                         TextField(
                           controller: nameController,
@@ -55,9 +54,9 @@ class AddAccountDialog {
                             ),
                           ),
                         ),
-                  
+
                         const SizedBox(height: 12),
-                  
+
                         /// INITIAL BALANCE
                         TextField(
                           controller: balanceController,
@@ -80,7 +79,7 @@ class AddAccountDialog {
                             ),
                           ),
                         ),
-                  
+
                         /// PROVIDER ERROR
                         if (ledger.lastError != null) ...[
                           const SizedBox(height: 12),
@@ -100,9 +99,9 @@ class AddAccountDialog {
                             ),
                           ),
                         ],
-                  
+
                         const SizedBox(height: 24),
-                  
+
                         /// ACTION BUTTONS
                         Row(
                           children: [
@@ -115,38 +114,45 @@ class AddAccountDialog {
                                 child: const Text("Cancel"),
                               ),
                             ),
-                  
+
                             const SizedBox(width: 12),
-                  
+
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () async {
                                   ledger.clearError();
-                  
+
                                   final name = nameController.text.trim();
                                   final balanceText = balanceController.text;
-                  
+
                                   /// VALIDATION USING HELPER
                                   setState(() {
-                                    nameError = FormValidation.accountName(name);
+                                    nameError = FormValidation.accountName(
+                                      name,
+                                    );
                                     balanceError = FormValidation.balance(
                                       balanceText,
                                     );
                                   });
-                  
-                                  if (nameError != null || balanceError != null) {
+
+                                  if (nameError != null ||
+                                      balanceError != null) {
                                     return;
                                   }
-                  
+
                                   final balance =
                                       double.tryParse(balanceText) ?? 0.0;
-                  
+
                                   /// CALL PROVIDER
-                                  final providerRef = context.read<LedgerProvider>();
+                                  final providerRef = context
+                                      .read<LedgerProvider>();
                                   await providerRef.addAccount(
-                                    Account(name: name, initialBalance: balance),
+                                    Account(
+                                      name: name,
+                                      initialBalance: balance,
+                                    ),
                                   );
-                  
+
                                   /// CLOSE ONLY IF SUCCESS
                                   if (providerRef.lastError == null) {
                                     if (context.mounted) Navigator.pop(context);

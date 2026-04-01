@@ -44,7 +44,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     final p = context.watch<AnalysisProvider>();
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       body: Column(
         children: [
           _AnalysisHeader(provider: p),
@@ -332,7 +331,7 @@ class _MonthlyBody extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: AppTheme.primary,
+                color: AppTheme.onSurface,
               ),
             ),
           ),
@@ -542,16 +541,12 @@ class _StatCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Colors.black26,
-                  size: 16,
-                ),
+                Icon(Icons.chevron_right, color: AppTheme.divider, size: 16),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              '₹${formatAmt(value.abs())}',
+              '${value < 0 ? '- ' : ''}₹${formatAmt(value.abs())}',
               style: TextStyle(
                 color: color,
                 fontSize: 20,
@@ -585,7 +580,7 @@ class _SavingsRateCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+          boxShadow: [BoxShadow(blurRadius: 6, color: AppTheme.divider)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,16 +589,15 @@ class _SavingsRateCard extends StatelessWidget {
               children: [
                 Icon(Icons.percent, color: color, size: 16),
                 const SizedBox(width: 6),
-                const Text(
+                Text(
                   'Savings Rate',
-                  style: TextStyle(color: Colors.black54, fontSize: 12),
+                  style: TextStyle(
+                    color: AppTheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
                 const Spacer(),
-                const Icon(
-                  Icons.chevron_right,
-                  color: Colors.black26,
-                  size: 16,
-                ),
+                Icon(Icons.chevron_right, color: AppTheme.divider, size: 16),
               ],
             ),
             const SizedBox(height: 8),
@@ -647,7 +641,7 @@ class _SmallStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
       ),
@@ -656,11 +650,11 @@ class _SmallStatCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: Colors.black54, fontSize: 11),
+            style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 11),
           ),
           const SizedBox(height: 6),
           Text(
-            '₹${formatAmt(value)}',
+            '${value < 0 ? '-' : ''}₹${formatAmt(value.abs())}',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,
@@ -700,16 +694,19 @@ class _BestMonthCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Best Savings Month',
-                style: TextStyle(color: Colors.black54, fontSize: 12),
+                style: TextStyle(
+                  color: AppTheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
               Text(
-                '$label — ₹${formatAmt(savings)}',
+                '$label — ${savings < 0 ? '-' : ''}₹${formatAmt(savings.abs())}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
             ],
@@ -738,9 +735,9 @@ class _SectionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surface,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
+          boxShadow: [BoxShadow(blurRadius: 8, color: AppTheme.divider)],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,16 +750,23 @@ class _SectionCard extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    color: AppTheme.primary,
+                    color: AppTheme.onSurface,
                   ),
                 ),
                 Row(
                   children: [
                     Text(
                       'Details',
-                      style: TextStyle(fontSize: 12, color: Colors.black45),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.onSurfaceVariant,
+                      ),
                     ),
-                    Icon(Icons.chevron_right, color: Colors.black26, size: 16),
+                    Icon(
+                      Icons.chevron_right,
+                      color: AppTheme.divider,
+                      size: 16,
+                    ),
                   ],
                 ),
               ],
@@ -802,7 +806,7 @@ class _BreakdownPreview extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '₹${formatAmt(item.amount)}',
+                    '${item.amount < 0 ? '-' : ''}₹${formatAmt(item.amount.abs())}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: color,
@@ -815,9 +819,9 @@ class _BreakdownPreview extends StatelessWidget {
                     child: Text(
                       '${item.percentage.toStringAsFixed(0)}%',
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Colors.black45,
+                        color: AppTheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -882,7 +886,10 @@ class _InsightCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   insight.body,
-                  style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -905,8 +912,11 @@ class _TrendBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (trend.isEmpty) {
-      return const Center(
-        child: Text('No data', style: TextStyle(color: Colors.black38)),
+      return Center(
+        child: Text(
+          'No data',
+          style: TextStyle(color: AppTheme.onSurfaceVariant),
+        ),
       );
     }
 
@@ -942,7 +952,7 @@ class _TrendBarChart extends StatelessWidget {
                     trend[idx].label,
                     style: TextStyle(
                       fontSize: compact ? 9 : 10,
-                      color: Colors.black54,
+                      color: AppTheme.onSurfaceVariant,
                     ),
                   ),
                 );
@@ -1011,7 +1021,10 @@ class _DailySpendChart extends StatelessWidget {
               interval: 7,
               getTitlesWidget: (v, meta) => Text(
                 '${v.toInt()}',
-                style: const TextStyle(fontSize: 10, color: Colors.black45),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               reservedSize: 18,
             ),
@@ -1022,7 +1035,7 @@ class _DailySpendChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: maxVal > 0 ? maxVal / 3 : 1000,
           getDrawingHorizontalLine: (_) =>
-              const FlLine(color: Colors.black12, strokeWidth: 1),
+              FlLine(color: AppTheme.divider, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [

@@ -168,7 +168,6 @@ class BackupRestoreHandler {
     return await showDialog<bool>(
           context: context,
           builder: (_) => Dialog(
-            backgroundColor: AppTheme.background,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -192,7 +191,7 @@ class BackupRestoreHandler {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -244,14 +243,14 @@ class BackupRestoreHandler {
                           onPressed: () => Navigator.pop(context, false),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: const BorderSide(color: Colors.black26),
+                            side: BorderSide(color: AppTheme.divider),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           child: Text(
                             'Cancel',
-                            style: TextStyle(color: Colors.black54),
+                            style: TextStyle(color: AppTheme.onSurfaceVariant),
                           ),
                         ),
                       ),
@@ -260,7 +259,7 @@ class BackupRestoreHandler {
                         child: ElevatedButton(
                           onPressed: () => Navigator.pop(context, true),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
+                            backgroundColor: AppTheme.accent,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -313,14 +312,17 @@ class BackupRestoreHandler {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 'How would you like to save your backup?',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 24),
               _BackupOptionTile(
@@ -339,7 +341,10 @@ class BackupRestoreHandler {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: TextStyle(color: Colors.black54)),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppTheme.onSurfaceVariant),
+                ),
               ),
             ],
           ),
@@ -381,18 +386,17 @@ class BackupRestoreHandler {
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
           child: Row(
             children: [
-              const CircularProgressIndicator(),
+              CircularProgressIndicator(color: AppTheme.onSurface),
               const SizedBox(width: 20),
               Expanded(
                 child: Text(
                   message,
-                  style: TextStyle(fontSize: 14, color: AppTheme.primary),
+                  style: TextStyle(fontSize: 14, color: AppTheme.onSurface),
                 ),
               ),
             ],
@@ -406,7 +410,6 @@ class BackupRestoreHandler {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -428,14 +431,17 @@ class BackupRestoreHandler {
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -462,7 +468,6 @@ class BackupRestoreHandler {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -484,14 +489,17 @@ class BackupRestoreHandler {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Your data has been restored successfully. Everything is up to date.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -524,7 +532,6 @@ class BackupRestoreHandler {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -546,14 +553,17 @@ class BackupRestoreHandler {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'All your data has been permanently deleted. Start fresh!',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -608,7 +618,7 @@ class _BackupOptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.black12),
+          border: Border.all(color: AppTheme.divider),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -619,7 +629,7 @@ class _BackupOptionTile extends StatelessWidget {
                 color: AppTheme.primary.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.primary, size: 24),
+              child: Icon(icon, color: AppTheme.onSurface, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -631,18 +641,21 @@ class _BackupOptionTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 12, color: Colors.black45),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.black12),
+            Icon(Icons.chevron_right, color: AppTheme.divider),
           ],
         ),
       ),
@@ -674,7 +687,7 @@ class _InfoPoint extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(fontSize: 13, color: AppTheme.onSurface),
           ),
         ),
       ],

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 
 class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -8,11 +7,13 @@ class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return AppBar(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: theme.colorScheme.primary,
       centerTitle: false,
       leading: IconButton(
-        icon: Icon(Icons.menu, color: AppTheme.accent),
+        icon: Icon(Icons.menu, color: theme.colorScheme.secondary),
         // Use the global key — always opens RootScaffold's drawer
         // regardless of which screen's Scaffold this AppBar is inside.
         onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
@@ -22,7 +23,7 @@ class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(
           fontFamily: 'Ravivarma',
           fontSize: 44,
-          color: AppTheme.accent,
+          color: theme.colorScheme.secondary,
         ),
       ),
       actions: actions,

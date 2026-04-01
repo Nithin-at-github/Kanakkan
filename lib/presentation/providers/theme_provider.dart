@@ -26,10 +26,17 @@ class ThemeProvider extends ChangeNotifier {
   /// Updates the theme mode and persists it.
   Future<void> setThemeMode(ThemeMode mode) async {
     if (_themeMode == mode) return;
+    
     _themeMode = mode;
-    await _storage.write(key: _themeKey, value: mode.toString());
     updateAppThemeStatic(mode == ThemeMode.dark);
+    
+    // Notify UI immediately to prevent frame drops/delays during toggle.
     notifyListeners();
+    
+    // Persist securely in the background, delayed so the UI completely finishes transitioning first.
+    Future.delayed(const Duration(milliseconds: 150), () {
+      _storage.write(key: _themeKey, value: mode.toString());
+    });
   }
 
   /// Toggles between light and dark mode manually.

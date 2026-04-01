@@ -7,27 +7,49 @@ class AppTheme {
   static bool isDarkMode = false;
 
   /// Core Palette - Now dynamic based on [isDarkMode]
-  static Color get primary => isDarkMode ? const Color(0xFF1E1E2C) : const Color(0xFF2D2438);
-  static Color get background => isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5DC);
-  static Color get accent => isDarkMode ? const Color(0xFFD4B475) : const Color(0xFFC5A059);
-  static Color get success => isDarkMode ? const Color(0xFF43A047) : const Color(0xFF2E7D32);
-  static Color get error => isDarkMode ? const Color(0xFFE53935) : const Color(0xFFC62828);
+  static Color get primary =>
+      isDarkMode ? const Color(0xFF1E1E2C) : const Color(0xFF2D2438);
+  static Color get background =>
+      isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F5DC);
+  static Color get accent =>
+      isDarkMode ? const Color(0xFFC5A059) : const Color(0xFFC5A059);
+  static Color get success =>
+      isDarkMode ? const Color(0xFF43A047) : const Color(0xFF2E7D32);
+  static Color get error =>
+      isDarkMode ? const Color(0xFFE53935) : const Color(0xFFC62828);
 
   /// Surface colors for cards and sheets
-  static Color get surface => isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-  static Color get onSurface => isDarkMode ? Colors.white.withValues(alpha: 0.9) : Colors.black87;
-  static Color get onSurfaceVariant => isDarkMode ? Colors.white60 : Colors.black54;
+  static Color get surface =>
+      isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+  static Color get onSurface =>
+      isDarkMode ? Colors.white.withValues(alpha: 0.9) : Colors.black87;
+  static Color get onSurfaceVariant =>
+      isDarkMode ? Colors.white60 : Colors.black54;
+  static Color get divider => isDarkMode ? Colors.white12 : Colors.black12;
+  static Color get outline => isDarkMode ? Colors.white24 : Colors.black26;
 
   static ThemeData lightTheme = _buildTheme(Brightness.light);
   static ThemeData darkTheme = _buildTheme(Brightness.dark);
 
+  static Color get warning => isDarkMode
+      ? const Color.fromARGB(190, 255, 153, 0)
+      : const Color.fromARGB(190, 255, 153, 0);
+
   static ThemeData _buildTheme(Brightness brightness) {
     final bool isDark = brightness == Brightness.dark;
-    final Color primaryColor = isDark ? const Color(0xFF1E1E2C) : const Color(0xFF2D2438);
-    final Color backgroundColor = isDark ? const Color(0xFF121212) : const Color(0xFFF5F5DC);
-    final Color accentColor = isDark ? const Color(0xFFD4B475) : const Color(0xFFC5A059);
+    final Color primaryColor = isDark
+        ? const Color(0xFF1E1E2C)
+        : const Color(0xFF2D2438);
+    final Color backgroundColor = isDark
+        ? const Color(0xFF121212)
+        : const Color(0xFFF5F5DC);
+    final Color accentColor = isDark
+        ? const Color(0xFFC5A059)
+        : const Color(0xFFC5A059);
     final Color surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final Color onSurfaceColor = isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87;
+    final Color onSurfaceColor = isDark
+        ? Colors.white.withValues(alpha: 0.9)
+        : Colors.black87;
 
     return ThemeData(
       useMaterial3: true,
@@ -36,14 +58,23 @@ class AppTheme {
 
       // Refined Text Theme
       textTheme: TextTheme(
-        headlineLarge: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        headlineMedium: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        titleLarge: TextStyle(fontWeight: FontWeight.bold, color: onSurfaceColor),
+        headlineLarge: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        headlineMedium: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        titleLarge: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: onSurfaceColor,
+        ),
         bodyLarge: TextStyle(fontSize: 16, color: onSurfaceColor),
         bodyMedium: TextStyle(fontSize: 14, color: onSurfaceColor),
       ),
 
-      scaffoldBackgroundColor: isDark ? backgroundColor : primaryColor,
+      scaffoldBackgroundColor: backgroundColor,
       canvasColor: surfaceColor,
 
       colorScheme: ColorScheme(
@@ -61,8 +92,13 @@ class AppTheme {
         surfaceContainerHighest: surfaceColor,
       ),
 
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: backgroundColor,
+        surfaceTintColor: Colors.transparent,
+      ),
+
       dialogTheme: DialogThemeData(
-        backgroundColor: surfaceColor,
+        backgroundColor: backgroundColor,
         surfaceTintColor: Colors.transparent,
       ),
 
@@ -91,9 +127,7 @@ class AppTheme {
         unselectedItemColor: isDark ? Colors.white38 : Colors.black45,
       ),
 
-      popupMenuTheme: PopupMenuThemeData(
-        color: surfaceColor,
-      ),
+      popupMenuTheme: PopupMenuThemeData(color: surfaceColor),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -101,7 +135,9 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
       ),
@@ -111,8 +147,13 @@ class AppTheme {
           foregroundColor: isDark ? Colors.white70 : Colors.black54,
           side: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.normal,
+            fontSize: 15,
+          ),
         ),
       ),
 
@@ -126,6 +167,23 @@ class AppTheme {
         color: surfaceColor,
         elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        labelStyle: TextStyle(color: isDark ? Colors.white : Colors.black54),
+        floatingLabelStyle: TextStyle(color: accentColor),
+        hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white24 : Colors.black12,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: accentColor, width: 2),
+        ),
+        prefixIconColor: isDark ? Colors.white : Colors.black54,
+        suffixIconColor: isDark ? Colors.white : Colors.black54,
       ),
     );
   }

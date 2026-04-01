@@ -16,12 +16,12 @@ class ConfirmDeleteDialog {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
+            child: Text("Cancel", style: TextStyle(color: AppTheme.onSurface)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.error),
-            child: const Text("Delete"),
+            child: Text("Delete", style: TextStyle(color: AppTheme.error)),
           ),
         ],
       ),

@@ -21,7 +21,6 @@ class AddCategoryDialog {
           return StatefulBuilder(
             builder: (context, setState) {
               return Dialog(
-                backgroundColor: AppTheme.background,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -37,7 +36,7 @@ class AddCategoryDialog {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
+                            color: AppTheme.onSurface,
                           ),
                         ),
 
@@ -70,17 +69,19 @@ class AddCategoryDialog {
                           decoration: InputDecoration(
                             labelText: 'Linked account (optional)',
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: AppTheme.surface,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           items: [
-                            const DropdownMenuItem<Account?>(
+                            DropdownMenuItem<Account?>(
                               value: null,
                               child: Text(
                                 'None',
-                                style: TextStyle(color: Colors.black54),
+                                style: TextStyle(
+                                  color: AppTheme.onSurfaceVariant,
+                                ),
                               ),
                             ),
                             ...ledger.accounts.map(
@@ -88,8 +89,11 @@ class AddCategoryDialog {
                                 value: a,
                                 child: Row(
                                   children: [
-                                    Icon(Icons.account_balance,
-                                        size: 16, color: AppTheme.accent),
+                                    Icon(
+                                      Icons.account_balance,
+                                      size: 16,
+                                      color: AppTheme.accent,
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(a.name),
                                   ],
@@ -168,14 +172,15 @@ class AddCategoryDialog {
                                   final name = controller.text.trim();
 
                                   setState(() {
-                                    nameError =
-                                        FormValidation.categoryName(name);
+                                    nameError = FormValidation.categoryName(
+                                      name,
+                                    );
                                   });
 
                                   if (nameError != null) return;
 
-                                  final catProvider =
-                                      context.read<CategoryProvider>();
+                                  final catProvider = context
+                                      .read<CategoryProvider>();
                                   await catProvider.addCategory(
                                     Category(
                                       name: name,

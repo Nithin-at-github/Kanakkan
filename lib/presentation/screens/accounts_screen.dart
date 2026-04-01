@@ -40,7 +40,6 @@ class AccountsScreen extends StatelessWidget {
         .fold(0.0, (sum, t) => sum + t.amount);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
       appBar: ReusableAppBar(),
       body: SingleChildScrollView(
         child: Column(
@@ -104,7 +103,7 @@ class AccountsScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.only(top: 16),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: const [
                   BoxShadow(
@@ -118,14 +117,14 @@ class AccountsScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (accounts.isEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
                       child: Center(
                         child: Text(
                           "No accounts added",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.black54,
+                            color: AppTheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -141,7 +140,7 @@ class AccountsScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
+                            color: AppTheme.onSurface,
                           ),
                         ),
                       ),
@@ -179,7 +178,6 @@ class AccountsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.accent.withValues(alpha: .35)),
-        color: Colors.white,
       ),
       child: Row(
         children: [
@@ -193,7 +191,7 @@ class AccountsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                    color: AppTheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -214,7 +212,7 @@ class AccountsScreen extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            icon: Icon(Icons.more_vert, color: AppTheme.primary),
+            icon: Icon(Icons.more_vert, color: AppTheme.onSurface),
             onSelected: (value) async {
               if (value == "edit") {
                 _editAccount(context, acc);
@@ -234,7 +232,7 @@ class AccountsScreen extends StatelessWidget {
                         "Account deleted",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppTheme.onSurface,
                         ),
                       ),
                       backgroundColor: AppTheme.error,
@@ -253,7 +251,7 @@ class AccountsScreen extends StatelessWidget {
                     Icon(
                       Icons.edit_outlined,
                       size: 18,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                     const SizedBox(width: 10),
                     Text("Edit"),
@@ -305,7 +303,6 @@ class AccountsScreen extends StatelessWidget {
       builder: (_) => Consumer<LedgerProvider>(
         builder: (context, ledger, _) {
           return Dialog(
-            backgroundColor: AppTheme.background,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -319,7 +316,7 @@ class AccountsScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
 
@@ -331,7 +328,7 @@ class AccountsScreen extends StatelessWidget {
                     decoration: InputDecoration(
                       labelText: "Account name",
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Theme.of(context).colorScheme.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -345,24 +342,24 @@ class AccountsScreen extends StatelessWidget {
                     decoration: InputDecoration(
                       labelText: "Initial balance",
                       filled: true,
-                      fillColor: Colors.grey.shade100,
+                      fillColor: AppTheme.divider,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      suffixIcon: const Tooltip(
+                      suffixIcon: Tooltip(
                         message: "Initial balance cannot be changed",
                         child: Icon(
                           Icons.lock_outline,
                           size: 18,
-                          color: Colors.black38,
+                          color: AppTheme.outline,
                         ),
                       ),
                     ),
                     child: Text(
                       "₹${formatAmt(account.initialBalance)}",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
-                        color: Colors.black54,
+                        color: AppTheme.onSurfaceVariant,
                       ),
                     ),
                   ),

@@ -126,8 +126,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
-
       appBar: ReusableAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 60), // clears the FAB
@@ -210,13 +208,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(18),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: AppTheme.divider,
                     blurRadius: 10,
-                    offset: Offset(0, 4),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -256,11 +254,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       border: Border.all(
                         color: AppTheme.accent,
                       ),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.black12,
+                          color: AppTheme.divider,
                           blurRadius: 8,
-                          offset: Offset(0, 3),
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -316,14 +314,14 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   Widget _emptyBudgets() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 40),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Text(
           "No budgets created yet",
           style: TextStyle(
             fontSize: 16,
-            color: Colors.black54,
+            color: AppTheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),

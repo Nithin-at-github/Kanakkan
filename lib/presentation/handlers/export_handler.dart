@@ -93,8 +93,8 @@ class ExportHandler {
   static void showExportOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.background,
       isScrollControlled: true,
+      backgroundColor: AppTheme.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -118,7 +118,6 @@ class ExportHandler {
       context: context,
       barrierDismissible: false,
       builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
@@ -210,7 +209,6 @@ class ExportHandler {
     return await showDialog<String>(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -222,7 +220,7 @@ class ExportHandler {
                 backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
                 child: Icon(
                   Icons.save_outlined,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                   size: 28,
                 ),
               ),
@@ -232,14 +230,14 @@ class ExportHandler {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 'How would you like to save your export?',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
               ),
               const SizedBox(height: 24),
               _ChoiceTile(
@@ -258,7 +256,7 @@ class ExportHandler {
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: TextStyle(color: Colors.black54)),
+                child: Text('Cancel', style: TextStyle(color: AppTheme.onSurfaceVariant)),
               ),
             ],
           ),
@@ -322,19 +320,24 @@ class _ExportSheetState extends State<_ExportSheet> {
         firstDate: DateTime(2000),
         lastDate: DateTime.now(),
         initialDateRange: _customRange,
-        builder: (context, child) => Theme(
-          data: ThemeData(
-            useMaterial3: false,
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primary,
-              onPrimary: AppTheme.accent,
-              onSurface: Colors.black,
-              surface: AppTheme.background,
+        builder: (context, child) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: (isDark ? const ColorScheme.dark() : const ColorScheme.light()).copyWith(
+                primary: AppTheme.primary,
+                onPrimary: AppTheme.accent,
+                onSurface: AppTheme.onSurface,
+                surface: AppTheme.background,
+              ),
+              dialogTheme: DialogThemeData(
+                backgroundColor: AppTheme.background,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
             ),
-            dialogTheme: DialogThemeData(backgroundColor: AppTheme.background),
-          ),
-          child: child!,
-        ),
+            child: child!,
+          );
+        },
       );
       if (picked != null) {
         setState(() {
@@ -370,7 +373,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                 children: [
                   Icon(
                     Icons.file_download_outlined,
-                    color: AppTheme.primary,
+                    color: AppTheme.onSurface,
                     size: 22,
                   ),
                   const SizedBox(width: 8),
@@ -379,16 +382,16 @@ class _ExportSheetState extends State<_ExportSheet> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close,
                       size: 20,
-                      color: Colors.black45,
+                      color: AppTheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -401,7 +404,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black38,
+                  color: AppTheme.onSurfaceVariant,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -416,9 +419,9 @@ class _ExportSheetState extends State<_ExportSheet> {
                     selected: isActive,
                     onSelected: (_) => _onPresetTap(preset),
                     selectedColor: AppTheme.primary,
-                    backgroundColor: Colors.black.withValues(alpha: 0.04),
+                    backgroundColor: AppTheme.onSurface.withValues(alpha: 0.04),
                     labelStyle: TextStyle(
-                      color: isActive ? Colors.white : Colors.black87,
+                      color: isActive ? Colors.white : AppTheme.onSurface,
                       fontSize: 13,
                       fontWeight: isActive
                           ? FontWeight.bold
@@ -427,7 +430,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(
-                        color: isActive ? AppTheme.primary : Colors.black12,
+                        color: isActive ? AppTheme.primary : AppTheme.divider,
                       ),
                     ),
                     showCheckmark: false,
@@ -443,10 +446,10 @@ class _ExportSheetState extends State<_ExportSheet> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.06),
+                  color: AppTheme.accent.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primary.withValues(alpha: 0.15),
+                    color: AppTheme.accent.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -454,7 +457,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                     Icon(
                       Icons.calendar_today_outlined,
                       size: 16,
-                      color: AppTheme.primary,
+                      color: AppTheme.accent,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -462,7 +465,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                         _rangeSummary,
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.primary,
+                          color: AppTheme.accent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -477,7 +480,7 @@ class _ExportSheetState extends State<_ExportSheet> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black38,
+                  color: AppTheme.onSurfaceVariant,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -541,7 +544,7 @@ class _ChoiceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.black12),
+          border: Border.all(color: AppTheme.divider),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -552,7 +555,7 @@ class _ChoiceTile extends StatelessWidget {
                 color: AppTheme.primary.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.primary, size: 24),
+              child: Icon(icon, color: AppTheme.onSurface, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -564,18 +567,18 @@ class _ChoiceTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 12, color: Colors.black45),
+                    style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.black12),
+            Icon(Icons.chevron_right, color: AppTheme.divider),
           ],
         ),
       ),
@@ -633,7 +636,7 @@ class _FormatButton extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 11, color: Colors.black45),
+                    style: TextStyle(fontSize: 11, color: AppTheme.onSurfaceVariant),
                   ),
                 ],
               ),

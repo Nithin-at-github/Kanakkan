@@ -57,7 +57,7 @@ class _LockScreenState extends State<LockScreen> {
     return InputDecoration(
       hintText: "••••",
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppTheme.surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: AppTheme.accent.withValues(alpha: .4)),
@@ -75,7 +75,6 @@ class _LockScreenState extends State<LockScreen> {
       canPop: false,
 
       child: Scaffold(
-        backgroundColor: AppTheme.background,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -106,11 +105,11 @@ class _LockScreenState extends State<LockScreen> {
                     decoration: BoxDecoration(
                       color: AppTheme.surface,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.black12,
+                          color: AppTheme.divider,
                           blurRadius: 12,
-                          offset: Offset(0, 6),
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -190,9 +189,9 @@ class _LockScreenState extends State<LockScreen> {
 
                   const SizedBox(height: 28),
 
-                  const Text(
+                  Text(
                     "Authentication keeps your financial data secure",
-                    style: TextStyle(fontSize: 12, color: Colors.black45),
+                    style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                 ],

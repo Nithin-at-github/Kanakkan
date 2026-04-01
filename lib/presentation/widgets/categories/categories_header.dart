@@ -15,11 +15,13 @@ class CategoriesHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       decoration: BoxDecoration(
-        color: AppTheme.primary,
+        color: theme.colorScheme.primary,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
       ),
       child: Column(
@@ -27,7 +29,7 @@ class CategoriesHeader extends StatelessWidget {
           Text(
             "Categories",
             style: TextStyle(
-              color: AppTheme.accent,
+              color: theme.colorScheme.secondary,
               fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
@@ -44,7 +46,7 @@ class CategoriesHeader extends StatelessWidget {
               _summaryCard(
                 "Top Wallet",
                 "$topCategoryName${topCategoryName.isNotEmpty ? ': ' : ''}₹${formatAmt(topCategoryAmount)}",
-                AppTheme.accent,
+                theme.colorScheme.secondary,
               ),
             ],
           ),
@@ -59,7 +61,7 @@ class CategoriesHeader extends StatelessWidget {
         children: [
           Text(
             title.toUpperCase(),
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: TextStyle(color: Colors.white60, fontSize: 12),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),

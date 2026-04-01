@@ -139,17 +139,6 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
 
-                  _DrawerTile(
-                    icon: context.watch<ThemeProvider>().themeMode == ThemeMode.dark
-                        ? Icons.light_mode_outlined
-                        : Icons.dark_mode_outlined,
-                    label: "Theme Mode",
-                    subtitle: "Switch to ${context.watch<ThemeProvider>().themeMode == ThemeMode.dark ? 'Day' : 'Night'} Mode",
-                    onTap: () {
-                      context.read<ThemeProvider>().toggleTheme();
-                    },
-                  ),
-
                   const Spacer(),
 
                   // ── FOOTER ──
@@ -173,7 +162,8 @@ class AppDrawer extends StatelessWidget {
       context: context,
       builder: (_) => Dialog(
         backgroundColor: AppTheme.background,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -194,7 +184,7 @@ class AppDrawer extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 10),
@@ -203,7 +193,9 @@ class AppDrawer extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.error.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AppTheme.error.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -233,14 +225,14 @@ class AppDrawer extends StatelessWidget {
                       onPressed: () => navigator.pop(),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: const BorderSide(color: Colors.black26),
+                        side: BorderSide(color: AppTheme.divider),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         "Cancel",
-                        style: TextStyle(color: Colors.black54),
+                        style: TextStyle(color: AppTheme.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -298,6 +290,8 @@ class _DrawerHeaderState extends State<_DrawerHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().themeMode == ThemeMode.dark;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
       decoration: BoxDecoration(
@@ -310,26 +304,84 @@ class _DrawerHeaderState extends State<_DrawerHeader> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // App icon / logo mark
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
-            ),
-            child: Center(
-              child: Text(
-                "₹",
-                style: TextStyle(
-                  fontSize: 24,
-                  color: AppTheme.accent,
-                  fontWeight: FontWeight.bold,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // App icon / logo mark
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppTheme.accent.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    "₹",
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: AppTheme.accent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const Spacer(),
+              _ThemeSwitch(
+                isDark: isDark,
+                onChanged: (bool value) async {
+                  final themeProvider = context.read<ThemeProvider>();
+                  final overlayContext =
+                      rootScaffoldKey.currentContext ?? context;
+
+                  Navigator.pop(context); // Close drawer smoothly
+
+                  // Wait for the drawer close animation to fully complete
+                  await Future.delayed(const Duration(milliseconds: 250));
+
+                  if (!overlayContext.mounted) return;
+
+                  // Show a fully opaque 'Lights Out' fade transition using the brand's primary color
+                  showGeneralDialog(
+                    context: overlayContext,
+                    barrierDismissible: false,
+                    barrierColor: AppTheme.primary, // Deep purple fade
+                    transitionDuration: const Duration(milliseconds: 300),
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        Center(
+                          // Show an animated glowing sun/moon during the darkness
+                          child: _ThemeTransitionLoader(toDark: !isDark),
+                        ),
+                    transitionBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
+                  );
+
+                  // Wait for the fade-in to completely darken the screen
+                  await Future.delayed(const Duration(milliseconds: 350));
+
+                  // Trigger the massive global rebuild underneath the solid overlay
+                  themeProvider.toggleTheme();
+
+                  // Give the framework time to re-evaluate and rasterize the new tree (the jank happens here)
+                  await Future.delayed(const Duration(milliseconds: 250));
+
+                  // Fade the overlay back out, revealing the beautifully rendered new theme
+                  if (overlayContext.mounted) {
+                    Navigator.of(overlayContext, rootNavigator: true).pop();
+                  }
+                },
+              ),
+            ],
           ),
+          const SizedBox(height: 12),
 
           Text(
             "I-W-¡-³-",
@@ -375,10 +427,10 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: Colors.black38,
+          color: AppTheme.onSurfaceVariant,
           letterSpacing: 1.2,
         ),
       ),
@@ -409,7 +461,7 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = iconColor ?? AppTheme.primary;
+    final color = iconColor ?? AppTheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -430,19 +482,22 @@ class _DrawerTile extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: labelColor ?? AppTheme.primary,
+            color: labelColor ?? AppTheme.onSurface,
           ),
         ),
         subtitle: subtitle != null
             ? Text(
                 subtitle!,
-                style: const TextStyle(fontSize: 11, color: Colors.black45),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               )
             : null,
         trailing: Icon(
           Icons.chevron_right,
           size: 18,
-          color: (iconColor ?? Colors.black).withValues(alpha: 0.3),
+          color: (iconColor ?? AppTheme.onSurface).withValues(alpha: 0.3),
         ),
       ),
     );
@@ -511,19 +566,143 @@ class _WarningPoint extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.warning_amber_rounded,
-          color: AppTheme.error,
-          size: 16,
-        ),
+        Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 16),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(fontSize: 13, color: AppTheme.onSurface),
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM THEME SWITCH
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ThemeSwitch extends StatelessWidget {
+  final bool isDark;
+  final ValueChanged<bool> onChanged;
+
+  const _ThemeSwitch({required this.isDark, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!isDark),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
+        width: 60,
+        height: 32,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: isDark ? Colors.black38 : Colors.white24,
+          border: Border.all(
+            color: isDark
+                ? AppTheme.accent.withValues(alpha: 0.3)
+                : Colors.white38,
+          ),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutBack,
+              left: isDark
+                  ? 28
+                  : 0, // 60 width - 8 padding - 24 thumb width = 28 track length
+              right: isDark ? 0 : 28,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? AppTheme.accent : Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, anim) => RotationTransition(
+                      turns: anim,
+                      child: ScaleTransition(scale: anim, child: child),
+                    ),
+                    child: Icon(
+                      isDark
+                          ? Icons.dark_mode_rounded
+                          : Icons.light_mode_rounded,
+                      key: ValueKey(isDark),
+                      size: 14,
+                      color: isDark ? AppTheme.primary : AppTheme.accent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM THEME TRANSITION LOADER
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ThemeTransitionLoader extends StatelessWidget {
+  final bool toDark;
+
+  const _ThemeTransitionLoader({required this.toDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.5 + (value * 0.5), // Scale from 0.5 to 1.0
+          child: Transform.rotate(
+            angle: value * 2 * 3.14159, // One full rotation
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.05),
+          boxShadow: [
+            BoxShadow(
+              color: (toDark ? AppTheme.accent : Colors.orange).withValues(
+                alpha: 0.2,
+              ),
+              blurRadius: 30,
+              spreadRadius: 10,
+            ),
+          ],
+        ),
+        child: Icon(
+          toDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+          size: 64,
+          color: toDark ? AppTheme.accent : Colors.orange,
+        ),
+      ),
     );
   }
 }

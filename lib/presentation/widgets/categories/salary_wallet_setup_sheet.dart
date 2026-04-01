@@ -44,7 +44,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppTheme.divider,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -67,7 +67,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primary,
+                        color: AppTheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -122,20 +122,20 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                             color: Colors.orange.withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(
                               Icons.info_outline,
                               color: Colors.orange,
                               size: 20,
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 'No categories yet. Add one first from the Categories screen.',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.black54,
+                                  color: AppTheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -150,7 +150,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: AppTheme.primary,
+                          color: AppTheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -158,9 +158,9 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                         provider.hasSalaryWallet
                             ? 'Tap another to switch, or remove the current one.'
                             : 'This category will receive your salary and fund your wallets.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black45,
+                          color: AppTheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -209,7 +209,7 @@ class SalaryWalletSetupSheet extends StatelessWidget {
                         ),
                         child: Text(
                           'Close',
-                          style: TextStyle(color: AppTheme.primary),
+                          style: TextStyle(color: AppTheme.onSurface),
                         ),
                       ),
                     ),
@@ -243,10 +243,10 @@ Future<bool> confirmWalletChange({
 
   if (hasExpenseTx && !tappedCategory.isSalaryWallet) {
     if (!context.mounted) return false;
-    final proceed = await showDialog<bool>(
+    final proceed =
+        await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            backgroundColor: AppTheme.background,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -254,7 +254,7 @@ Future<bool> confirmWalletChange({
               'Unusual Choice',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primary,
+                color: AppTheme.onSurface,
               ),
             ),
             content: Text(
@@ -263,7 +263,10 @@ Future<bool> confirmWalletChange({
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppTheme.onSurface),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -272,9 +275,7 @@ Future<bool> confirmWalletChange({
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text(
                   'Proceed',
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -295,7 +296,7 @@ Future<bool> confirmWalletChange({
             title: 'Remove Salary Wallet?',
             icon: Icons.workspace_premium_outlined,
             iconColor: Colors.orange,
-            points: const [
+            points: [
               _ChangePoint(
                 icon: Icons.block,
                 color: Colors.orange,
@@ -310,12 +311,12 @@ Future<bool> confirmWalletChange({
               ),
               _ChangePoint(
                 icon: Icons.history,
-                color: Colors.green,
+                color: AppTheme.success,
                 text: 'Past transactions and wallet balances are unaffected.',
               ),
             ],
             confirmLabel: 'Remove',
-            confirmColor: Colors.orange,
+            confirmColor: AppTheme.accent,
           ),
         ) ??
         false;
@@ -348,9 +349,9 @@ Future<bool> confirmWalletChange({
                 text:
                     'Future income added to "${tappedCategory.name}" will trigger wallet distribution.',
               ),
-              const _ChangePoint(
+              _ChangePoint(
                 icon: Icons.history,
-                color: Colors.green,
+                color: AppTheme.success,
                 text:
                     'Past salary transactions and stored splits are unaffected.',
               ),
@@ -391,21 +392,21 @@ class _CategoryPickerTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.amber.withValues(alpha: 0.12)
-              : Colors.white,
+              ? AppTheme.accent.withValues(alpha: 0.12)
+              : AppTheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? Colors.amber : Colors.black12,
+            color: isSelected ? AppTheme.accent : AppTheme.divider,
             width: isSelected ? 1.5 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.amber.withValues(alpha: 0.15),
+                    color: AppTheme.accent.withValues(alpha: 0.15),
                     blurRadius: 8,
                   ),
                 ]
-              : const [BoxShadow(blurRadius: 4, color: Colors.black12)],
+              : [BoxShadow(blurRadius: 4, color: AppTheme.divider)],
         ),
         child: Row(
           children: [
@@ -413,11 +414,11 @@ class _CategoryPickerTile extends StatelessWidget {
             CircleAvatar(
               radius: 18,
               backgroundColor: isSelected
-                  ? Colors.amber.withValues(alpha: 0.2)
+                  ? AppTheme.accent.withValues(alpha: 0.2)
                   : AppTheme.success.withValues(alpha: 0.1),
               child: Icon(
                 Icons.arrow_downward,
-                color: isSelected ? Colors.amber : AppTheme.success,
+                color: isSelected ? AppTheme.accent : AppTheme.success,
                 size: 16,
               ),
             ),
@@ -430,18 +431,18 @@ class _CategoryPickerTile extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
-                  color: isSelected ? Colors.amber.shade800 : Colors.black87,
+                  color: isSelected ? AppTheme.accent : AppTheme.onSurface,
                 ),
               ),
             ),
 
             // Check / crown
             if (isSelected)
-              const Icon(Icons.workspace_premium, color: Colors.amber, size: 22)
+              Icon(Icons.workspace_premium, color: AppTheme.accent, size: 22)
             else
-              const Icon(
+              Icon(
                 Icons.radio_button_unchecked,
-                color: Colors.black26,
+                color: AppTheme.outline,
                 size: 22,
               ),
           ],
@@ -486,7 +487,6 @@ class _WalletChangeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -508,13 +508,13 @@ class _WalletChangeDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primary,
+                color: AppTheme.onSurface,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               "Here's what will change:",
-              style: TextStyle(fontSize: 13, color: Colors.black45),
+              style: TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
 
@@ -523,9 +523,9 @@ class _WalletChangeDialog extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: AppTheme.onSurface.withValues(alpha: 0.03),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.black12),
+                border: Border.all(color: AppTheme.divider),
               ),
               child: Column(
                 children: points.map((p) {
@@ -539,9 +539,9 @@ class _WalletChangeDialog extends StatelessWidget {
                         Expanded(
                           child: Text(
                             p.text,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Colors.black87,
+                              color: AppTheme.onSurface,
                             ),
                           ),
                         ),
@@ -562,14 +562,14 @@ class _WalletChangeDialog extends StatelessWidget {
                     onPressed: () => Navigator.pop(context, false),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Colors.black26),
+                      side: BorderSide(color: AppTheme.outline),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
-                      style: TextStyle(color: Colors.black54),
+                      style: TextStyle(color: AppTheme.onSurfaceVariant),
                     ),
                   ),
                 ),
@@ -625,10 +625,10 @@ class _FeatureRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.amber.withValues(alpha: 0.15),
+            color: AppTheme.accent.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: Colors.amber, size: 18),
+          child: Icon(icon, color: AppTheme.accent, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -640,13 +640,16 @@ class _FeatureRow extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 body,
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

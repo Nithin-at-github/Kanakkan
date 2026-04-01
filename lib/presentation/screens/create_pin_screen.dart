@@ -79,7 +79,6 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -191,9 +190,9 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                 const SizedBox(height: 30),
 
                 /// subtle footer
-                const Text(
+                Text(
                   "Your PIN stays only on this device",
-                  style: TextStyle(fontSize: 12, color: Colors.black45),
+                  style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
                 ),
               ],
             ),

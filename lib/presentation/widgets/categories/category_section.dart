@@ -25,9 +25,9 @@ class CategorySection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
+          boxShadow: [BoxShadow(blurRadius: 8, color: AppTheme.divider)],
         ),
         child: Column(
           children: [
@@ -39,7 +39,7 @@ class CategorySection extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                   fontSize: 17,
                 ),
               ),
@@ -52,14 +52,14 @@ class CategorySection extends StatelessWidget {
 
             // ── CATEGORY LIST ──
             if (categories.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Text(
                     "No categories added",
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.black54,
+                      color: AppTheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -88,13 +88,13 @@ class _SalaryWalletBanner extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(12, 10, 12, 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.1),
+        color: AppTheme.accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.workspace_premium, color: Colors.amber, size: 20),
+          Icon(Icons.workspace_premium, color: AppTheme.accent, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -108,7 +108,7 @@ class _SalaryWalletBanner extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.amber,
+                color: AppTheme.accent,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(

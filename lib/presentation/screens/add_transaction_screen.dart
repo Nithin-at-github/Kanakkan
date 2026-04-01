@@ -149,7 +149,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final categories = categoriesProvider.mainCategories;
 
     return Scaffold(
-      backgroundColor: AppTheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: SafeArea(
         child: ValueListenableBuilder<bool>(
           valueListenable: _multiModeNotifier,
@@ -304,9 +304,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       label: Text(label),
       selected: selected,
       selectedColor: AppTheme.accent,
-      backgroundColor: AppTheme.background,
       labelStyle: TextStyle(
-        color: selected ? AppTheme.background : AppTheme.primary,
+        color: selected ? AppTheme.background : AppTheme.onSurface,
         fontWeight: FontWeight.bold,
       ),
       onSelected: (_) => onSelected(),
@@ -618,6 +617,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       initialDate: _selectedDateTime,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: (isDark ? const ColorScheme.dark() : const ColorScheme.light()).copyWith(
+              primary: AppTheme.accent,
+              onPrimary: AppTheme.primary,
+              onSurface: AppTheme.onSurface,
+              surface: AppTheme.background,
+            ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: AppTheme.background,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (date != null) {
       setState(() {
@@ -636,6 +653,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppTheme.accent,
+              onPrimary: AppTheme.primary,
+              surface: AppTheme.surface,
+              onSurface: AppTheme.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (time != null) {
       setState(() {
@@ -685,7 +715,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
+                          color: AppTheme.onSurface,
                         ),
                       ),
                       TextButton.icon(
@@ -777,7 +807,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.primary,
+                          color: AppTheme.onSurface,
                         ),
                       ),
                       TextButton.icon(
@@ -814,7 +844,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         _selectionTile(
                           title: "None",
                           icon: Icons.block,
-                          color: Colors.black45,
+                          color: AppTheme.onSurfaceVariant,
                           onTap: () {
                             setState(() => _selectedSubcategory = null);
                             Navigator.pop(context);
@@ -841,7 +871,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
-                                    color: Colors.black54,
+                                    color: AppTheme.onSurfaceVariant,
                                   ),
                                 ),
                               ),
@@ -913,7 +943,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.primary,
+                              color: AppTheme.onSurface,
                             ),
                           ),
                           TextButton.icon(
@@ -947,14 +977,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: searchController,
-                        style: TextStyle(color: Colors.black),
+                        style: TextStyle(color: AppTheme.onSurface),
                         cursorColor: AppTheme.accent,
                         decoration: InputDecoration(
                           hintText: "Search category",
-                          hintStyle: const TextStyle(color: Colors.black54),
-                          prefixIcon: const Icon(
+                          hintStyle: TextStyle(color: AppTheme.onSurfaceVariant),
+                          prefixIcon: Icon(
                             Icons.search,
-                            color: Colors.black54,
+                            color: AppTheme.onSurfaceVariant,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: AppTheme.accent),
@@ -1030,7 +1060,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 child: Center(
                                   child: Text(
                                     "No categories found",
-                                    style: TextStyle(color: Colors.white54),
+                                    style: TextStyle(color: AppTheme.onSurfaceVariant),
                                   ),
                                 ),
                               ),
@@ -1056,7 +1086,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       height: 4,
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade400,
+        color: AppTheme.divider,
         borderRadius: BorderRadius.circular(10),
       ),
     );

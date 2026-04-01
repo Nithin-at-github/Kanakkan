@@ -62,7 +62,6 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
     final categories = provider.mainCategories;
 
     return Dialog(
-      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 600),
@@ -77,13 +76,16 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
+                  color: AppTheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Consolidate multiple categories into one. All transactions and subcategories will be moved.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -97,7 +99,7 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
                 decoration: InputDecoration(
                   hintText: 'e.g. Household',
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: AppTheme.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -118,7 +120,7 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: ListView.separated(

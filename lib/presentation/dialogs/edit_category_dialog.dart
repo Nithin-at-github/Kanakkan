@@ -25,7 +25,6 @@ void editCategoryDialog(BuildContext context, Category category) {
         final provider = context.watch<CategoryProvider>();
 
         return Dialog(
-          backgroundColor: AppTheme.background,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -39,7 +38,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                    color: AppTheme.onSurface,
                   ),
                 ),
 
@@ -50,7 +49,7 @@ void editCategoryDialog(BuildContext context, Category category) {
                   decoration: InputDecoration(
                     labelText: 'Category name',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppTheme.surface,
                     errorText: localError,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -72,17 +71,17 @@ void editCategoryDialog(BuildContext context, Category category) {
                     decoration: InputDecoration(
                       labelText: 'Linked account (optional)',
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: AppTheme.surface,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     items: [
-                      const DropdownMenuItem<Account?>(
+                      DropdownMenuItem<Account?>(
                         value: null,
                         child: Text(
                           'None',
-                          style: TextStyle(color: Colors.black54),
+                          style: TextStyle(color: AppTheme.onSurfaceVariant),
                         ),
                       ),
                       ...allAccounts.map(
