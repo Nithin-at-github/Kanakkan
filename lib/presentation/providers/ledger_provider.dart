@@ -132,12 +132,24 @@ class LedgerProvider extends ChangeNotifier {
     for (final tx in _transactions) {
       if (tx.type != "expense" || tx.transferGroupId != null) continue;
       if (categoryProvider.isExcluded(tx.categoryId)) continue;
+
       final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
       if (date.month != month || date.year != year) continue;
+
       final categoryId = tx.categoryId;
       if (categoryId == null) continue;
+
+      // 1. Direct attribution (Self)
       _monthlyCategoryTotals[categoryId] =
           (_monthlyCategoryTotals[categoryId] ?? 0) + tx.amount;
+
+      // 2. Roll up to parent (if subcategory)
+      final category = categoryProvider.resolveCategory(categoryId);
+      if (category != null && category.isSubcategory && category.parentId != null) {
+        final parentId = category.parentId!;
+        _monthlyCategoryTotals[parentId] =
+            (_monthlyCategoryTotals[parentId] ?? 0) + tx.amount;
+      }
     }
   }
 

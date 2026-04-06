@@ -77,23 +77,13 @@ class BudgetProvider extends ChangeNotifier {
   }
 
   /// Derived Calculations
-
+  /// NOTE: These use the LedgerProvider's pre-built cache for efficiency.
   double getSpentForCategory(LedgerProvider ledger, int categoryId) {
-    return ledger.transactions
-        .where(
-          (t) =>
-              t.categoryId == categoryId &&
-              DateTime.fromMillisecondsSinceEpoch(t.timestamp).month ==
-                  currentMonth &&
-              DateTime.fromMillisecondsSinceEpoch(t.timestamp).year ==
-                  currentYear,
-        )
-        .fold(0.0, (sum, t) => sum + t.amount);
+    return ledger.getMonthlySpent(categoryId);
   }
 
   double getRemaining(LedgerProvider ledger, BudgetEntity budget) {
-    final spent = getSpentForCategory(ledger, budget.categoryId);
-
+    final spent = ledger.getMonthlySpent(budget.categoryId);
     return budget.allocatedAmount - spent;
   }
 }

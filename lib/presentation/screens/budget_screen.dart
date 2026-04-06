@@ -156,10 +156,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: Icon(
-                          Icons.arrow_left,
-                          color: AppTheme.accent,
-                        ),
+                        icon: Icon(Icons.arrow_left, color: AppTheme.accent),
                         onPressed: () => _previousMonth(budgetProvider),
                       ),
 
@@ -173,10 +170,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
 
                       IconButton(
-                        icon: Icon(
-                          Icons.arrow_right,
-                          color: AppTheme.accent,
-                        ),
+                        icon: Icon(Icons.arrow_right, color: AppTheme.accent),
                         onPressed: () => _nextMonth(budgetProvider),
                       ),
                     ],
@@ -249,11 +243,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.accent.withValues(alpha:  .8),
+                      color: AppTheme.accent.withValues(alpha: .8),
                       borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: AppTheme.accent,
-                      ),
+                      border: Border.all(color: AppTheme.accent),
                       boxShadow: [
                         BoxShadow(
                           color: AppTheme.divider,
@@ -268,13 +260,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         Icon(
                           Icons.copy_rounded,
                           size: 20,
-                          color: AppTheme.primary,
+                          color: AppTheme.onSurface,
                         ),
                         const SizedBox(width: 10),
                         Text(
                           "Copy from previous months",
                           style: TextStyle(
-                            color: AppTheme.primary,
+                            color: AppTheme.onSurface,
                             fontWeight: FontWeight.w600,
                             fontSize: 14.5,
                             letterSpacing: .2,

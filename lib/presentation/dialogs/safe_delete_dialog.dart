@@ -54,7 +54,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
               children: [
                 Icon(
                   Icons.warning_amber_rounded,
-                  color: Colors.amber,
+                  color: AppTheme.warning,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -64,7 +64,7 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                 ),
@@ -73,21 +73,29 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
             const SizedBox(height: 16),
             Text(
               'To preserve your financial history, please choose a destination for all existing transactions and subcategories.',
-              style: TextStyle(fontSize: 14, color: Colors.black87),
+              style: TextStyle(fontSize: 14, color: AppTheme.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             DropdownButtonFormField<int>(
               initialValue: _targetId,
+              style: TextStyle(color: AppTheme.onSurface),
+              dropdownColor: AppTheme.background,
               decoration: InputDecoration(
                 labelText: 'Move data to...',
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppTheme.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               items: options.map((c) {
-                return DropdownMenuItem(value: c.id, child: Text(c.name));
+                return DropdownMenuItem(
+                  value: c.id,
+                  child: Text(
+                    c.name,
+                    style: TextStyle(color: AppTheme.onSurface),
+                  ),
+                );
               }).toList(),
               onChanged: (val) => setState(() => _targetId = val),
             ),
@@ -104,7 +112,9 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel'),
+                    child: const FittedBox(
+                      child: Text('Cancel'),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -129,7 +139,9 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                               setState(() => _errorText = provider.lastError);
                             }
                           },
-                    child: const Text('Move & Delete'),
+                    child: const FittedBox(
+                      child: Text('Move & Delete'),
+                    ),
                   ),
                 ),
               ],

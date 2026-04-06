@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/data/models/bulk_transaction_item.dart';
 
@@ -57,6 +58,11 @@ class BulkEntryList extends StatelessWidget {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d{0,2}$'),
+                          ),
+                        ],
                         decoration: InputDecoration(
                           hintText: "Amount",
                           hintStyle: const TextStyle(color: Colors.white54),
@@ -139,7 +145,7 @@ class BulkEntryList extends StatelessWidget {
                 ),
               ),
               Text(
-                "₹${formatAmt(total, decimals: false)}",
+                "₹${formatAmt(total, decimals: true)}",
                 style: TextStyle(
                   color: AppTheme.accent,
                   fontWeight: FontWeight.bold,

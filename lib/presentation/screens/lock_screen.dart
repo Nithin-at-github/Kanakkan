@@ -11,21 +11,65 @@ class LockScreen extends StatefulWidget {
   State<LockScreen> createState() => _LockScreenState();
 }
 
-class _LockScreenState extends State<LockScreen> {
+class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
   final TextEditingController _pinController = TextEditingController();
   final SecurityService _security = SecurityService();
 
   bool _isLoading = false;
+  bool _isAuthenticating = false;
+  DateTime? _lastAttemptTime;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Small delay ensures platform is ready on initial mount
+      Future.delayed(const Duration(milliseconds: 1000), _tryBiometric);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Debounce: prevent back-to-back prompts after cancelling
+      final now = DateTime.now();
+      if (_lastAttemptTime != null &&
+          now.difference(_lastAttemptTime!).inSeconds < 10) {
+        return;
+      }
+
+      // Re-trigger biometric whenever the app is resumed while locked
+      Future.delayed(const Duration(milliseconds: 1000), _tryBiometric);
+    }
+  }
 
   /// ================= BIOMETRIC =================
   Future<void> _tryBiometric() async {
+    if (_isAuthenticating) return;
+
+    _isAuthenticating = true;
+    _lastAttemptTime = DateTime.now();
+
     final success = await _security.authenticateBiometric();
 
-    if (!mounted) return;
+    if (!mounted) {
+      _isAuthenticating = false;
+      return;
+    }
 
     if (success) {
       context.read<AppStateProvider>().unlockApp();
     }
+
+    _isAuthenticating = false;
   }
 
   /// ================= VERIFY PIN =================
@@ -41,15 +85,17 @@ class _LockScreenState extends State<LockScreen> {
     if (valid) {
       context.read<AppStateProvider>().unlockApp();
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: const Text("Invalid PIN",
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Invalid PIN",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
-        backgroundColor: AppTheme.error,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 1),
-      ));
+          backgroundColor: AppTheme.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 1),
+        ),
+      );
     }
   }
 
@@ -94,7 +140,10 @@ class _LockScreenState extends State<LockScreen> {
 
                   Text(
                     "Unlock your finances",
-                    style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 14),
+                    style: TextStyle(
+                      color: AppTheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
                   ),
 
                   const SizedBox(height: 20),
@@ -191,7 +240,10 @@ class _LockScreenState extends State<LockScreen> {
 
                   Text(
                     "Authentication keeps your financial data secure",
-                    style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
