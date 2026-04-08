@@ -44,7 +44,7 @@ class RootScaffold extends StatelessWidget {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: IndexedStack(index: nav.currentIndex, children: pages),
+      body: pages[nav.currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: nav.currentIndex,

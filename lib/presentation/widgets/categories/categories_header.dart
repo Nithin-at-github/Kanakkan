@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
 
 class CategoriesHeader extends StatelessWidget {
   final double totalWallet;
@@ -40,13 +40,14 @@ class CategoriesHeader extends StatelessWidget {
             children: [
               _summaryCard(
                 "Total Wallets",
-                "₹${formatAmt(totalWallet)}",
+                totalWallet,
                 Colors.white,
               ),
               _summaryCard(
                 "Top Wallet",
-                "$topCategoryName${topCategoryName.isNotEmpty ? ': ' : ''}₹${formatAmt(topCategoryAmount)}",
+                topCategoryAmount,
                 theme.colorScheme.secondary,
+                prefix: "$topCategoryName${topCategoryName.isNotEmpty ? ': ' : ''}",
               ),
             ],
           ),
@@ -55,26 +56,24 @@ class CategoriesHeader extends StatelessWidget {
     );
   }
 
-  Widget _summaryCard(String title, String content, Color color) {
+  Widget _summaryCard(String title, double amount, Color color, {String? prefix}) {
     return Expanded(
       child: Column(
         children: [
           Text(
             title.toUpperCase(),
-            style: TextStyle(color: Colors.white60, fontSize: 12),
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
-          Text(
-            content,
+          AnimatedAmount(
+            amount: amount,
+            prefix: prefix ?? "₹",
             style: TextStyle(
               color: color,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

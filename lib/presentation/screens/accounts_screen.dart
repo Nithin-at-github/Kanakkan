@@ -5,6 +5,8 @@ import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 
 class AccountsScreen extends StatelessWidget {
@@ -67,13 +69,26 @@ class AccountsScreen extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  Text(
-                    "Total Balance → ₹${formatAmt(totalBalance)}",
-                    style: TextStyle(
-                      color: AppTheme.accent,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Total Balance → ",
+                        style: TextStyle(
+                          color: AppTheme.accent,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      AnimatedAmount(
+                        amount: totalBalance,
+                        style: TextStyle(
+                          color: AppTheme.accent,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -154,7 +169,10 @@ class AccountsScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final acc = accounts[index];
                         final balance = provider.accountBalances[acc.id] ?? 0.0;
-                        return _accountTile(context, acc, balance);
+                        return StaggeredEntrance(
+                          index: index,
+                          child: _accountTile(context, acc, balance),
+                        );
                       },
                     ),
 
@@ -195,13 +213,25 @@ class AccountsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  "Balance → ₹${formatAmt(balance)}",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: balance < 0 ? AppTheme.error : AppTheme.success,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      "Balance → ",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: balance < 0 ? AppTheme.error : AppTheme.success,
+                      ),
+                    ),
+                    AnimatedAmount(
+                      amount: balance,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: balance < 0 ? AppTheme.error : AppTheme.success,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -283,8 +313,8 @@ class AccountsScreen extends StatelessWidget {
           style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
         const SizedBox(height: 6),
-        Text(
-          "₹${formatAmt(amount)}",
+        AnimatedAmount(
+          amount: amount,
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.bold,

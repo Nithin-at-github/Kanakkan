@@ -3,6 +3,7 @@ import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/presentation/widgets/categories/category_tile.dart';
 import 'package:kanakkan/presentation/widgets/categories/salary_wallet_setup_sheet.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 class CategorySection extends StatelessWidget {
   final String title;
@@ -66,8 +67,11 @@ class CategorySection extends StatelessWidget {
                 ),
               )
             else
-              ...categories.map(
-                (c) => CategoryTile(category: c, accent: accent),
+              ...categories.asMap().entries.map(
+                (e) => StaggeredEntrance(
+                  index: e.key,
+                  child: CategoryTile(category: e.value, accent: accent),
+                ),
               ),
           ],
         ),

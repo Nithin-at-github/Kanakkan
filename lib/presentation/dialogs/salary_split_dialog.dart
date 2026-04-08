@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 class SalarySplitDialog extends StatefulWidget {
   final double salaryAmount;
@@ -79,8 +81,8 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "₹${formatAmt(widget.salaryAmount, decimals: false)}",
+                  AnimatedAmount(
+                    amount: widget.salaryAmount,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -112,45 +114,48 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                     final category = categories[index];
                     final controller = controllers[category.id]!;
 
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(blurRadius: 6, color: Colors.black12),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              category.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
+                    return StaggeredEntrance(
+                      index: index,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [
+                            BoxShadow(blurRadius: 6, color: Colors.black12),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                category.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(
-                            width: 110,
-                            child: TextField(
-                              controller: controller,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                prefixText: "₹ ",
-                                isDense: true,
-                                border: OutlineInputBorder(),
+                            SizedBox(
+                              width: 110,
+                              child: TextField(
+                                controller: controller,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                decoration: const InputDecoration(
+                                  prefixText: "₹ ",
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (_) => setState(() {}),
                               ),
-                              onChanged: (_) => setState(() {}),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -178,13 +183,11 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                       "Remaining",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text(
-                      "₹${formatAmt(remaining, decimals: false)}",
+                    AnimatedAmount(
+                      amount: remaining,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: remaining < 0
-                            ? AppTheme.error
-                            : AppTheme.success,
+                        color: remaining < 0 ? AppTheme.error : AppTheme.success,
                       ),
                     ),
                   ],

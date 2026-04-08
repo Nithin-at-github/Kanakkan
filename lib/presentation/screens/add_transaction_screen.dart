@@ -13,6 +13,7 @@ import 'package:kanakkan/data/models/bulk_transaction_item.dart';
 import 'package:kanakkan/domain/entities/account.dart';
 import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
 
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
@@ -1116,11 +1117,9 @@ class _AmountDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final val = double.tryParse(amount) ?? 0.0;
-    final formatted = formatAmt(val);
-    final display = amount.endsWith('.') ? '$formatted.' : formatted;
 
-    return Text(
-      "₹$display",
+    return AnimatedAmount(
+      amount: val,
       style: TextStyle(
         fontSize: 48,
         color: AppTheme.accent,

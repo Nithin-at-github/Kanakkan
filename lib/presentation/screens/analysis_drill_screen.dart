@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
 import 'package:kanakkan/presentation/screens/analysis_transactions_screen.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,9 +40,28 @@ extension DrillTypeLabel on DrillType {
 // DRILL SCREEN
 // ─────────────────────────────────────────────────────────────────────────────
 
-class AnalysisDrillScreen extends StatelessWidget {
+class AnalysisDrillScreen extends StatefulWidget {
   final DrillType type;
   const AnalysisDrillScreen({super.key, required this.type});
+
+  @override
+  State<AnalysisDrillScreen> createState() => _AnalysisDrillScreenState();
+}
+
+class _AnalysisDrillScreenState extends State<AnalysisDrillScreen> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,29 +75,36 @@ class AnalysisDrillScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              type.title,
-              style: TextStyle(
+              widget.type.title,
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
             Text(
               p.periodLabel,
-              style: TextStyle(color: Colors.white60, fontSize: 12),
+              style: const TextStyle(color: Colors.white60, fontSize: 12),
             ),
           ],
         ),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: _buildContent(context, p),
+      body: Scrollbar(
+        controller: _scrollController,
+        thickness: 6.0,
+        radius: const Radius.circular(8),
+        interactive: true,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(16),
+          child: _buildContent(context, p),
+        ),
       ),
     );
   }
 
   Widget _buildContent(BuildContext context, AnalysisProvider p) {
-    return switch (type) {
+    return switch (widget.type) {
       DrillType.expenseBreakdown => _BreakdownDrill(
         items: p.expenseBreakdown,
         color: AppTheme.error,
@@ -185,28 +213,31 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
           return Column(
             children: [
               // Main category row
-              GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AnalysisTransactionsScreen(
-                      categoryId: item.categoryId,
-                      categoryName: item.name,
+              StaggeredEntrance(
+                index: idx,
+                child: GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AnalysisTransactionsScreen(
+                        categoryId: item.categoryId,
+                        categoryName: item.name,
+                      ),
                     ),
                   ),
-                ),
-                child: _CategoryRow(
-                  item: item,
-                  color: color,
-                  isExpanded: isExpanded,
-                  hasChildren: item.subcategories.isNotEmpty,
-                  onToggleExpand: () => setState(() {
-                    if (isExpanded) {
-                      _expandedIds.remove(item.categoryId);
-                    } else {
-                      _expandedIds.add(item.categoryId);
-                    }
-                  }),
+                  child: _CategoryRow(
+                    item: item,
+                    color: color,
+                    isExpanded: isExpanded,
+                    hasChildren: item.subcategories.isNotEmpty,
+                    onToggleExpand: () => setState(() {
+                      if (isExpanded) {
+                        _expandedIds.remove(item.categoryId);
+                      } else {
+                        _expandedIds.add(item.categoryId);
+                      }
+                    }),
+                  ),
                 ),
               ),
 
@@ -246,8 +277,8 @@ class _BreakdownDrillState extends State<_BreakdownDrill> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            '₹${formatAmt(total)}',
+          AnimatedAmount(
+            amount: total,
             style: TextStyle(
               color: widget.color,
               fontSize: 28,

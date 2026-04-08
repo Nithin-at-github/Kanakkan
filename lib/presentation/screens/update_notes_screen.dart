@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 class UpdateNote {
   final String version;
@@ -129,7 +130,10 @@ class UpdateNotesScreen extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final note = _updates[index];
-                  return _UpdateCard(note: note);
+                  return StaggeredEntrance(
+                    index: index,
+                    child: _UpdateCard(note: note),
+                  );
                 }, childCount: _updates.length),
               ),
             ),

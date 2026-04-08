@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/data/models/bulk_transaction_item.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 class BulkEntryList extends StatelessWidget {
   final List<BulkTransactionItem> items;
@@ -43,90 +45,96 @@ class BulkEntryList extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (_, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    /// AMOUNT
-                    SizedBox(
-                      width: 110,
-                      child: TextField(
-                        focusNode: amountFocusNodes[index],
-                        textInputAction: TextInputAction.next,
-                        style: const TextStyle(color: Colors.white),
-                        cursorColor: AppTheme.accent,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d*\.?\d{0,2}$'),
+              return StaggeredEntrance(
+                index: index,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      /// AMOUNT
+                      SizedBox(
+                        width: 110,
+                        child: TextField(
+                          focusNode: amountFocusNodes[index],
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(color: Colors.white),
+                          cursorColor: AppTheme.accent,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
                           ),
-                        ],
-                        decoration: InputDecoration(
-                          hintText: "Amount",
-                          hintStyle: const TextStyle(color: Colors.white54),
-                          prefixText: "₹ ",
-                          prefixStyle: const TextStyle(color: Colors.white),
-                          isDense: true,
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AppTheme.accent),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: AppTheme.accent,
-                              width: 2,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d{0,2}$'),
                             ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onChanged: (v) => onAmountChanged(index, v),
-                        onSubmitted: (_) {
-                          FocusScope.of(
-                            context,
-                          ).requestFocus(noteFocusNodes[index]);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    /// NOTE
-                    Expanded(
-                      child: TextField(
-                        focusNode: noteFocusNodes[index],
-                        textInputAction: TextInputAction.next,
-                        style: const TextStyle(color: Colors.white),
-                        cursorColor: AppTheme.accent,
-                        decoration: InputDecoration(
-                          hintText: "Note",
-                          hintStyle: const TextStyle(color: Colors.white54),
-                          isDense: true,
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AppTheme.accent),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: AppTheme.accent,
-                              width: 2,
+                          ],
+                          decoration: InputDecoration(
+                            hintText: "Amount",
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            prefixText: "₹ ",
+                            prefixStyle: const TextStyle(color: Colors.white),
+                            isDense: true,
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.accent),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: AppTheme.accent,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
+                          onChanged: (v) => onAmountChanged(index, v),
+                          onSubmitted: (_) {
+                            FocusScope.of(
+                              context,
+                            ).requestFocus(noteFocusNodes[index]);
+                          },
                         ),
-                        onChanged: (v) => onNoteChanged(index, v),
-                        onSubmitted: (_) => onSubmitNote(index),
                       ),
-                    ),
 
-                    /// DELETE
-                    if (items.length > 1)
-                      IconButton(
-                        icon: Icon(Icons.delete_outline, color: AppTheme.error),
-                        onPressed: () => onDelete(index),
+                      const SizedBox(width: 10),
+
+                      /// NOTE
+                      Expanded(
+                        child: TextField(
+                          focusNode: noteFocusNodes[index],
+                          textInputAction: TextInputAction.next,
+                          style: const TextStyle(color: Colors.white),
+                          cursorColor: AppTheme.accent,
+                          decoration: InputDecoration(
+                            hintText: "Note",
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            isDense: true,
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.accent),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: AppTheme.accent,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onChanged: (v) => onNoteChanged(index, v),
+                          onSubmitted: (_) => onSubmitNote(index),
+                        ),
                       ),
-                  ],
+
+                      /// DELETE
+                      if (items.length > 1)
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: AppTheme.error,
+                          ),
+                          onPressed: () => onDelete(index),
+                        ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -144,8 +152,8 @@ class BulkEntryList extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                "₹${formatAmt(total, decimals: true)}",
+              AnimatedAmount(
+                amount: total,
                 style: TextStyle(
                   color: AppTheme.accent,
                   fontWeight: FontWeight.bold,

@@ -97,11 +97,18 @@ class BudgetItemCard extends StatelessWidget {
               /// ================= PROGRESS =================
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: AppTheme.accent.withValues(alpha: .2),
-                  valueColor: AlwaysStoppedAnimation(progressColor),
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 1500),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween<double>(begin: 0, end: progress),
+                  builder: (context, value, child) {
+                    return LinearProgressIndicator(
+                      value: value,
+                      minHeight: 8,
+                      backgroundColor: AppTheme.accent.withValues(alpha: .2),
+                      valueColor: AlwaysStoppedAnimation(progressColor),
+                    );
+                  },
                 ),
               ),
 

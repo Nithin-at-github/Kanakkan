@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 enum DateFilterMode { daily, weekly, monthly, yearly }
 
@@ -24,6 +26,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DateFilterMode filterMode = DateFilterMode.monthly;
   DateTime selectedDate = DateTime.now();
   late NavigationProvider _nav;
+  late final ScrollController _scrollController;
+
 
   void _openSalarySplitDialog(SalaryTrigger trigger) {
     // Use the flag-based getter — no hardcoded name lookup
@@ -47,8 +51,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
 
     final ledger = context.read<LedgerProvider>();
+
 
     ledger.salaryIncomeTrigger.addListener(() {
       final trigger = ledger.consumeSalaryTrigger();
@@ -66,8 +72,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _nav.removeListener(_onTabChanged);
+    _scrollController.dispose();
     super.dispose();
   }
+
 
   void _onTabChanged() {
     if (_nav.currentIndex == 0 && _nav.previousIndex != 0) {
@@ -109,9 +117,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: ReusableAppBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: Scrollbar(
+        controller: _scrollController,
+        thickness: 6.0,
+        radius: const Radius.circular(8),
+        interactive: true,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          child: Column(
+            children: [
+
             /// ================= HEADER =================
             Container(
               color: AppTheme.primary,
@@ -268,89 +283,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           tx.timestamp,
                         );
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => _showTransactionDetails(tx),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: AppTheme.accent.withValues(alpha: .25),
+                        return StaggeredEntrance(
+                          index: i,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () => _showTransactionDetails(tx),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
                                 ),
-                              ),
-                              child: Row(
-                                children: [
-                                  /// ICON
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          (isIncome
-                                                  ? AppTheme.success
-                                                  : AppTheme.error)
-                                              .withValues(alpha: .12),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      isIncome
-                                          ? Icons.arrow_downward
-                                          : Icons.arrow_upward,
-                                      color: isIncome
-                                          ? AppTheme.success
-                                          : AppTheme.error,
-                                      size: 20,
-                                    ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppTheme.accent.withValues(alpha: .25),
                                   ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    /// ICON
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            (isIncome
+                                                    ? AppTheme.success
+                                                    : AppTheme.error)
+                                                .withValues(alpha: .12),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        isIncome
+                                            ? Icons.arrow_downward
+                                            : Icons.arrow_upward,
+                                        color: isIncome
+                                            ? AppTheme.success
+                                            : AppTheme.error,
+                                        size: 20,
+                                      ),
+                                    ),
 
-                                  const SizedBox(width: 14),
+                                    const SizedBox(width: 14),
 
-                                  /// DETAILS
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          categoryName,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 15,
-                                            color: AppTheme.onSurface,
+                                    /// DETAILS
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            categoryName,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                              color: AppTheme.onSurface,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "$accountName • ${DateFormat("MMM d").format(date)}",
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: AppTheme.onSurfaceVariant,
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            "$accountName • ${DateFormat("MMM d").format(date)}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.onSurfaceVariant,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
 
-                                  /// AMOUNT
-                                  Text(
-                                    "₹${formatAmt(tx.amount)}",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: isIncome
-                                          ? AppTheme.success
-                                          : AppTheme.error,
+                                    /// AMOUNT
+                                    Text(
+                                      "₹${formatAmt(tx.amount)}",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: isIncome
+                                            ? AppTheme.success
+                                            : AppTheme.error,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -363,6 +381,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -450,8 +469,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
         const SizedBox(height: 4),
-        Text(
-          "₹${formatAmt(amount)}",
+        AnimatedAmount(
+          amount: amount,
           style: TextStyle(
             fontSize: 16,
             color: color,

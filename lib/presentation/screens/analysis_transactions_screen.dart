@@ -6,9 +6,10 @@ import 'package:kanakkan/presentation/providers/analysis_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/widgets/transaction/transaction_detail_sheet.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 
-class AnalysisTransactionsScreen extends StatelessWidget {
+class AnalysisTransactionsScreen extends StatefulWidget {
   final int categoryId;
   final String categoryName;
 
@@ -19,12 +20,31 @@ class AnalysisTransactionsScreen extends StatelessWidget {
   });
 
   @override
+  State<AnalysisTransactionsScreen> createState() => _AnalysisTransactionsScreenState();
+}
+
+class _AnalysisTransactionsScreenState extends State<AnalysisTransactionsScreen> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final analysis = context.watch<AnalysisProvider>();
     final ledger = context.watch<LedgerProvider>();
     final categories = context.watch<CategoryProvider>();
 
-    final transactions = analysis.getTransactionsForCategory(categoryId);
+    final transactions = analysis.getTransactionsForCategory(widget.categoryId);
 
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +54,7 @@ class AnalysisTransactionsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              categoryName,
+              widget.categoryName,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             Text(
@@ -46,13 +66,23 @@ class AnalysisTransactionsScreen extends StatelessWidget {
       ),
       body: transactions.isEmpty
           ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: transactions.length,
-              itemBuilder: (context, index) {
-                final tx = transactions[index];
-                return _buildTransactionItem(context, tx, ledger, categories);
-              },
+          : Scrollbar(
+              controller: _scrollController,
+              thickness: 6.0,
+              radius: const Radius.circular(8),
+              interactive: true,
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(12),
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final tx = transactions[index];
+                  return StaggeredEntrance(
+                    index: index,
+                    child: _buildTransactionItem(context, tx, ledger, categories),
+                  );
+                },
+              ),
             ),
     );
   }

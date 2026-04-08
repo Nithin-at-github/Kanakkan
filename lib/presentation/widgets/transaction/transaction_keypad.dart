@@ -20,24 +20,71 @@ class TransactionKeypad extends StatelessWidget {
         childAspectRatio: 1.7,
       ),
       itemBuilder: (_, i) {
-        final key = keys[i];
-
-        return GestureDetector(
-          onTap: () => onKeyTap(key),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.accent),
-            ),
-            child: Center(
-              child: Text(
-                key,
-                style: const TextStyle(fontSize: 22, color: Colors.white),
-              ),
-            ),
-          ),
+        return _KeypadButton(
+          label: keys[i],
+          onTap: onKeyTap,
         );
       },
+    );
+  }
+}
+
+class _KeypadButton extends StatefulWidget {
+  final String label;
+  final Function(String) onTap;
+
+  const _KeypadButton({required this.label, required this.onTap});
+
+  @override
+  State<_KeypadButton> createState() => _KeypadButtonState();
+}
+
+class _KeypadButtonState extends State<_KeypadButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 60),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.92).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: () => widget.onTap(widget.label),
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.accent),
+            color: Colors.transparent, // Ensure it captures taps
+          ),
+          child: Center(
+            child: Text(
+              widget.label,
+              style: const TextStyle(fontSize: 22, color: Colors.white),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

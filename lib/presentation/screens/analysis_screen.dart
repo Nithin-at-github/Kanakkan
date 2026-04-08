@@ -2,8 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
-import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/screens/analysis_drill_screen.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 
@@ -15,28 +16,14 @@ class AnalysisScreen extends StatefulWidget {
 }
 
 class _AnalysisScreenState extends State<AnalysisScreen> {
-  late NavigationProvider _nav;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _nav = context.read<NavigationProvider>();
-      _nav.addListener(_onTabChanged);
+      if (mounted) {
+        context.read<AnalysisProvider>().resetToToday();
+      }
     });
-  }
-
-  @override
-  void dispose() {
-    _nav.removeListener(_onTabChanged);
-    super.dispose();
-  }
-
-  void _onTabChanged() {
-    // Tab index 1 = Analysis. Reset to today when user navigates here.
-    if (_nav.currentIndex == 1 && _nav.previousIndex != 1) {
-      context.read<AnalysisProvider>().resetToToday();
-    }
   }
 
   @override
@@ -245,19 +232,25 @@ class _MonthlyBody extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _StatCard(
-                label: 'Savings',
-                value: provider.savings,
-                color: provider.savings >= 0 ? AppTheme.accent : AppTheme.error,
-                icon: Icons.savings,
-                onTap: () => _openDrill(context, DrillType.savingsTrend),
+              child: StaggeredEntrance(
+                index: 0,
+                child: _StatCard(
+                  label: 'Savings',
+                  value: provider.savings,
+                  color: provider.savings >= 0 ? AppTheme.accent : AppTheme.error,
+                  icon: Icons.savings,
+                  onTap: () => _openDrill(context, DrillType.savingsTrend),
+                ),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _SavingsRateCard(
-                rate: provider.savingsRate,
-                onTap: () => _openDrill(context, DrillType.savingsTrend),
+              child: StaggeredEntrance(
+                index: 1,
+                child: _SavingsRateCard(
+                  rate: provider.savingsRate,
+                  onTap: () => _openDrill(context, DrillType.savingsTrend),
+                ),
               ),
             ),
           ],
@@ -292,12 +285,15 @@ class _MonthlyBody extends StatelessWidget {
 
         // Income breakdown
         if (provider.incomeBreakdown.isNotEmpty)
-          _SectionCard(
-            title: 'Income Sources',
-            onTap: () => _openDrill(context, DrillType.incomeBreakdown),
-            child: _BreakdownPreview(
-              items: provider.incomeBreakdown,
-              color: AppTheme.success,
+          StaggeredEntrance(
+            index: 2,
+            child: _SectionCard(
+              title: 'Income Sources',
+              onTap: () => _openDrill(context, DrillType.incomeBreakdown),
+              child: _BreakdownPreview(
+                items: provider.incomeBreakdown,
+                color: AppTheme.success,
+              ),
             ),
           ),
 
@@ -545,8 +541,9 @@ class _StatCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              '${value < 0 ? '- ' : ''}₹${formatAmt(value.abs())}',
+            AnimatedAmount(
+              amount: value.abs(),
+              prefix: value < 0 ? '- ₹' : '₹',
               style: TextStyle(
                 color: color,
                 fontSize: 20,
@@ -653,8 +650,9 @@ class _SmallStatCard extends StatelessWidget {
             style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 11),
           ),
           const SizedBox(height: 6),
-          Text(
-            '${value < 0 ? '-' : ''}₹${formatAmt(value.abs())}',
+          AnimatedAmount(
+            amount: value.abs(),
+            prefix: value < 0 ? '- ₹' : '₹',
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

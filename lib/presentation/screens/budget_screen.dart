@@ -6,6 +6,8 @@ import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/widgets/budget_item_card.dart';
 import 'package:kanakkan/presentation/dialogs/copy_budget_dialog.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -220,8 +222,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: budgetProvider.budgets.length,
                       itemBuilder: (_, i) {
-                        return BudgetItemCard(
-                          budget: budgetProvider.budgets[i],
+                        return StaggeredEntrance(
+                          index: i,
+                          child: BudgetItemCard(
+                            budget: budgetProvider.budgets[i],
+                          ),
                         );
                       },
                     ),
@@ -293,8 +298,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
           style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
         const SizedBox(height: 4),
-        Text(
-          "₹${formatAmt(amount)}",
+        AnimatedAmount(
+          amount: amount,
           style: TextStyle(
             fontSize: 16,
             color: color,

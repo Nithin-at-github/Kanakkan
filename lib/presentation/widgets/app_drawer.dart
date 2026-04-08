@@ -6,6 +6,7 @@ import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/handlers/export_handler.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 import 'package:kanakkan/presentation/providers/theme_provider.dart';
+import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -42,61 +43,71 @@ class AppDrawer extends StatelessWidget {
                   // ── MANAGEMENT SECTION ──
                   _SectionLabel(label: "MANAGEMENT"),
 
-                  _DrawerTile(
-                    icon: Icons.cloud_upload_outlined,
-                    label: "Backup Data",
-                    subtitle: "Save a copy to your device",
-                    onTap: () async {
-                      Navigator.pop(context);
-                      // Drawer context is now deactivated — use the stable
-                      // scaffold context so Provider lookups + dialogs work.
-                      final ctx = rootScaffoldKey.currentContext;
-                      if (ctx == null || !ctx.mounted) return;
-                      await BackupRestoreHandler.runBackup(ctx);
-                    },
+                  StaggeredEntrance(
+                    index: 0,
+                    child: _DrawerTile(
+                      icon: Icons.cloud_upload_outlined,
+                      label: "Backup Data",
+                      subtitle: "Save a copy to your device",
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final ctx = rootScaffoldKey.currentContext;
+                        if (ctx == null || !ctx.mounted) return;
+                        await BackupRestoreHandler.runBackup(ctx);
+                      },
+                    ),
                   ),
 
-                  _DrawerTile(
-                    icon: Icons.cloud_download_outlined,
-                    label: "Restore Data",
-                    subtitle: "Load from a backup file",
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await Future.delayed(const Duration(milliseconds: 300));
-                      final ctx = rootScaffoldKey.currentContext;
-                      if (ctx == null || !ctx.mounted) return;
-                      final confirmed =
-                          await BackupRestoreHandler.confirmRestore(ctx);
-                      if (!confirmed || !ctx.mounted) return;
-                      await BackupRestoreHandler.runRestore(ctx);
-                    },
+                  StaggeredEntrance(
+                    index: 1,
+                    child: _DrawerTile(
+                      icon: Icons.cloud_download_outlined,
+                      label: "Restore Data",
+                      subtitle: "Load from a backup file",
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        final ctx = rootScaffoldKey.currentContext;
+                        if (ctx == null || !ctx.mounted) return;
+                        final confirmed =
+                            await BackupRestoreHandler.confirmRestore(ctx);
+                        if (!confirmed || !ctx.mounted) return;
+                        await BackupRestoreHandler.runRestore(ctx);
+                      },
+                    ),
                   ),
 
-                  _DrawerTile(
-                    icon: Icons.file_download_outlined,
-                    label: "Export Records",
-                    subtitle: "Download as CSV or PDF",
-                    onTap: () {
-                      Navigator.pop(context);
-                      final ctx = rootScaffoldKey.currentContext;
-                      if (ctx == null) return;
-                      ExportHandler.showExportOptions(ctx);
-                    },
+                  StaggeredEntrance(
+                    index: 2,
+                    child: _DrawerTile(
+                      icon: Icons.file_download_outlined,
+                      label: "Export Records",
+                      subtitle: "Download as CSV or PDF",
+                      onTap: () {
+                        Navigator.pop(context);
+                        final ctx = rootScaffoldKey.currentContext;
+                        if (ctx == null) return;
+                        ExportHandler.showExportOptions(ctx);
+                      },
+                    ),
                   ),
 
-                  _DrawerTile(
-                    icon: Icons.new_releases_outlined,
-                    label: "Update Notes",
-                    subtitle: "See what's new in Kanakkan",
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const UpdateNotesScreen(),
-                        ),
-                      );
-                    },
+                  StaggeredEntrance(
+                    index: 3,
+                    child: _DrawerTile(
+                      icon: Icons.new_releases_outlined,
+                      label: "Update Notes",
+                      subtitle: "See what's new in Kanakkan",
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const UpdateNotesScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
 
                   const Padding(
@@ -107,18 +118,20 @@ class AppDrawer extends StatelessWidget {
                   // ── SECURITY SECTION ──
                   _SectionLabel(label: "SECURITY"),
 
-                  _DrawerTile(
-                    icon: Icons.pin_outlined,
-                    label: "Change PIN",
-                    subtitle: "Update your login PIN",
-                    onTap: () async {
-                      Navigator.pop(context);
-                      // Wait for drawer close animation before showing sheet
-                      await Future.delayed(const Duration(milliseconds: 300));
-                      final ctx = rootScaffoldKey.currentContext;
-                      if (ctx == null || !ctx.mounted) return;
-                      await ChangePinSheet.show(ctx);
-                    },
+                  StaggeredEntrance(
+                    index: 4,
+                    child: _DrawerTile(
+                      icon: Icons.pin_outlined,
+                      label: "Change PIN",
+                      subtitle: "Update your login PIN",
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await Future.delayed(const Duration(milliseconds: 300));
+                        final ctx = rootScaffoldKey.currentContext;
+                        if (ctx == null || !ctx.mounted) return;
+                        await ChangePinSheet.show(ctx);
+                      },
+                    ),
                   ),
 
                   const Padding(
@@ -126,23 +139,26 @@ class AppDrawer extends StatelessWidget {
                     child: Divider(height: 1, color: Colors.black12),
                   ),
 
-                  _DrawerTile(
-                    icon: Icons.delete_forever_outlined,
-                    label: "Delete & Reset",
-                    subtitle: "Erase all data permanently",
-                    iconColor: AppTheme.error,
-                    labelColor: AppTheme.error,
-                    onTap: () {
-                      Navigator.pop(context);
-                      final ctx = rootScaffoldKey.currentContext;
-                      if (ctx != null) _confirmReset(ctx);
-                    },
+                  StaggeredEntrance(
+                    index: 5,
+                    child: _DrawerTile(
+                      icon: Icons.delete_forever_outlined,
+                      label: "Delete & Reset",
+                      subtitle: "Erase all data permanently",
+                      iconColor: AppTheme.error,
+                      labelColor: AppTheme.error,
+                      onTap: () {
+                        Navigator.pop(context);
+                        final ctx = rootScaffoldKey.currentContext;
+                        if (ctx != null) _confirmReset(ctx);
+                      },
+                    ),
                   ),
 
                   const Spacer(),
 
                   // ── FOOTER ──
-                  _DrawerFooter(),
+                  StaggeredEntrance(index: 6, child: _DrawerFooter()),
 
                   const SizedBox(height: 12),
                 ],
@@ -334,46 +350,44 @@ class _DrawerHeaderState extends State<_DrawerHeader> {
                 isDark: isDark,
                 onChanged: (bool value) async {
                   final themeProvider = context.read<ThemeProvider>();
-                  final overlayContext =
-                      rootScaffoldKey.currentContext ?? context;
+                  final overlayContext = rootScaffoldKey.currentContext ?? context;
+                  final currentIsDark = themeProvider.themeMode == ThemeMode.dark;
+                  
+                  // The background color we are transitioning TO
+                  final targetBgColor = currentIsDark 
+                      ? const Color(0xFFF5F5DC) // Light background
+                      : const Color(0xFF121212); // Dark background
 
-                  Navigator.pop(context); // Close drawer smoothly
+                  Navigator.pop(context); // Close drawer
 
-                  // Wait for the drawer close animation to fully complete
-                  await Future.delayed(const Duration(milliseconds: 250));
+                  // Wait slightly for drawer to begin closing so the fade feels natural
+                  await Future.delayed(const Duration(milliseconds: 150));
 
                   if (!overlayContext.mounted) return;
 
-                  // Show a fully opaque 'Lights Out' fade transition using the brand's primary color
+                  // 1. Fade the entire screen into the *target* background color
                   showGeneralDialog(
                     context: overlayContext,
                     barrierDismissible: false,
-                    barrierColor: AppTheme.primary, // Deep purple fade
-                    transitionDuration: const Duration(milliseconds: 300),
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        Center(
-                          // Show an animated glowing sun/moon during the darkness
-                          child: _ThemeTransitionLoader(toDark: !isDark),
-                        ),
-                    transitionBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          );
-                        },
+                    barrierColor: targetBgColor,
+                    transitionDuration: const Duration(milliseconds: 200),
+                    pageBuilder: (context, _, _) => const SizedBox.shrink(),
+                    transitionBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
                   );
 
-                  // Wait for the fade-in to completely darken the screen
-                  await Future.delayed(const Duration(milliseconds: 350));
+                  // 2. Wait for the fade-in to complete
+                  await Future.delayed(const Duration(milliseconds: 200));
 
-                  // Trigger the massive global rebuild underneath the solid overlay
+                  // 3. Perform the heavy operation (rebuilding the entire app tree)
                   themeProvider.toggleTheme();
 
-                  // Give the framework time to re-evaluate and rasterize the new tree (the jank happens here)
-                  await Future.delayed(const Duration(milliseconds: 250));
+                  // 4. Give the framework 1-2 frames to rasterize the new tree in the background
+                  await Future.delayed(const Duration(milliseconds: 50));
 
-                  // Fade the overlay back out, revealing the beautifully rendered new theme
+                  // 5. Fade out the overlay. Because the overlay matches the new background, 
+                  // it will look like the widgets are smoothly fading into existence.
                   if (overlayContext.mounted) {
                     Navigator.of(overlayContext, rootNavigator: true).pop();
                   }
@@ -658,51 +672,4 @@ class _ThemeSwitch extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CUSTOM THEME TRANSITION LOADER
-// ─────────────────────────────────────────────────────────────────────────────
 
-class _ThemeTransitionLoader extends StatelessWidget {
-  final bool toDark;
-
-  const _ThemeTransitionLoader({required this.toDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 0.5 + (value * 0.5), // Scale from 0.5 to 1.0
-          child: Transform.rotate(
-            angle: value * 2 * 3.14159, // One full rotation
-            child: child,
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: 0.05),
-          boxShadow: [
-            BoxShadow(
-              color: (toDark ? AppTheme.accent : Colors.orange).withValues(
-                alpha: 0.2,
-              ),
-              blurRadius: 30,
-              spreadRadius: 10,
-            ),
-          ],
-        ),
-        child: Icon(
-          toDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-          size: 64,
-          color: toDark ? AppTheme.accent : Colors.orange,
-        ),
-      ),
-    );
-  }
-}
