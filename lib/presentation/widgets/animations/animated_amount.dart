@@ -5,16 +5,24 @@ class AnimatedAmount extends StatelessWidget {
   final double amount;
   final TextStyle style;
   final String prefix;
+  final bool animate;
 
   const AnimatedAmount({
     super.key,
     required this.amount,
     required this.style,
     this.prefix = "₹",
+    this.animate = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!animate) {
+      return Text(
+        "$prefix${formatAmt(amount)}",
+        style: style,
+      );
+    }
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutExpo,

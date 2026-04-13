@@ -7,8 +7,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Bumped to 9: added excludeFromAnalysis to categories
-  static const int _dbVersion = 9;
+  // Bumped to 11: Trigger wallet reconciliation for subcategory rollup fix
+  static const int _dbVersion = 11;
   static int get dbVersion => _dbVersion;
 
   Future<Database> get database async {

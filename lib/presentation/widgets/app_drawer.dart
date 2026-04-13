@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/presentation/dialogs/change_pin_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/handlers/export_handler.dart';
@@ -10,6 +9,7 @@ import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
+import 'package:kanakkan/presentation/screens/settings_screen.dart';
 import 'package:kanakkan/presentation/screens/update_notes_screen.dart';
 
 /// The app-wide navigation drawer.
@@ -110,47 +110,20 @@ class AppDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    child: Divider(height: 1, color: Colors.black12),
-                  ),
-
-                  // ── SECURITY SECTION ──
-                  _SectionLabel(label: "SECURITY"),
-
                   StaggeredEntrance(
                     index: 4,
                     child: _DrawerTile(
-                      icon: Icons.pin_outlined,
-                      label: "Change PIN",
-                      subtitle: "Update your login PIN",
-                      onTap: () async {
-                        Navigator.pop(context);
-                        await Future.delayed(const Duration(milliseconds: 300));
-                        final ctx = rootScaffoldKey.currentContext;
-                        if (ctx == null || !ctx.mounted) return;
-                        await ChangePinSheet.show(ctx);
-                      },
-                    ),
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    child: Divider(height: 1, color: Colors.black12),
-                  ),
-
-                  StaggeredEntrance(
-                    index: 5,
-                    child: _DrawerTile(
-                      icon: Icons.delete_forever_outlined,
-                      label: "Delete & Reset",
-                      subtitle: "Erase all data permanently",
-                      iconColor: AppTheme.error,
-                      labelColor: AppTheme.error,
+                      icon: Icons.settings_outlined,
+                      label: "Settings",
+                      subtitle: "Security, maintenance & reset",
                       onTap: () {
                         Navigator.pop(context);
-                        final ctx = rootScaffoldKey.currentContext;
-                        if (ctx != null) _confirmReset(ctx);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -158,7 +131,7 @@ class AppDrawer extends StatelessWidget {
                   const Spacer(),
 
                   // ── FOOTER ──
-                  StaggeredEntrance(index: 6, child: _DrawerFooter()),
+                  StaggeredEntrance(index: 5, child: _DrawerFooter()),
 
                   const SizedBox(height: 12),
                 ],
@@ -170,122 +143,6 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  void _confirmReset(BuildContext context) {
-    // Capture navigator before the async dialog — the builder's `_` context
-    // is deactivated once the dialog closes, causing the stale context error.
-    final navigator = Navigator.of(context);
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: AppTheme.error.withValues(alpha: 0.1),
-                child: Icon(
-                  Icons.delete_forever,
-                  color: AppTheme.error,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                "Delete & Reset?",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.error.withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    _WarningPoint(
-                      text: "All transactions will be permanently deleted.",
-                    ),
-                    SizedBox(height: 8),
-                    _WarningPoint(
-                      text:
-                          "All accounts, categories and budgets will be removed.",
-                    ),
-                    SizedBox(height: 8),
-                    _WarningPoint(
-                      text:
-                          "Wallet balances and salary allocations will be erased.",
-                    ),
-                    SizedBox(height: 8),
-                    _WarningPoint(text: "This action cannot be undone."),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => navigator.pop(),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: BorderSide(color: AppTheme.divider),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        "Cancel",
-                        style: TextStyle(color: AppTheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        navigator.pop();
-                        await Future.delayed(const Duration(milliseconds: 300));
-                        final ctx = rootScaffoldKey.currentContext;
-                        if (ctx == null || !ctx.mounted) return;
-                        await BackupRestoreHandler.runReset(ctx);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.error,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Delete All",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -461,21 +318,17 @@ class _DrawerTile extends StatelessWidget {
   final String label;
   final String? subtitle;
   final VoidCallback onTap;
-  final Color? iconColor;
-  final Color? labelColor;
 
   const _DrawerTile({
     required this.icon,
     required this.label,
     required this.onTap,
     this.subtitle,
-    this.iconColor,
-    this.labelColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = iconColor ?? AppTheme.onSurface;
+    final color = AppTheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -496,7 +349,7 @@ class _DrawerTile extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: labelColor ?? AppTheme.onSurface,
+            color: AppTheme.onSurface,
           ),
         ),
         subtitle: subtitle != null
@@ -511,7 +364,7 @@ class _DrawerTile extends StatelessWidget {
         trailing: Icon(
           Icons.chevron_right,
           size: 18,
-          color: (iconColor ?? AppTheme.onSurface).withValues(alpha: 0.3),
+          color: AppTheme.onSurface.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -567,31 +420,7 @@ class _DrawerFooter extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// WARNING POINT (used in reset dialog)
-// ─────────────────────────────────────────────────────────────────────────────
 
-class _WarningPoint extends StatelessWidget {
-  final String text;
-  const _WarningPoint({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.warning_amber_rounded, color: AppTheme.error, size: 16),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 13, color: AppTheme.onSurface),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CUSTOM THEME SWITCH

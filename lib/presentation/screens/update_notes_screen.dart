@@ -21,8 +21,21 @@ class UpdateNotesScreen extends StatelessWidget {
 
   static const List<UpdateNote> _updates = [
     UpdateNote(
-      version: '1.2.0',
+      version: '1.3.0',
       isLatest: true,
+      date: 'April 2026',
+      changes: [
+        'Day/Night Mode: Full dynamic theme support with a curated dark mode for comfortable use in low-light environments.',
+        'Dedicated Settings Screen: Centralized maintenance, security, and reset tools in a brand-new screen.',
+        'Fluid UI Animations: Global integration of StaggeredEntrance and AnimatedAmount for a premium, alive feel.',
+        'Interactive Scrollbars: Persistent vertical scrollbars added for easier navigation in long dashboard lists.',
+        'Wallet Reconciliation: New maintenance tool in Settings to fix balance inconsistencies across all categories.',
+        'Minor bug fixes and performance improvements.',
+      ],
+    ),
+    UpdateNote(
+      version: '1.2.0',
+      isLatest: false,
       date: 'March 2026',
       changes: [
         'Direct Backup & Export saving to device storage.',

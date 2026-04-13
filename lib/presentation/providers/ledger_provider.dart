@@ -14,6 +14,7 @@ import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 enum TransactionDeleteType { normal, salaryDistributed }
 
@@ -159,6 +160,13 @@ class LedgerProvider extends ChangeNotifier {
     await loadAccounts();
     await loadTransactions();
     await calculateBalances();
+
+    // One-time wallet reconciliation for version 11
+    const storage = FlutterSecureStorage();
+    final lastReconciled = await storage.read(key: 'last_reconciled_v');
+    if (lastReconciled == null || int.parse(lastReconciled) < 11) {
+      await reconcileCategoryWallets();
+    }
   }
 
   // ================= BALANCE CALC =================
@@ -195,6 +203,92 @@ class LedgerProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  // ================= RECONCILIATION =================
+
+  /// Re-calculates all category wallet balances and expense splits from scratch.
+  /// This ensures that subcategory income is correctly rolled up to parent wallets
+  /// and any past data inconsistencies are resolved.
+  Future<void> reconcileCategoryWallets() async {
+    final db = await DatabaseHelper.instance.database;
+    // 1. Get all transactions ordered by timestamp ASC for correct balance simulation
+    final allTxModels = await _transactionRepository.getAllTransactions();
+    final allTx = allTxModels.reversed.toList(); // getAllTransactions is DESC
+
+    await db.transaction((txn) async {
+      // 2. Clear current bucket state
+      await txn.execute('DELETE FROM category_balances');
+      await txn.execute('DELETE FROM transaction_wallet_splits');
+
+      final balances = <int, double>{};
+      final salaryId = categoryProvider.getSalaryCategoryId();
+
+      for (final tx in allTx) {
+        // Transfers don't affect category wallets
+        if (tx.transferGroupId != null && tx.type != "income" && tx.type != "expense") continue;
+        if (tx.type == "transfer") continue;
+
+        final baseCategoryId = tx.categoryId ?? salaryId;
+        if (baseCategoryId == null) continue;
+
+        // Resolve rollup (Parent if it's a subcategory)
+        final walletId = _walletCategoryId(baseCategoryId) ?? baseCategoryId;
+
+        if (tx.type == "income") {
+          balances[walletId] = (balances[walletId] ?? 0) + tx.amount;
+        } else if (tx.type == "expense") {
+          // Simulate _spendWithSalaryFallback logic using local balance map
+          final currentCatBal = balances[walletId] ?? 0;
+          final splits = <({int categoryId, double amount})>[];
+
+          if (currentCatBal >= tx.amount) {
+            // Enough in category wallet
+            balances[walletId] = currentCatBal - tx.amount;
+            splits.add((categoryId: walletId, amount: tx.amount));
+          } else {
+            // Partial/Full shortfall handled by pulling from Salary Wallet
+            final fromCategory = currentCatBal;
+            final fromSalary = tx.amount - fromCategory;
+
+            if (fromCategory > 0) {
+              balances[walletId] = 0;
+              splits.add((categoryId: walletId, amount: fromCategory));
+            }
+
+            if (salaryId != null && fromSalary > 0) {
+              balances[salaryId] = (balances[salaryId] ?? 0) - fromSalary;
+              splits.add((categoryId: salaryId, amount: fromSalary));
+            }
+          }
+
+          // Save calculated splits back to DB
+          for (final split in splits) {
+            await txn.insert('transaction_wallet_splits', {
+              'transactionId': tx.id,
+              'categoryId': split.categoryId,
+              'amount': split.amount,
+            });
+          }
+        }
+      }
+
+      // 3. Batch insert final balances
+      for (final entry in balances.entries) {
+        await txn.insert('category_balances', {
+          'categoryId': entry.key,
+          'balance': entry.value,
+        });
+      }
+    });
+
+    // 4. Mark as reconciled
+    const storage = FlutterSecureStorage();
+    await storage.write(key: 'last_reconciled_v', value: '11');
+
+    // 5. Reload provider states to reflect changes globally
+    await balanceProvider.loadBalances();
+    await _reloadAll();
   }
 
   // ================= ACCOUNTS =================
@@ -612,11 +706,11 @@ class LedgerProvider extends ChangeNotifier {
     bool reverse = false,
     int? transactionId,
   }) async {
-    // If category is null, we treat this transaction as belonging to the
-    // "Salary Wallet" (the pool for unassigned funds). This ensures 100%
-    // reconciliation between accounts and wallets even for orphaned items.
-    final targetCategoryId = tx.categoryId ?? salaryCategoryId;
-    if (targetCategoryId == null) return; // No wallet system established yet
+    final baseCategoryId = tx.categoryId ?? salaryCategoryId;
+    if (baseCategoryId == null) return; // No wallet system established yet
+
+    // Resolve to the actual wallet (Parent if it's a subcategory)
+    final walletId = _walletCategoryId(baseCategoryId) ?? baseCategoryId;
 
     final amount = reverse ? -tx.amount : tx.amount;
 
@@ -635,10 +729,10 @@ class LedgerProvider extends ChangeNotifier {
           }
         }
         // Fallback for old transactions with no split record
-        await balanceProvider.allocate(targetCategoryId, tx.amount);
+        await balanceProvider.allocate(walletId, tx.amount);
       } else {
         final splits = await _spendWithSalaryFallback(
-          categoryId: targetCategoryId,
+          categoryId: baseCategoryId,
           amount: tx.amount,
         );
         // Persist splits so detail screen and reversal can read them
@@ -653,7 +747,7 @@ class LedgerProvider extends ChangeNotifier {
     }
 
     if (tx.type == "income") {
-      await balanceProvider.allocate(targetCategoryId, amount);
+      await balanceProvider.allocate(walletId, amount);
     }
   }
 

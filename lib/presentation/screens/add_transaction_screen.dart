@@ -1120,6 +1120,7 @@ class _AmountDisplay extends StatelessWidget {
 
     return AnimatedAmount(
       amount: val,
+      animate: false,
       style: TextStyle(
         fontSize: 48,
         color: AppTheme.accent,

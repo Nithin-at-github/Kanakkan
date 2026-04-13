@@ -154,6 +154,7 @@ class BulkEntryList extends StatelessWidget {
               ),
               AnimatedAmount(
                 amount: total,
+                animate: false,
                 style: TextStyle(
                   color: AppTheme.accent,
                   fontWeight: FontWeight.bold,
