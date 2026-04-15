@@ -8,6 +8,7 @@ import 'package:kanakkan/presentation/widgets/categories/categories_header.dart'
 import 'package:kanakkan/presentation/widgets/categories/category_section.dart';
 import 'package:kanakkan/presentation/widgets/categories/salary_wallet_setup_sheet.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:provider/provider.dart';
 
 class CategoriesScreen extends StatelessWidget {
@@ -43,38 +44,44 @@ class CategoriesScreen extends StatelessWidget {
       appBar: ReusableAppBar(
         actions: [
           // Crown button — always visible, opens setup/management sheet
-          IconButton(
-            icon: Icon(
-              Icons.workspace_premium,
-              // Amber when designated, muted when not
-              color: provider.hasSalaryWallet
-                  ? theme.colorScheme.secondary
-                  : theme.colorScheme.secondary.withValues(alpha: 0.5),
-              size: 28,
+          PressableScale(
+            child: IconButton(
+              icon: Icon(
+                Icons.workspace_premium,
+                // Amber when designated, muted when not
+                color: provider.hasSalaryWallet
+                    ? theme.colorScheme.secondary
+                    : theme.colorScheme.secondary.withValues(alpha: 0.5),
+                size: 28,
+              ),
+              tooltip: provider.hasSalaryWallet
+                  ? 'Manage Salary Wallet'
+                  : 'Set up Salary Wallet',
+              onPressed: () => SalaryWalletSetupSheet.show(context),
             ),
-            tooltip: provider.hasSalaryWallet
-                ? 'Manage Salary Wallet'
-                : 'Set up Salary Wallet',
-            onPressed: () => SalaryWalletSetupSheet.show(context),
           ),
-          IconButton(
-            icon: Icon(
-              Icons.call_merge,
-              color: theme.colorScheme.secondary,
-              size: 28,
+          PressableScale(
+            child: IconButton(
+              icon: Icon(
+                Icons.call_merge,
+                color: theme.colorScheme.secondary,
+                size: 28,
+              ),
+              tooltip: 'Merge Categories',
+              onPressed: () => MergeCategoriesDialog.show(context),
             ),
-            tooltip: 'Merge Categories',
-            onPressed: () => MergeCategoriesDialog.show(context),
           ),
-          IconButton(
-            icon: Icon(
-              Icons.swap_horiz,
-              color: theme.colorScheme.secondary,
-              size: 35,
-            ),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => const MoveWalletDialog(),
+          PressableScale(
+            child: IconButton(
+              icon: Icon(
+                Icons.swap_horiz,
+                color: theme.colorScheme.secondary,
+                size: 35,
+              ),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) => const MoveWalletDialog(),
+              ),
             ),
           ),
         ],

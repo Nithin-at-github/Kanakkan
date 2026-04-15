@@ -3,6 +3,7 @@ import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:provider/provider.dart';
 
 class MergeCategoriesDialog extends StatefulWidget {
@@ -177,9 +178,11 @@ class _MergeCategoriesDialogState extends State<MergeCategoriesDialog> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: _handleMerge,
-                      child: const Text('Merge'),
+                    child: PressableScale(
+                      child: ElevatedButton(
+                        onPressed: _handleMerge,
+                        child: const Text('Merge'),
+                      ),
                     ),
                   ),
                 ],

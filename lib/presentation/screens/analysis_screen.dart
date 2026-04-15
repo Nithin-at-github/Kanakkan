@@ -4,6 +4,7 @@ import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
 import 'package:kanakkan/presentation/screens/analysis_drill_screen.dart';
 import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
@@ -93,9 +94,11 @@ class _AnalysisHeader extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left, color: Colors.white),
-                onPressed: provider.previous,
+              PressableScale(
+                child: IconButton(
+                  icon: Icon(Icons.chevron_left, color: Colors.white),
+                  onPressed: provider.previous,
+                ),
               ),
               Text(
                 provider.periodLabel,
@@ -105,12 +108,14 @@ class _AnalysisHeader extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.chevron_right,
-                  color: provider.canGoForward ? Colors.white : Colors.white30,
+              PressableScale(
+                child: IconButton(
+                  icon: Icon(
+                    Icons.chevron_right,
+                    color: provider.canGoForward ? Colors.white : Colors.white30,
+                  ),
+                  onPressed: provider.canGoForward ? provider.next : null,
                 ),
-                onPressed: provider.canGoForward ? provider.next : null,
               ),
             ],
           ),
@@ -167,21 +172,23 @@ class _ModeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.accent : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.white60,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
+    return PressableScale(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? AppTheme.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : Colors.white60,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
         ),
       ),
@@ -206,22 +213,30 @@ class _MonthlyBody extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _StatCard(
-                label: 'Income',
-                value: provider.totalIncome,
-                color: AppTheme.success,
-                icon: Icons.arrow_downward,
-                onTap: () => _openDrill(context, DrillType.incomeBreakdown),
+              child: StaggeredEntrance(
+                index: 0,
+                type: EntranceType.scale,
+                child: _StatCard(
+                  label: 'Income',
+                  value: provider.totalIncome,
+                  color: AppTheme.success,
+                  icon: Icons.arrow_downward,
+                  onTap: () => _openDrill(context, DrillType.incomeBreakdown),
+                ),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _StatCard(
-                label: 'Expense',
-                value: provider.totalExpense,
-                color: AppTheme.error,
-                icon: Icons.arrow_upward,
-                onTap: () => _openDrill(context, DrillType.expenseBreakdown),
+              child: StaggeredEntrance(
+                index: 1,
+                type: EntranceType.scale,
+                child: _StatCard(
+                  label: 'Expense',
+                  value: provider.totalExpense,
+                  color: AppTheme.error,
+                  icon: Icons.arrow_upward,
+                  onTap: () => _openDrill(context, DrillType.expenseBreakdown),
+                ),
               ),
             ),
           ],
@@ -233,8 +248,10 @@ class _MonthlyBody extends StatelessWidget {
           children: [
             Expanded(
               child: StaggeredEntrance(
-                index: 0,
+                index: 2,
+                type: EntranceType.scale,
                 child: _StatCard(
+                  index: 2,
                   label: 'Savings',
                   value: provider.savings,
                   color: provider.savings >= 0 ? AppTheme.accent : AppTheme.error,
@@ -246,7 +263,8 @@ class _MonthlyBody extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: StaggeredEntrance(
-                index: 1,
+                index: 3,
+                type: EntranceType.scale,
                 child: _SavingsRateCard(
                   rate: provider.savingsRate,
                   onTap: () => _openDrill(context, DrillType.savingsTrend),
@@ -503,54 +521,60 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
+  final int index;
+
   const _StatCard({
     required this.label,
     required this.value,
     required this.color,
     required this.icon,
     required this.onTap,
+    this.index = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: AppTheme.onSurfaceVariant,
-                    fontSize: 12,
+    return PressableScale(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(blurRadius: 6, color: Colors.black12)],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: AppTheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                Icon(Icons.chevron_right, color: AppTheme.divider, size: 16),
-              ],
-            ),
-            const SizedBox(height: 8),
-            AnimatedAmount(
-              amount: value.abs(),
-              prefix: value < 0 ? '- ₹' : '₹',
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                  const Spacer(),
+                  Icon(Icons.chevron_right, color: AppTheme.divider, size: 16),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              AnimatedAmount(
+                amount: value.abs(),
+                delay: Duration(milliseconds: 100 + (index * 150)),
+                prefix: value < 0 ? '- ₹' : '₹',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -570,53 +594,55 @@ class _SavingsRateCard extends StatelessWidget {
         ? AppTheme.accent
         : AppTheme.error;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(blurRadius: 6, color: AppTheme.divider)],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.percent, color: color, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  'Savings Rate',
-                  style: TextStyle(
-                    color: AppTheme.onSurfaceVariant,
-                    fontSize: 12,
+    return PressableScale(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(blurRadius: 6, color: AppTheme.divider)],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.percent, color: color, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Savings Rate',
+                    style: TextStyle(
+                      color: AppTheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
+                  const Spacer(),
+                  Icon(Icons.chevron_right, color: AppTheme.divider, size: 16),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${rate.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  color: color,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
-                const Spacer(),
-                Icon(Icons.chevron_right, color: AppTheme.divider, size: 16),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${rate.toStringAsFixed(1)}%',
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: (rate.abs() / 100).clamp(0.0, 1.0),
-                backgroundColor: color.withValues(alpha: 0.15),
-                valueColor: AlwaysStoppedAnimation(color),
-                minHeight: 5,
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: (rate.abs() / 100).clamp(0.0, 1.0),
+                  backgroundColor: color.withValues(alpha: 0.15),
+                  valueColor: AlwaysStoppedAnimation(color),
+                  minHeight: 5,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

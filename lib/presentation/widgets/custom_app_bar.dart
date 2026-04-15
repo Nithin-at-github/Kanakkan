@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 
 class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
@@ -12,11 +13,13 @@ class ReusableAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: theme.colorScheme.primary,
       centerTitle: false,
-      leading: IconButton(
-        icon: Icon(Icons.menu, color: theme.colorScheme.secondary),
-        // Use the global key — always opens RootScaffold's drawer
-        // regardless of which screen's Scaffold this AppBar is inside.
-        onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
+      leading: PressableScale(
+        child: IconButton(
+          icon: Icon(Icons.menu, color: theme.colorScheme.secondary),
+          // Use the global key — always opens RootScaffold's drawer
+          // regardless of which screen's Scaffold this AppBar is inside.
+          onPressed: () => rootScaffoldKey.currentState?.openDrawer(),
+        ),
       ),
       title: Text(
         "I-W-¡-³-",

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 class UpdateNote {
@@ -81,24 +82,26 @@ class UpdateNotesScreen extends StatelessWidget {
               backgroundColor: AppTheme.background,
               surfaceTintColor: Colors.transparent,
               leading: Center(
-                child: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surface,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.onSurface.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 16,
-                      color: AppTheme.onSurface,
+                child: PressableScale(
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.onSurface.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 16,
+                        color: AppTheme.onSurface,
+                      ),
                     ),
                   ),
                 ),
@@ -145,6 +148,8 @@ class UpdateNotesScreen extends StatelessWidget {
                   final note = _updates[index];
                   return StaggeredEntrance(
                     index: index,
+                    type: EntranceType.slideUp,
+                    delayIncrement: const Duration(milliseconds: 100),
                     child: _UpdateCard(note: note),
                   );
                 }, childCount: _updates.length),

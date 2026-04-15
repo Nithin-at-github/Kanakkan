@@ -11,6 +11,7 @@ import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
 import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 enum DateFilterMode { daily, weekly, monthly, yearly }
@@ -137,9 +138,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_left, color: AppTheme.accent),
-                        onPressed: _previousPeriod,
+                      PressableScale(
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_left, color: AppTheme.accent),
+                          onPressed: _previousPeriod,
+                        ),
                       ),
 
                       Text(
@@ -151,9 +154,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
 
-                      IconButton(
-                        icon: Icon(Icons.arrow_right, color: AppTheme.accent),
-                        onPressed: _nextPeriod,
+                      PressableScale(
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_right, color: AppTheme.accent),
+                          onPressed: _nextPeriod,
+                        ),
                       ),
 
                       const SizedBox(width: 10),
@@ -230,14 +235,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _summaryColumn("EXPENSE", totalExpense, AppTheme.error),
-                      _summaryColumn("INCOME", totalIncome, AppTheme.success),
+                      _summaryColumn("EXPENSE", totalExpense, AppTheme.error, delay: const Duration(milliseconds: 100)),
+                      _summaryColumn("INCOME", totalIncome, AppTheme.success, delay: const Duration(milliseconds: 300)),
                       _summaryColumn(
                         "BALANCE",
                         totalIncome - totalExpense,
                         (totalIncome - totalExpense) < 0
                             ? AppTheme.error
                             : Colors.white70,
+                        delay: const Duration(milliseconds: 500),
                       ),
                     ],
                   ),
@@ -285,24 +291,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                         return StaggeredEntrance(
                           index: i,
+                          type: EntranceType.slideUp,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(14),
-                              onTap: () => _showTransactionDetails(tx),
-                              child: Container(
+                            child: PressableScale(
+                              child: GestureDetector(
+                                onTap: () => _showTransactionDetails(tx),
+                                child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                   vertical: 14,
                                 ),
                                 decoration: BoxDecoration(
+                                  color: AppTheme.surface,
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: AppTheme.accent.withValues(alpha: .25),
+                                    color: AppTheme.accent.withValues(alpha: .15),
                                   ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.onSurface.withValues(alpha: 0.02),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
                                 child: Row(
                                   children: [
@@ -367,23 +382,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             : AppTheme.error,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                ],
                               ),
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
+                    );
+                  },
                     ),
-            ),
+              ),
 
             const SizedBox(height: 90),
           ],
         ),
       ),
     ),
-    );
-  }
+  );
+}
 
   List<TransactionEntity> _filterTransactions(List<TransactionEntity> all) {
     return all.where((tx) {
@@ -461,7 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _summaryColumn(String title, double amount, Color color) {
+  Widget _summaryColumn(String title, double amount, Color color, {Duration delay = Duration.zero}) {
     return Column(
       children: [
         Text(
@@ -471,6 +487,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(height: 4),
         AnimatedAmount(
           amount: amount,
+          delay: delay,
           style: TextStyle(
             fontSize: 16,
             color: color,

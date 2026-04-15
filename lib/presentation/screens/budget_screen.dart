@@ -7,6 +7,7 @@ import 'package:kanakkan/presentation/widgets/budget_item_card.dart';
 import 'package:kanakkan/presentation/dialogs/copy_budget_dialog.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -157,9 +158,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_left, color: AppTheme.accent),
-                        onPressed: () => _previousMonth(budgetProvider),
+                      PressableScale(
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_left, color: AppTheme.accent),
+                          onPressed: () => _previousMonth(budgetProvider),
+                        ),
                       ),
 
                       Text(
@@ -171,9 +174,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         ),
                       ),
 
-                      IconButton(
-                        icon: Icon(Icons.arrow_right, color: AppTheme.accent),
-                        onPressed: () => _nextMonth(budgetProvider),
+                      PressableScale(
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_right, color: AppTheme.accent),
+                          onPressed: () => _nextMonth(budgetProvider),
+                        ),
                       ),
                     ],
                   ),
@@ -188,9 +193,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         "TOTAL BUDGET",
                         totalBudget,
                         AppTheme.accent,
+                        delay: const Duration(milliseconds: 100),
                       ),
 
-                      _summaryColumn("TOTAL SPENT", totalSpent, AppTheme.error),
+                      _summaryColumn(
+                        "TOTAL SPENT",
+                        totalSpent,
+                        AppTheme.error,
+                        delay: const Duration(milliseconds: 300),
+                      ),
                     ],
                   ),
                 ],
@@ -224,8 +235,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       itemBuilder: (_, i) {
                         return StaggeredEntrance(
                           index: i,
-                          child: BudgetItemCard(
-                            budget: budgetProvider.budgets[i],
+                          type: EntranceType.slideUp,
+                          child: PressableScale(
+                            child: BudgetItemCard(
+                              budget: budgetProvider.budgets[i],
+                            ),
                           ),
                         );
                       },
@@ -237,47 +251,46 @@ class _BudgetScreenState extends State<BudgetScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
-                child: InkWell(
-                  splashColor: AppTheme.accent.withValues(alpha: .15),
-                  highlightColor: Colors.transparent,
-                  borderRadius: BorderRadius.circular(28),
-                  onTap: _openCopyDialog,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accent.withValues(alpha: .8),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: AppTheme.accent),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.divider,
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.copy_rounded,
-                          size: 20,
-                          color: AppTheme.onSurface,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "Copy from previous months",
-                          style: TextStyle(
-                            color: AppTheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14.5,
-                            letterSpacing: .2,
+                child: PressableScale(
+                  child: GestureDetector(
+                    onTap: _openCopyDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent.withValues(alpha: .8),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppTheme.accent),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.divider,
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.copy_rounded,
+                            size: 20,
+                            color: AppTheme.onSurface,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            "Copy from previous months",
+                            style: TextStyle(
+                              color: AppTheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14.5,
+                              letterSpacing: .2,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -290,7 +303,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   // ================= HELPERS =================
-  Widget _summaryColumn(String title, double amount, Color color) {
+  Widget _summaryColumn(String title, double amount, Color color, {Duration delay = Duration.zero}) {
     return Column(
       children: [
         Text(
@@ -300,6 +313,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
         const SizedBox(height: 4),
         AnimatedAmount(
           amount: amount,
+          delay: delay,
           style: TextStyle(
             fontSize: 16,
             color: color,

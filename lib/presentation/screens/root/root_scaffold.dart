@@ -9,6 +9,7 @@ import 'package:kanakkan/presentation/screens/categories_screen.dart';
 import 'package:kanakkan/presentation/screens/dashboard_screen.dart';
 import 'package:kanakkan/presentation/widgets/app_drawer.dart';
 import 'package:kanakkan/presentation/widgets/universal_create_sheet.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:provider/provider.dart';
 
 // Global key so any ReusableAppBar can open this scaffold's drawer
@@ -35,16 +36,41 @@ class RootScaffold extends StatelessWidget {
       drawer: const AppDrawer(),
       floatingActionButton: GestureDetector(
         onLongPress: () => UniversalCreateSheet.show(context),
-        child: FloatingActionButton.extended(
-          backgroundColor: AppTheme.accent,
-          elevation: 6,
-          icon: const Icon(Icons.add),
-          label: Text(_fabLabel(nav.currentIndex)),
-          onPressed: () => SmartCreateHandler.handle(context, nav.currentIndex),
+        child: PressableScale(
+          child: FloatingActionButton.extended(
+            backgroundColor: AppTheme.accent,
+            elevation: 6,
+            icon: const Icon(Icons.add),
+            label: Text(_fabLabel(nav.currentIndex)),
+            onPressed: () => SmartCreateHandler.handle(context, nav.currentIndex),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: pages[nav.currentIndex],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOutQuart,
+        switchOutCurve: Curves.easeInQuart,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.02),
+                end: Offset.zero,
+              ).animate(animation),
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.98, end: 1.0).animate(animation),
+                child: child,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          key: ValueKey<int>(nav.currentIndex),
+          child: pages[nav.currentIndex],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: nav.currentIndex,

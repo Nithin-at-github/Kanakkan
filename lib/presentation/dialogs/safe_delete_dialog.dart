@@ -4,6 +4,7 @@ import 'package:kanakkan/domain/entities/category.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:provider/provider.dart';
 
 class SafeDeleteDialog extends StatefulWidget {
@@ -119,28 +120,30 @@ class _SafeDeleteDialogState extends State<SafeDeleteDialog> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _targetId == null
-                        ? null
-                        : () async {
-                            await provider.mergeInto(
-                              widget.category.id!,
-                              _targetId!,
-                            );
-                            if (provider.lastError == null) {
-                              // Reload everything to ensure UI state matches DB
-                              await Future.wait([
-                                ledger.loadTransactions(),
-                                balances.loadBalances(),
-                              ]);
-                              if (!context.mounted) return;
-                              Navigator.pop(context, true);
-                            } else {
-                              setState(() => _errorText = provider.lastError);
-                            }
-                          },
-                    child: const FittedBox(
-                      child: Text('Move & Delete'),
+                  child: PressableScale(
+                    child: ElevatedButton(
+                      onPressed: _targetId == null
+                          ? null
+                          : () async {
+                              await provider.mergeInto(
+                                widget.category.id!,
+                                _targetId!,
+                              );
+                              if (provider.lastError == null) {
+                                // Reload everything to ensure UI state matches DB
+                                await Future.wait([
+                                  ledger.loadTransactions(),
+                                  balances.loadBalances(),
+                                ]);
+                                if (!context.mounted) return;
+                                Navigator.pop(context, true);
+                              } else {
+                                setState(() => _errorText = provider.lastError);
+                              }
+                            },
+                      child: const FittedBox(
+                        child: Text('Move & Delete'),
+                      ),
                     ),
                   ),
                 ),

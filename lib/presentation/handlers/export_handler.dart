@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/data/services/export_service.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
@@ -324,9 +325,16 @@ class _ExportSheetState extends State<_ExportSheet> {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Theme(
             data: Theme.of(context).copyWith(
+              appBarTheme: AppBarTheme(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                systemOverlayStyle: isDark
+                    ? SystemUiOverlayStyle.light
+                    : SystemUiOverlayStyle.dark,
+              ),
               colorScheme: (isDark ? const ColorScheme.dark() : const ColorScheme.light()).copyWith(
                 primary: AppTheme.primary,
-                onPrimary: AppTheme.accent,
+                onPrimary: Colors.white,
                 onSurface: AppTheme.onSurface,
                 surface: AppTheme.background,
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/data/models/bulk_transaction_item.dart';
 import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 
 class BulkEntryList extends StatelessWidget {
@@ -182,16 +183,18 @@ class BulkEntryList extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: onSaveAll,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accent,
-                  ),
-                  child: Text(
-                    "Save All",
-                    style: TextStyle(
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.bold,
+                child: PressableScale(
+                  child: ElevatedButton(
+                    onPressed: onSaveAll,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accent,
+                    ),
+                    child: Text(
+                      "Save All",
+                      style: TextStyle(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

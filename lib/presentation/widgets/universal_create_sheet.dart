@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/dialogs/add_account_dialog.dart';
 import 'package:kanakkan/presentation/dialogs/add_category_dialog.dart';
 import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
@@ -90,13 +91,15 @@ class UniversalCreateSheet {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: color.withValues(alpha: .15),
-        child: Icon(icon, color: color),
+    return PressableScale(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: .15),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        onTap: onTap,
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      onTap: onTap,
     );
   }
 }

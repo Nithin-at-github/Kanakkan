@@ -6,6 +6,7 @@ import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/widgets/custom_app_bar.dart';
 import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:provider/provider.dart';
 
@@ -432,31 +433,33 @@ class AccountsScreen extends StatelessWidget {
                       const SizedBox(width: 12),
 
                       Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accent,
-                            minimumSize: const Size(double.infinity, 48),
+                        child: PressableScale(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accent,
+                              minimumSize: const Size(double.infinity, 48),
+                            ),
+                            onPressed: () async {
+                              ledger.clearError();
+
+                              final newName = controller.text.trim();
+
+                              final ledgerRef = context.read<LedgerProvider>();
+                              await ledgerRef.updateAccount(
+                                Account(
+                                  id: account.id,
+                                  name: newName,
+                                  // preserve the original initial balance unchanged
+                                  initialBalance: account.initialBalance,
+                                ),
+                              );
+
+                              if (ledgerRef.lastError == null) {
+                                if (context.mounted) Navigator.pop(context);
+                              }
+                            },
+                            child: Text("Save"),
                           ),
-                          onPressed: () async {
-                            ledger.clearError();
-
-                            final newName = controller.text.trim();
-
-                            final ledgerRef = context.read<LedgerProvider>();
-                            await ledgerRef.updateAccount(
-                              Account(
-                                id: account.id,
-                                name: newName,
-                                // preserve the original initial balance unchanged
-                                initialBalance: account.initialBalance,
-                              ),
-                            );
-
-                            if (ledgerRef.lastError == null) {
-                              if (context.mounted) Navigator.pop(context);
-                            }
-                          },
-                          child: Text("Save"),
                         ),
                       ),
                     ],

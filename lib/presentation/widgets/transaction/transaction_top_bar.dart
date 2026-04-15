@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 
 class TransactionTopBar extends StatelessWidget {
   final VoidCallback onCancel;
@@ -26,10 +27,12 @@ class TransactionTopBar extends StatelessWidget {
               style: TextStyle(color: AppTheme.accent),
             ),
           ),
-          TextButton.icon(
-            onPressed: onSave,
-            icon: Icon(Icons.check, color: AppTheme.accent),
-            label: Text("SAVE", style: TextStyle(color: AppTheme.accent)),
+          PressableScale(
+            child: TextButton.icon(
+              onPressed: onSave,
+              icon: Icon(Icons.check, color: AppTheme.accent),
+              label: Text("SAVE", style: TextStyle(color: AppTheme.accent)),
+            ),
           ),
         ],
       ),

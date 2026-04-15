@@ -3,6 +3,7 @@ import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 
 class MoveWalletDialog extends StatefulWidget {
   const MoveWalletDialog({super.key});
@@ -158,21 +159,23 @@ class _MoveWalletDialogState extends State<MoveWalletDialog> {
                   const SizedBox(width: 10),
 
                   Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accent,
+                    child: PressableScale(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accent,
+                        ),
+                        onPressed: loading ? null : _moveMoney,
+                        child: loading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text("Move"),
                       ),
-                      onPressed: loading ? null : _moveMoney,
-                      child: loading
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text("Move"),
                     ),
                   ),
                 ],

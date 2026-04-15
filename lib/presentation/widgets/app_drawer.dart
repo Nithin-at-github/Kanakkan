@@ -5,6 +5,7 @@ import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/handlers/export_handler.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 import 'package:kanakkan/presentation/providers/theme_provider.dart';
+import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -45,6 +46,7 @@ class AppDrawer extends StatelessWidget {
 
                   StaggeredEntrance(
                     index: 0,
+                    type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.cloud_upload_outlined,
                       label: "Backup Data",
@@ -60,6 +62,7 @@ class AppDrawer extends StatelessWidget {
 
                   StaggeredEntrance(
                     index: 1,
+                    type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.cloud_download_outlined,
                       label: "Restore Data",
@@ -79,6 +82,7 @@ class AppDrawer extends StatelessWidget {
 
                   StaggeredEntrance(
                     index: 2,
+                    type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.file_download_outlined,
                       label: "Export Records",
@@ -94,6 +98,7 @@ class AppDrawer extends StatelessWidget {
 
                   StaggeredEntrance(
                     index: 3,
+                    type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.new_releases_outlined,
                       label: "Update Notes",
@@ -112,6 +117,7 @@ class AppDrawer extends StatelessWidget {
 
                   StaggeredEntrance(
                     index: 4,
+                    type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.settings_outlined,
                       label: "Settings",
@@ -131,7 +137,7 @@ class AppDrawer extends StatelessWidget {
                   const Spacer(),
 
                   // ── FOOTER ──
-                  StaggeredEntrance(index: 5, child: _DrawerFooter()),
+                  StaggeredEntrance(index: 5, type: EntranceType.slideRight, child: _DrawerFooter()),
 
                   const SizedBox(height: 12),
                 ],
@@ -332,39 +338,41 @@ class _DrawerTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onTap: onTap,
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(10),
+      child: PressableScale(
+        child: ListTile(
+          onTap: onTap,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          leading: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 20),
           ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.onSurface,
+          title: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.onSurface,
+            ),
           ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-                subtitle!,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              )
-            : null,
-        trailing: Icon(
-          Icons.chevron_right,
-          size: 18,
-          color: AppTheme.onSurface.withValues(alpha: 0.3),
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                )
+              : null,
+          trailing: Icon(
+            Icons.chevron_right,
+            size: 18,
+            color: AppTheme.onSurface.withValues(alpha: 0.3),
+          ),
         ),
       ),
     );
