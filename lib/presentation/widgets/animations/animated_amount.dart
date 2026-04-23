@@ -16,7 +16,7 @@ class AnimatedAmount extends StatefulWidget {
     required this.style,
     this.prefix = "₹",
     this.animate = true,
-    this.duration = const Duration(milliseconds: 1000),
+    this.duration = const Duration(milliseconds: 600),
     this.delay = Duration.zero,
     this.curve = Curves.easeOutQuart,
   });
@@ -40,22 +40,82 @@ class _AnimatedAmountState extends State<AnimatedAmount> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.animate) {
-      return Text(
-        "${widget.prefix}${formatAmt(widget.amount)}",
-        style: widget.style,
+    final String formatted = formatAmt(widget.amount);
+    final String fullText = "${widget.prefix}$formatted";
+
+    if (!widget.animate || !_start) {
+      return Opacity(
+        opacity: !_start && widget.animate ? 0 : 1,
+        child: Text(fullText, style: widget.style),
       );
     }
-    return TweenAnimationBuilder<double>(
-      duration: widget.duration,
-      curve: widget.curve,
-      tween: Tween<double>(begin: 0, end: _start ? widget.amount : 0),
-      builder: (context, value, child) {
-        return Text(
-          "${widget.prefix}${formatAmt(value)}",
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: _buildAnimatedCharacters(fullText),
+    );
+  }
+
+  List<Widget> _buildAnimatedCharacters(String text) {
+    final List<Widget> widgets = [];
+    final characters = text.characters.toList();
+
+    for (int i = 0; i < characters.length; i++) {
+      widgets.add(
+        _RollingCharacter(
+          key: ValueKey("pos_$i"),
+          char: characters[i],
           style: widget.style,
+          duration: widget.duration,
+          curve: widget.curve,
+        ),
+      );
+    }
+    return widgets;
+  }
+}
+
+class _RollingCharacter extends StatelessWidget {
+  final String char;
+  final TextStyle style;
+  final Duration duration;
+  final Curve curve;
+
+  const _RollingCharacter({
+    super.key,
+    required this.char,
+    required this.style,
+    required this.duration,
+    required this.curve,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: duration,
+      switchInCurve: curve,
+      switchOutCurve: curve,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[...previousChildren, currentChild!],
         );
       },
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        final bool isNew = child.key == ValueKey(char);
+
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: isNew ? const Offset(0, 0.4) : const Offset(0, -0.4),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
+      child: Text(char, key: ValueKey(char), style: style),
     );
   }
 }

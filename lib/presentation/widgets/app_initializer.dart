@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/screens/root/root_screen.dart';
@@ -37,8 +38,9 @@ class _AppInitializerState extends State<AppInitializer> {
       future: _initFuture,
       builder: (_, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            backgroundColor: AppTheme.background,
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
         return const RootScreen();

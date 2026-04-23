@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:kanakkan/presentation/providers/ledger_provider.dart';
 import 'package:kanakkan/presentation/dialogs/change_pin_sheet.dart';
 import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
-import 'package:provider/provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -25,29 +23,14 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
-          // ── MAINTENANCE SECTION ──
-          _SectionHeader(title: "MAINTENANCE"),
-          StaggeredEntrance(
-            index: 0,
-            child: _SettingsTile(
-              icon: Icons.sync_outlined,
-              title: "Reconcile Wallets",
-              subtitle: "Fix balance inconsistencies across all categories",
-              onTap: () => _reconcile(context),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(indent: 20, endIndent: 20, thickness: 0.5),
-
           // ── SECURITY SECTION ──
           _SectionHeader(title: "SECURITY"),
           StaggeredEntrance(
-            index: 1,
+            index: 0,
             child: _SettingsTile(
               icon: Icons.pin_outlined,
               title: "Change PIN",
-              subtitle: "Update your biometric or manual login PIN",
+              subtitle: "Update your login PIN",
               onTap: () => _changePin(context),
             ),
           ),
@@ -58,7 +41,7 @@ class SettingsScreen extends StatelessWidget {
           // ── DANGER ZONE ──
           _SectionHeader(title: "DANGER ZONE", isError: true),
           StaggeredEntrance(
-            index: 2,
+            index: 1,
             child: _SettingsTile(
               icon: Icons.delete_forever_outlined,
               title: "Delete & Reset",
@@ -74,37 +57,11 @@ class SettingsScreen extends StatelessWidget {
 
   // ============= ACTIONS =============
 
-  Future<void> _reconcile(BuildContext context) async {
-    final ledger = context.read<LedgerProvider>();
-
-    // Show a loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    await ledger.reconcileCategoryWallets();
-
-    if (context.mounted) {
-      Navigator.pop(context); // hide loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Wallet reconciliation complete"),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
   Future<void> _changePin(BuildContext context) async {
     await ChangePinSheet.show(context);
   }
 
   void _reset(BuildContext context) {
-    // Reuse the existing confirm dialog pattern from BackupRestoreHandler
-    // or implement a slightly cleaner one for settings.
     showDialog(context: context, builder: (ctx) => _ConfirmResetDialog());
   }
 }
@@ -260,7 +217,6 @@ class _ConfirmResetDialog extends StatelessWidget {
                     ),
                     onPressed: () async {
                       Navigator.pop(context);
-                      // Trigger the actual reset via the existing handler
                       await BackupRestoreHandler.runReset(context);
                     },
                     child: const Text("Delete All"),

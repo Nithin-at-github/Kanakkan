@@ -18,8 +18,8 @@ class CategoriesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // This simple read binds the entire screen layout to theme changes.
     // It guarantees icons inside the Scaffold (which use AppTheme directly) will rebuild.
-    final theme = Theme.of(context); 
-    
+    final theme = Theme.of(context);
+
     final provider = context.watch<CategoryProvider>();
     final balances = context.watch<CategoryBalanceProvider>();
 
@@ -35,8 +35,9 @@ class CategoriesScreen extends StatelessWidget {
       }
     }
 
-    final topCategory =
-        topEntry != null ? provider.resolveCategory(topEntry.key) : null;
+    final topCategory = topEntry != null
+        ? provider.resolveCategory(topEntry.key)
+        : null;
     final topCategoryName = topCategory?.name ?? 'None';
     final topCategoryAmount = topEntry?.value ?? 0.0;
 

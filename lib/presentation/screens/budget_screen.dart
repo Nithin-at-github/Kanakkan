@@ -303,7 +303,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   // ================= HELPERS =================
-  Widget _summaryColumn(String title, double amount, Color color, {Duration delay = Duration.zero}) {
+  Widget _summaryColumn(
+    String title,
+    double amount,
+    Color color, {
+    Duration delay = Duration.zero,
+  }) {
     return Column(
       children: [
         Text(

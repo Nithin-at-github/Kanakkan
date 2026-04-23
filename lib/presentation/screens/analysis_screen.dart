@@ -112,7 +112,9 @@ class _AnalysisHeader extends StatelessWidget {
                 child: IconButton(
                   icon: Icon(
                     Icons.chevron_right,
-                    color: provider.canGoForward ? Colors.white : Colors.white30,
+                    color: provider.canGoForward
+                        ? Colors.white
+                        : Colors.white30,
                   ),
                   onPressed: provider.canGoForward ? provider.next : null,
                 ),
@@ -254,7 +256,9 @@ class _MonthlyBody extends StatelessWidget {
                   index: 2,
                   label: 'Savings',
                   value: provider.savings,
-                  color: provider.savings >= 0 ? AppTheme.accent : AppTheme.error,
+                  color: provider.savings >= 0
+                      ? AppTheme.accent
+                      : AppTheme.error,
                   icon: Icons.savings,
                   onTap: () => _openDrill(context, DrillType.savingsTrend),
                 ),

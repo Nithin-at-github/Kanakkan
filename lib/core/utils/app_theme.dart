@@ -75,7 +75,7 @@ class AppTheme {
       ),
 
       scaffoldBackgroundColor: backgroundColor,
-      canvasColor: surfaceColor,
+      canvasColor: backgroundColor,
 
       colorScheme: ColorScheme(
         brightness: brightness,
@@ -87,9 +87,9 @@ class AppTheme {
         onError: Colors.white,
         surface: surfaceColor,
         onSurface: onSurfaceColor,
-        surfaceContainer: surfaceColor,
-        surfaceContainerHigh: surfaceColor,
-        surfaceContainerHighest: surfaceColor,
+        surfaceContainer: backgroundColor,
+        surfaceContainerHigh: backgroundColor,
+        surfaceContainerHighest: backgroundColor,
       ),
 
       bottomSheetTheme: BottomSheetThemeData(

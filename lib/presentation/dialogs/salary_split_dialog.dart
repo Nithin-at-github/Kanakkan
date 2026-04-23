@@ -61,6 +61,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
     final allocationProvider = context.watch<SalaryAllocationProvider>();
 
     return Dialog(
+      backgroundColor: AppTheme.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.8,
@@ -77,7 +78,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.primary,
+                      color: AppTheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -97,8 +98,11 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
-                    icon: const Icon(Icons.download),
-                    label: const Text("Use saved split"),
+                    icon: Icon(Icons.download, color: AppTheme.onSurface),
+                    label: Text(
+                      "Use saved split",
+                      style: TextStyle(color: AppTheme.onSurface),
+                    ),
                     onPressed: _applyTemplate,
                   ),
                 ),
@@ -122,10 +126,13 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppTheme.surface,
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: const [
-                            BoxShadow(blurRadius: 6, color: Colors.black12),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 6,
+                              color: AppTheme.onSurface.withValues(alpha: 0.08),
+                            ),
                           ],
                         ),
                         child: Row(
@@ -133,8 +140,9 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                             Expanded(
                               child: Text(
                                 category.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w500,
+                                  color: AppTheme.onSurface,
                                 ),
                               ),
                             ),
@@ -146,10 +154,11 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
                                     ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   prefixText: "₹ ",
+                                  prefixStyle: TextStyle(color: AppTheme.onSurface),
                                   isDense: true,
-                                  border: OutlineInputBorder(),
+                                  border: const OutlineInputBorder(),
                                 ),
                                 onChanged: (_) => setState(() {}),
                               ),
@@ -179,15 +188,20 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                     Text(
                       "Remaining",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.onSurface,
+                      ),
                     ),
                     AnimatedAmount(
                       amount: remaining,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: remaining < 0 ? AppTheme.error : AppTheme.success,
+                        color: remaining < 0
+                            ? AppTheme.error
+                            : AppTheme.success,
                       ),
                     ),
                   ],
@@ -198,7 +212,12 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
               CheckboxListTile(
                 value: saveTemplate,
                 contentPadding: EdgeInsets.zero,
-                title: const Text("Save this split"),
+                title: Text(
+                  "Save this split",
+                  style: TextStyle(color: AppTheme.onSurface),
+                ),
+                activeColor: AppTheme.accent,
+                checkColor: Colors.white,
                 onChanged: (v) {
                   setState(() {
                     saveTemplate = v ?? false;

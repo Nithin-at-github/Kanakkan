@@ -16,6 +16,7 @@ class RootScreen extends StatelessWidget {
     switch (appState.status) {
       case AppLockStatus.loading:
         return Scaffold(
+          backgroundColor: AppTheme.background,
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
