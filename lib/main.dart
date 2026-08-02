@@ -7,6 +7,7 @@ import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/navigation_provider.dart';
 import 'package:kanakkan/presentation/widgets/app_initializer.dart';
 import 'package:kanakkan/presentation/providers/salary_allocation_provider.dart';
+import 'package:kanakkan/presentation/providers/lend_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'presentation/providers/ledger_provider.dart';
@@ -94,6 +95,15 @@ void main() async {
 
         /// Theme State
         ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
+
+        /// Lends state
+        ChangeNotifierProxyProvider<LedgerProvider, LendProvider>(
+          create: (context) => LendProvider(context.read<LedgerProvider>()),
+          update: (_, ledger, previous) {
+            previous!.updateLedger(ledger);
+            return previous;
+          },
+        ),
       ],
       child: const KanakkanApp(),
     ),

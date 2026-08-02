@@ -264,6 +264,7 @@ class LedgerProvider extends ChangeNotifier {
     int? categoryId,
     String? note,
     int? timestamp,
+    int? lendPersonId,
   }) async {
     final transaction = TransactionModel(
       type: "income",
@@ -273,6 +274,7 @@ class LedgerProvider extends ChangeNotifier {
       categoryId: categoryId,
       note: note,
       timestamp: timestamp ?? DateTime.now().millisecondsSinceEpoch,
+      lendPersonId: lendPersonId,
     );
 
     final id = await _transactionRepository.insertTransaction(transaction);
@@ -315,6 +317,7 @@ class LedgerProvider extends ChangeNotifier {
     int? categoryId,
     String? note,
     int? timestamp,
+    int? lendPersonId,
   }) async {
     final transaction = TransactionModel(
       type: "expense",
@@ -324,6 +327,7 @@ class LedgerProvider extends ChangeNotifier {
       categoryId: categoryId,
       note: note,
       timestamp: timestamp ?? DateTime.now().millisecondsSinceEpoch,
+      lendPersonId: lendPersonId,
     );
 
     final id = await _transactionRepository.insertTransaction(transaction);
@@ -343,6 +347,7 @@ class LedgerProvider extends ChangeNotifier {
         int? categoryId,
         String? note,
         int? timestamp,
+        int? lendPersonId,
       })
     >
     items,
@@ -356,6 +361,7 @@ class LedgerProvider extends ChangeNotifier {
         categoryId: item.categoryId,
         note: item.note,
         timestamp: item.timestamp ?? DateTime.now().millisecondsSinceEpoch,
+        lendPersonId: item.lendPersonId,
       );
       final id = await _transactionRepository.insertTransaction(transaction);
       await _applyBalanceEffect(transaction, transactionId: id);
@@ -373,6 +379,7 @@ class LedgerProvider extends ChangeNotifier {
         int? categoryId,
         String? note,
         int? timestamp,
+        int? lendPersonId,
       })
     >
     items,
@@ -389,6 +396,7 @@ class LedgerProvider extends ChangeNotifier {
         categoryId: item.categoryId,
         note: item.note,
         timestamp: item.timestamp ?? DateTime.now().millisecondsSinceEpoch,
+        lendPersonId: item.lendPersonId,
       );
       final id = await _transactionRepository.insertTransaction(transaction);
       await _applyBalanceEffect(transaction);
@@ -594,6 +602,7 @@ class LedgerProvider extends ChangeNotifier {
       categoryId: newTx.categoryId,
       note: newTx.note,
       timestamp: newTx.timestamp,
+      lendPersonId: newTx.lendPersonId,
     );
 
     await _transactionRepository.updateTransaction(model);

@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import 'package:kanakkan/presentation/screens/settings_screen.dart';
 import 'package:kanakkan/presentation/screens/update_notes_screen.dart';
+import 'package:kanakkan/presentation/screens/lend_tracker_screen.dart';
 
 /// The app-wide navigation drawer.
 /// Attach via `drawer: const AppDrawer()` on RootScaffold's Scaffold.
@@ -48,6 +49,25 @@ class AppDrawer extends StatelessWidget {
                     index: 0,
                     type: EntranceType.slideRight,
                     child: _DrawerTile(
+                      icon: Icons.handshake_outlined,
+                      label: "Lend Tracker",
+                      subtitle: "Manage lends and borrowings",
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LendTrackerScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  StaggeredEntrance(
+                    index: 1,
+                    type: EntranceType.slideRight,
+                    child: _DrawerTile(
                       icon: Icons.cloud_upload_outlined,
                       label: "Backup Data",
                       subtitle: "Save a copy to your device",
@@ -61,7 +81,7 @@ class AppDrawer extends StatelessWidget {
                   ),
 
                   StaggeredEntrance(
-                    index: 1,
+                    index: 2,
                     type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.cloud_download_outlined,
@@ -81,7 +101,7 @@ class AppDrawer extends StatelessWidget {
                   ),
 
                   StaggeredEntrance(
-                    index: 2,
+                    index: 3,
                     type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.file_download_outlined,
@@ -97,7 +117,7 @@ class AppDrawer extends StatelessWidget {
                   ),
 
                   StaggeredEntrance(
-                    index: 3,
+                    index: 4,
                     type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.new_releases_outlined,
@@ -116,7 +136,7 @@ class AppDrawer extends StatelessWidget {
                   ),
 
                   StaggeredEntrance(
-                    index: 4,
+                    index: 5,
                     type: EntranceType.slideRight,
                     child: _DrawerTile(
                       icon: Icons.settings_outlined,
@@ -137,7 +157,7 @@ class AppDrawer extends StatelessWidget {
                   const Spacer(),
 
                   // ── FOOTER ──
-                  StaggeredEntrance(index: 5, type: EntranceType.slideRight, child: _DrawerFooter()),
+                  StaggeredEntrance(index: 6, type: EntranceType.slideRight, child: _DrawerFooter()),
 
                   const SizedBox(height: 12),
                 ],

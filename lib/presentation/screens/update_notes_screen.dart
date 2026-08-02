@@ -22,8 +22,19 @@ class UpdateNotesScreen extends StatelessWidget {
 
   static const List<UpdateNote> _updates = [
     UpdateNote(
-      version: '1.3.0',
+      version: '1.4.0',
       isLatest: true,
+      date: 'August 2026',
+      changes: [
+        'Lends & Borrows Tracker: Dedicated section to track all lended money and borrowings per person, replacing manual category note management.',
+        'Retroactive Migration: Link existing unassociated transactions in bulk to a contact\'s profile with search and smart suggested matching.',
+        'Category & Subcategory Filtering: Filter transaction migration pools dynamically using category dialog selections.',
+        'Direct Account Settlements: Record a repayment or payout to instantly settle a contact\'s outstanding balance in one tap.',
+      ],
+    ),
+    UpdateNote(
+      version: '1.3.0',
+      isLatest: false,
       date: 'April 2026',
       changes: [
         'Day/Night Mode: Full dynamic theme support with a curated dark mode for comfortable use in low-light environments.',

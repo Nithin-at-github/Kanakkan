@@ -17,17 +17,25 @@ import 'package:kanakkan/presentation/widgets/animations/animated_amount.dart';
 
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
+import 'package:kanakkan/domain/entities/lend_person.dart';
+import 'package:kanakkan/presentation/providers/lend_provider.dart';
+import 'package:kanakkan/presentation/dialogs/quick_add_lend_person_dialog.dart';
+import 'package:kanakkan/core/utils/safe_iterable.dart';
 
 enum TransactionType { income, expense, transfer }
 
 class AddTransactionScreen extends StatefulWidget {
   final TransactionEntity? transaction;
   final TransactionEntity? pairedTransaction;
+  final int? preselectedLendPersonId;
+  final TransactionType? initialType;
 
   const AddTransactionScreen({
     super.key,
     this.transaction,
     this.pairedTransaction,
+    this.preselectedLendPersonId,
+    this.initialType,
   });
 
   @override
@@ -47,6 +55,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Account? _selectedToAccount;
   Category? _selectedCategory;
   Category? _selectedSubcategory; // optional, drives category auto-select
+  LendPerson? _selectedLendPerson;
 
   double _cachedTotalAmount = 0;
   DateTime _selectedDateTime = DateTime.now();
@@ -56,6 +65,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   bool get _isEditMode => widget.transaction != null;
   bool get _isTransferEdit => _isEditMode && widget.pairedTransaction != null;
+
+  bool get _isLendCategory =>
+      _type != TransactionType.transfer &&
+      (_selectedCategory?.name.toLowerCase() == 'lend' ||
+          _selectedSubcategory?.name.toLowerCase() == 'lend');
 
   @override
   void initState() {
@@ -82,6 +96,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         if (!mounted) return;
         final ledger = context.read<LedgerProvider>();
         final categories = context.read<CategoryProvider>();
+        final lendProvider = context.read<LendProvider>();
 
         setState(() {
           if (_isTransferEdit) {
@@ -103,8 +118,40 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               _selectedCategory = resolvedCat;
               _selectedSubcategory = null;
             }
+
+            final resolvedLendPerson = lendProvider.people.firstWhereOrNull(
+              (p) => p.person.id == tx.lendPersonId,
+            )?.person;
+            _selectedLendPerson = resolvedLendPerson;
           }
         });
+      });
+    } else {
+      _type = widget.initialType ?? TransactionType.expense;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final lendProvider = context.read<LendProvider>();
+        final categories = context.read<CategoryProvider>();
+
+        if (widget.preselectedLendPersonId != null) {
+          final personData = lendProvider.people.firstWhereOrNull(
+            (p) => p.person.id == widget.preselectedLendPersonId,
+          );
+          final lendCategoryId = await lendProvider.getOrCreateLendCategoryId();
+
+          setState(() {
+            _selectedLendPerson = personData?.person;
+            final resolvedCat = categories.resolveCategory(lendCategoryId);
+            if (resolvedCat != null && resolvedCat.isSubcategory) {
+              _selectedSubcategory = resolvedCat;
+              _selectedCategory = categories.resolveMainCategory(lendCategoryId);
+            } else {
+              _selectedCategory = resolvedCat;
+              _selectedSubcategory = null;
+            }
+          });
+        }
       });
     }
   }
@@ -210,6 +257,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               _selectSubcategory(categoriesProvider),
                           onSelectCategory: () => _selectCategory(categories),
                         ),
+
+                        if (_isLendCategory) _lendPersonSelector(context),
 
                         const SizedBox(height: 15),
 
@@ -441,6 +490,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 categoryId: _selectedCategory!.id! as int?,
                 note: item.note as String?,
                 timestamp: _selectedDateTime.millisecondsSinceEpoch as int?,
+                lendPersonId: _selectedLendPerson?.id,
               ),
             )
             .toList(),
@@ -455,6 +505,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 categoryId: _selectedCategory!.id! as int?,
                 note: item.note as String?,
                 timestamp: _selectedDateTime.millisecondsSinceEpoch as int?,
+                lendPersonId: _selectedLendPerson?.id,
               ),
             )
             .toList(),
@@ -575,6 +626,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             categoryId: (_selectedSubcategory ?? _selectedCategory)?.id,
             note: _noteController.text,
             timestamp: _selectedDateTime.millisecondsSinceEpoch,
+            lendPersonId: _selectedLendPerson?.id,
           ),
         );
       }
@@ -586,6 +638,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           categoryId: (_selectedSubcategory ?? _selectedCategory)?.id,
           note: _noteController.text,
           timestamp: _selectedDateTime.millisecondsSinceEpoch,
+          lendPersonId: _selectedLendPerson?.id,
         );
       } else if (_type == TransactionType.expense) {
         await ledger.addExpense(
@@ -594,6 +647,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           categoryId: (_selectedSubcategory ?? _selectedCategory)?.id,
           note: _noteController.text,
           timestamp: _selectedDateTime.millisecondsSinceEpoch,
+          lendPersonId: _selectedLendPerson?.id,
         );
       } else {
         await ledger.transferFunds(
@@ -679,6 +733,192 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
       });
     }
+  }
+
+  // ================= LEND PERSON SELECT =================
+
+  Widget _lendPersonSelector(BuildContext context) {
+    final hasValue = _selectedLendPerson != null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+      child: GestureDetector(
+        onTap: () => _selectLendPerson(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white10,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hasValue
+                  ? AppTheme.accent.withValues(alpha: 0.5)
+                  : Colors.white24,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.person_outline,
+                color: hasValue ? AppTheme.accent : Colors.white38,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Lend Account / Contact",
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hasValue ? _selectedLendPerson!.name : "Select Contact",
+                      style: TextStyle(
+                        color: hasValue ? Colors.white : Colors.white38,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_drop_down, color: Colors.white38, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _selectLendPerson(BuildContext context) {
+    final lendProvider = context.read<LendProvider>();
+    final people = lendProvider.people;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: StatefulBuilder(
+                builder: (context, setSheetState) {
+                  return Column(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Select Contact",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.onSurface,
+                            ),
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text("New"),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTheme.accent,
+                            ),
+                            onPressed: () async {
+                              final created = await QuickAddLendPersonDialog.show(context);
+                              if (created != null) {
+                                await lendProvider.loadPeople();
+                                setSheetState(() {});
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: people.isEmpty
+                            ? Center(
+                                child: Text(
+                                  "No contacts added yet",
+                                  style: TextStyle(color: AppTheme.onSurfaceVariant),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: people.length,
+                                itemBuilder: (context, index) {
+                                  final item = people[index];
+                                  final person = item.person;
+                                  final isSelected = _selectedLendPerson?.id == person.id;
+
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: isSelected
+                                          ? AppTheme.accent.withValues(alpha: 0.2)
+                                          : AppTheme.divider,
+                                      child: Text(
+                                        person.name.substring(0, 1).toUpperCase(),
+                                        style: TextStyle(
+                                          color: isSelected ? AppTheme.accent : AppTheme.onSurface,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      person.name,
+                                      style: TextStyle(
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        color: AppTheme.onSurface,
+                                      ),
+                                    ),
+                                    subtitle: person.phoneNumber != null ? Text(person.phoneNumber!) : null,
+                                    trailing: isSelected
+                                        ? Icon(Icons.check_circle, color: AppTheme.accent)
+                                        : null,
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedLendPerson = person;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   // ================= ACCOUNT SELECT =================

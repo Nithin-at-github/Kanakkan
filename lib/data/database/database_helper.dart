@@ -7,8 +7,8 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Bumped to 11: Trigger wallet reconciliation for subcategory rollup fix
-  static const int _dbVersion = 11;
+  // Bumped to 12: Add dedicated Lend Tracker tables and columns
+  static const int _dbVersion = 12;
   static int get dbVersion => _dbVersion;
 
   Future<Database> get database async {
@@ -328,6 +328,26 @@ class DatabaseHelper {
       await db.execute(
         'ALTER TABLE categories ADD COLUMN excludeFromAnalysis INTEGER NOT NULL DEFAULT 0',
       );
+    }
+
+    if (oldVersion < 12) {
+      await db.execute('''
+        CREATE TABLE lend_people(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          phoneNumber TEXT,
+          createdAt INTEGER NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        ALTER TABLE transactions ADD COLUMN lendPersonId INTEGER
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_transactions_lend_person
+        ON transactions(lendPersonId)
+      ''');
     }
   }
 

@@ -9,6 +9,7 @@ class TransactionEntity {
   final int timestamp;
   // Links both legs of a transfer. Null for income/expense transactions.
   final String? transferGroupId;
+  final int? lendPersonId;
 
   const TransactionEntity({
     this.id,
@@ -20,6 +21,7 @@ class TransactionEntity {
     this.note,
     required this.timestamp,
     this.transferGroupId,
+    this.lendPersonId,
   });
 
   TransactionEntity copyWith({
@@ -32,6 +34,7 @@ class TransactionEntity {
     String? note,
     int? timestamp,
     String? transferGroupId,
+    int? lendPersonId,
   }) {
     return TransactionEntity(
       id: id ?? this.id,
@@ -43,6 +46,7 @@ class TransactionEntity {
       note: note ?? this.note,
       timestamp: timestamp ?? this.timestamp,
       transferGroupId: transferGroupId ?? this.transferGroupId,
+      lendPersonId: lendPersonId ?? this.lendPersonId,
     );
   }
 }
