@@ -124,12 +124,12 @@ class ExportHandler {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
           child: Row(
             children: [
-              const CircularProgressIndicator(),
+              CircularProgressIndicator(color: AppTheme.accent),
               const SizedBox(width: 20),
               Expanded(
                 child: Text(
                   'Generating document…',
-                  style: TextStyle(fontSize: 14, color: AppTheme.primary),
+                  style: TextStyle(fontSize: 14, color: AppTheme.onSurface),
                 ),
               ),
             ],
@@ -143,20 +143,18 @@ class ExportHandler {
       final ledger = context.read<LedgerProvider>();
       final categories = context.read<CategoryProvider>();
 
-      var txs = ledger.transactions;
+      final allTxs = ledger.transactions;
 
+      var txsInRange = allTxs;
       if (range != null) {
         final startMs = range.start.millisecondsSinceEpoch;
         final endMs = range.end.millisecondsSinceEpoch;
-        txs = txs
+        txsInRange = allTxs
             .where((tx) => tx.timestamp >= startMs && tx.timestamp <= endMs)
             .toList();
       }
 
-      // Sort oldest → newest
-      txs.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-      if (txs.isEmpty) {
+      if (txsInRange.isEmpty) {
         navigator.pop();
         messenger.showSnackBar(
           SnackBar(
@@ -175,16 +173,18 @@ class ExportHandler {
 
       if (format == 'csv') {
         await ExportService.instance.exportToCsv(
-          transactions: txs,
-          ledger: ledger,
+          allTransactions: allTxs,
+          accounts: ledger.accounts,
           categories: categories,
+          range: range,
           saveToStorage: saveToStorage,
         );
       } else {
         await ExportService.instance.exportToPdf(
-          transactions: txs,
-          ledger: ledger,
+          allTransactions: allTxs,
+          accounts: ledger.accounts,
           categories: categories,
+          range: range,
           saveToStorage: saveToStorage,
         );
       }
