@@ -15,7 +15,7 @@
 
 ## Overview
 
-**Kanakkan** (Malayalam for *Accountant*) is a 100 % offline personal finance app. All data lives on your device — no cloud, no accounts, no subscriptions. It is designed for users who want full control over their financial data with a polished, intuitive UI.
+**Kanakkan** (Malayalam for *Accountant*) is an offline-first personal finance app. All data lives on your device by default — no accounts, no subscriptions. Google Drive backup is entirely optional and off by default; turn it on only if you want an automatic off-device copy of your data. It is designed for users who want full control over their financial data with a polished, intuitive UI.
 
 ---
 
@@ -60,12 +60,16 @@
 - Remaining balance shown in real time as you type
 - Save distribution templates for recurring months
 
+### 🤝 Lends & Borrows
+- Track money lent or borrowed per contact, separate from regular expense categories
+- Bulk-migrate existing transactions to a contact's profile with smart suggested matching
+- Settle a contact's balance directly from their profile in one tap
+
 ### 📤 Export & Backup
-- **Export to CSV** — full transaction list with date, account, category, amount, note
-- **Export to PDF** — formatted report with header, table, and totals
+- **Cash book export (CSV & PDF)** — transactions grouped by month, one Receipt/Payment column per account, with opening balance, closing balance, and running totals, plus auto-numbered voucher/receipt references
 - Both exports support **date-range filtering**
-- **Backup** — export entire database as a single `.db` file
-- **Restore** — import a backup file to restore all data
+- **Local backup** — export the entire database as a single `.db` file, or restore from one
+- **Automatic Google Drive backup** *(optional)* — turn it on in Settings to silently keep a single always-current backup in Drive, refreshed on app open; restore from it anytime via Restore Data
 - Share exports directly via system share sheet
 
 ### 🔒 Security
@@ -83,7 +87,7 @@
 
 | Layer | Technology |
 |---|---|
-| Framework | Flutter 3.41.4 / Dart 3.11.1 |
+| Framework | Flutter 3.47.2 / Dart 3.13.2 |
 | State Management | Provider (`ChangeNotifier`) |
 | Database | SQLite via `sqflite` |
 | Security | `flutter_secure_storage`, `local_auth` |
@@ -92,6 +96,7 @@
 | CSV export | `csv` |
 | File picker | `file_picker` |
 | Sharing | `share_plus` |
+| Google Drive backup | `google_sign_in`, `googleapis`, `http` |
 | Number formatting | `intl` (en_IN locale) |
 | Unique IDs | `uuid` |
 
@@ -107,14 +112,14 @@ lib/
 ├── data/
 │   ├── models/            # SQLite row models
 │   ├── repositories/      # DAOs — transactions, accounts, categories, budgets
-│   └── services/          # BackupService, ExportService (CSV & PDF)
+│   └── services/          # BackupService, DriveBackupService, ExportService (CSV & PDF)
 ├── domain/
 │   └── entities/          # Pure domain entities (TransactionEntity, etc.)
 ├── presentation/
 │   ├── dialogs/           # All modal dialogs and bottom sheets
 │   ├── handlers/          # BackupRestoreHandler, ExportHandler — orchestration
 │   ├── providers/         # LedgerProvider, CategoryProvider, BudgetProvider,
-│   │                      #   AnalysisProvider, AppStateProvider, …
+│   │                      #   AnalysisProvider, AppStateProvider, BackupSettingsProvider, …
 │   ├── screens/           # Full screens (Dashboard, Analysis, Budget, …)
 │   └── widgets/           # Reusable widget components
 └── main.dart

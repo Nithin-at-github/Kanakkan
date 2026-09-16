@@ -27,10 +27,8 @@ class UpdateNotesScreen extends StatelessWidget {
       date: 'September 2026',
       changes: [
         'Automatic Google Drive Backup: Turn on auto-backup in Settings to silently keep a single always-current backup of your data in Drive, refreshed on app open — no more remembering to back up manually.',
+        'Restore from Google Drive: Restore Data now lets you recover straight from your latest Drive backup, alongside the existing device-file option.',
         'Redesigned Export as a Cash Book: PDF/CSV exports now read like a traditional Receipts & Payments cash book — grouped by month, one column per account, with opening balance, closing balance, and running totals.',
-        'Fixed exports of a full year sometimes failing with a pagination error.',
-        'Fixed exported closing balances not matching the balances shown in the app.',
-        'Fixed the export loading indicator being invisible in dark mode.',
       ],
     ),
     UpdateNote(
