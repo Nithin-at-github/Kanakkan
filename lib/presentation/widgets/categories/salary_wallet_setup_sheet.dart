@@ -246,7 +246,7 @@ Future<bool> confirmWalletChange({
     final proceed =
         await showDialog<bool>(
           context: context,
-          builder: (_) => AlertDialog(
+          builder: (dialogContext) => AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -262,7 +262,7 @@ Future<bool> confirmWalletChange({
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false),
+                onPressed: () => Navigator.pop(dialogContext, false),
                 child: Text(
                   'Cancel',
                   style: TextStyle(color: AppTheme.onSurface),
@@ -272,7 +272,7 @@ Future<bool> confirmWalletChange({
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.accent,
                 ),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(dialogContext, true),
                 child: const Text(
                   'Proceed',
                   style: TextStyle(color: Colors.white),

@@ -301,7 +301,7 @@ class _LinkExistingTransactionsScreenState extends State<LinkExistingTransaction
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: AppTheme.background,
+          backgroundColor: AppTheme.dialogSurface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
             "Filter by Category",

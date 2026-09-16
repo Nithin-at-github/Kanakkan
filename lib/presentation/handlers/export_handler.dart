@@ -209,7 +209,7 @@ class ExportHandler {
   static Future<String?> _showSaveChoiceDialog(BuildContext context) async {
     return await showDialog<String>(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -245,18 +245,18 @@ class ExportHandler {
                 icon: Icons.save_alt_rounded,
                 title: 'Save to Device Storage',
                 subtitle: 'Choose a folder on your phone',
-                onTap: () => Navigator.pop(context, 'storage'),
+                onTap: () => Navigator.pop(dialogContext, 'storage'),
               ),
               const SizedBox(height: 12),
               _ChoiceTile(
                 icon: Icons.share_outlined,
                 title: 'Share / Send File',
                 subtitle: 'Send via WhatsApp, Drive, etc.',
-                onTap: () => Navigator.pop(context, 'share'),
+                onTap: () => Navigator.pop(dialogContext, 'share'),
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: Text('Cancel', style: TextStyle(color: AppTheme.onSurfaceVariant)),
               ),
             ],
@@ -336,10 +336,10 @@ class _ExportSheetState extends State<_ExportSheet> {
                 primary: AppTheme.primary,
                 onPrimary: Colors.white,
                 onSurface: AppTheme.onSurface,
-                surface: AppTheme.background,
+                surface: AppTheme.dialogSurface,
               ),
               dialogTheme: DialogThemeData(
-                backgroundColor: AppTheme.background,
+                backgroundColor: AppTheme.dialogSurface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
             ),

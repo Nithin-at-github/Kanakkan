@@ -66,8 +66,22 @@
 
 		<key>NSDocumentsFolderUsageDescription</key>
 			<string>Kanakkan needs access to save backup files.</string>
-			
+
 		<key>UIFileSharingEnabled</key>
 		<true/>
+
+		<!-- Google Sign-In redirect — reversed form of the iOS OAuth client ID
+		     in lib/data/services/drive_backup_service.dart. -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.260383784604-5va2skd2s6ej2n3mf737gfls6kg04dc9</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>

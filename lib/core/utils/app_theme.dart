@@ -21,6 +21,13 @@ class AppTheme {
   /// Surface colors for cards and sheets
   static Color get surface =>
       isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+
+  /// Popup/dialog background — a step lighter than the page in dark mode
+  /// (shadows barely read on dark backgrounds, so dialogs need the surface
+  /// lightness step or they blend into the page). In light mode, shadows do
+  /// the job fine, so dialogs keep the original page background instead of
+  /// switching to white.
+  static Color get dialogSurface => isDarkMode ? surface : background;
   static Color get onSurface =>
       isDarkMode ? Colors.white.withValues(alpha: 0.9) : Colors.black87;
   static Color get onSurfaceVariant =>
@@ -98,7 +105,13 @@ class AppTheme {
       ),
 
       dialogTheme: DialogThemeData(
-        backgroundColor: backgroundColor,
+        // In dark mode, dialogs need to read as a step lighter than the
+        // page behind them — elevation shadows barely show on dark
+        // backgrounds, so Material dark themes lean on this lightness step
+        // (not borders) to convey depth. backgroundColor alone made every
+        // dialog blend invisibly into the page in dark mode. Light mode
+        // keeps the original page background — shadows read fine there.
+        backgroundColor: isDark ? surfaceColor : backgroundColor,
         surfaceTintColor: Colors.transparent,
       ),
 

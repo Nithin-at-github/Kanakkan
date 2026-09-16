@@ -86,7 +86,7 @@ class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: AppTheme.background,
+              backgroundColor: AppTheme.dialogSurface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: Text(
                 "Settle Account",

@@ -61,7 +61,7 @@ class _SalarySplitDialogState extends State<SalarySplitDialog> {
     final allocationProvider = context.watch<SalaryAllocationProvider>();
 
     return Dialog(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.dialogSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.8,

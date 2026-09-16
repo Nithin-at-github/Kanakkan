@@ -51,38 +51,63 @@ class BackupService {
   ];
 
   // ── BACKUP ──────────────────────────────────────────────────────────────────
-  
+
   /// Flushes all WAL data to the main DB file.
   Future<void> _checkpoint() async {
     final db = await _db.database;
     await db.rawQuery('PRAGMA wal_checkpoint(FULL)');
   }
 
+  /// True if there are no accounts and no transactions — i.e. nothing worth
+  /// backing up. Used to skip *automatic* Drive backups after a Delete &
+  /// Reset (or on a brand-new install), so a wiped DB never silently
+  /// overwrites a real backup. Manual "Back up now" bypasses this check —
+  /// it's an explicit user action either way.
+  Future<bool> isDatabaseEmpty() async {
+    final db = await _db.database;
+    final accounts = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM accounts'),
+    );
+    final transactions = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM transactions'),
+    );
+    return (accounts ?? 0) == 0 && (transactions ?? 0) == 0;
+  }
+
+  /// Checkpoints the WAL then copies the live DB to a fresh timestamped temp
+  /// file, returning it. Shared by every backup path (manual share/save and
+  /// Google Drive auto-backup) so the WAL-checkpoint step — without which a
+  /// copy can miss recent writes still sitting in the WAL file — only lives
+  /// in one place. Caller owns the returned file and should delete it once
+  /// done with it.
+  Future<File> checkpointedCopy() async {
+    await _checkpoint();
+
+    final dbPath = await _db.getDatabasePath();
+    final source = File(dbPath);
+
+    if (!await source.exists()) {
+      throw StateError('Database file not found.');
+    }
+
+    final temp = await getTemporaryDirectory();
+    final timestamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
+    final dest = File('${temp.path}/kanakkan_backup_$timestamp.db');
+    await source.copy(dest.path);
+    return dest;
+  }
+
   /// Copies the DB to a temp file then shares it via the system share sheet.
   Future<BackupResult> backup() async {
     try {
-      await _checkpoint();
-
-      final dbPath = await _db.getDatabasePath();
-      final source = File(dbPath);
-
-      if (!await source.exists()) {
-        return BackupResult.error('Database file not found.');
-      }
-
-      // Copy to temp dir with a timestamped name
-      final temp = await getTemporaryDirectory();
-      final timestamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
-      final backupName = 'kanakkan_backup_$timestamp.db';
-      final dest = File('${temp.path}/$backupName');
-
-      await source.copy(dest.path);
+      final dest = await checkpointedCopy();
+      final backupName = dest.uri.pathSegments.last;
 
       // Share via system sheet — user chooses where to send/share
       final result = await SharePlus.instance.share(
         ShareParams(
           files: [XFile(dest.path, mimeType: 'application/octet-stream')],
-          subject: 'Kanakkan Backup — $timestamp',
+          subject: 'Kanakkan Backup — $backupName',
         ),
       );
 
@@ -188,37 +213,46 @@ class BackupService {
   /// Returns a [BackupResult]. Caller is responsible for reinitializing
   /// all providers after a successful restore.
   Future<BackupResult> pickAndRestore() async {
+    // Step 1 — Pick file
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      allowMultiple: false,
+    );
+
+    if (result == null || result.files.isEmpty) {
+      return BackupResult.cancelled();
+    }
+
+    final pickedPath = result.files.single.path;
+    if (pickedPath == null) {
+      return BackupResult.error('Could not access the selected file.');
+    }
+
+    return restoreFromFile(pickedPath);
+  }
+
+  /// Validates a candidate backup file, then closes, replaces, and reopens
+  /// the live DB with it. Shared by [pickAndRestore] (local file) and
+  /// Google Drive restore — both end up with a plain file path on disk by
+  /// the time this runs. Caller is responsible for reinitializing all
+  /// providers after a successful restore.
+  Future<BackupResult> restoreFromFile(String filePath) async {
     try {
-      // Step 1 — Pick file
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
-      );
-
-      if (result == null || result.files.isEmpty) {
-        return BackupResult.cancelled();
-      }
-
-      final pickedPath = result.files.single.path;
-      if (pickedPath == null) {
-        return BackupResult.error('Could not access the selected file.');
-      }
-
-      // Step 2 — Validate
-      final validationError = await validateBackupFile(pickedPath);
+      // Step 1 — Validate
+      final validationError = await validateBackupFile(filePath);
       if (validationError != null) {
         return BackupResult.error(validationError);
       }
 
-      // Step 3 — Close current DB
+      // Step 2 — Close current DB
       await _db.closeDatabase();
 
-      // Step 4 — Replace DB file
+      // Step 3 — Replace DB file
       final dbPath = await _db.getDatabasePath();
-      final source = File(pickedPath);
+      final source = File(filePath);
       await source.copy(dbPath);
 
-      // Step 5 — Reopen (runs migrations if needed)
+      // Step 4 — Reopen (runs migrations if needed)
       await _db.reopenDatabase();
 
       return BackupResult.success();

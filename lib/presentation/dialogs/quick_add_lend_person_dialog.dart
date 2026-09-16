@@ -21,7 +21,7 @@ class QuickAddLendPersonDialog {
             final isEdit = person != null;
 
             return Dialog(
-              backgroundColor: AppTheme.background,
+              backgroundColor: AppTheme.dialogSurface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),

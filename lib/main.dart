@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import 'presentation/providers/ledger_provider.dart';
 import 'presentation/providers/app_state_provider.dart';
+import 'presentation/providers/backup_settings_provider.dart';
 import 'presentation/providers/theme_provider.dart';
 
 void main() async {
@@ -95,6 +96,11 @@ void main() async {
 
         /// Theme State
         ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
+
+        /// Google Drive auto-backup settings
+        ChangeNotifierProvider(
+          create: (_) => BackupSettingsProvider()..loadSettings(),
+        ),
 
         /// Lends state
         ChangeNotifierProxyProvider<LedgerProvider, LendProvider>(

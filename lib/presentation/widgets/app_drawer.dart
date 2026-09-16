@@ -86,16 +86,15 @@ class AppDrawer extends StatelessWidget {
                     child: _DrawerTile(
                       icon: Icons.cloud_download_outlined,
                       label: "Restore Data",
-                      subtitle: "Load from a backup file",
+                      subtitle: "From a device file or Google Drive",
                       onTap: () async {
                         Navigator.pop(context);
                         await Future.delayed(const Duration(milliseconds: 300));
                         final ctx = rootScaffoldKey.currentContext;
                         if (ctx == null || !ctx.mounted) return;
-                        final confirmed =
-                            await BackupRestoreHandler.confirmRestore(ctx);
-                        if (!confirmed || !ctx.mounted) return;
-                        await BackupRestoreHandler.runRestore(ctx);
+                        final source = await BackupRestoreHandler.confirmRestore(ctx);
+                        if (source == null || !ctx.mounted) return;
+                        await BackupRestoreHandler.runRestore(ctx, source);
                       },
                     ),
                   ),

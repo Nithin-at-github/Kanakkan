@@ -10,7 +10,7 @@ class UniversalCreateSheet {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) {
+      builder: (sheetContext) {
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -25,14 +25,14 @@ class UniversalCreateSheet {
               const SizedBox(height: 10),
 
               _actionTile(
-                context,
+                sheetContext,
                 icon: Icons.swap_vert,
                 title: "Add Transaction",
                 color: AppTheme.accent,
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   Navigator.push(
-                    context,
+                    sheetContext,
                     MaterialPageRoute(
                       builder: (_) => const AddTransactionScreen(),
                     ),
@@ -41,24 +41,24 @@ class UniversalCreateSheet {
               ),
 
               _actionTile(
-                context,
+                sheetContext,
                 icon: Icons.account_balance,
                 title: "Add Account",
                 color: AppTheme.success,
                 onTap: () {
-                  Navigator.pop(context);
-                  AddAccountDialog.show(context);
+                  Navigator.pop(sheetContext);
+                  AddAccountDialog.show(sheetContext);
                 },
               ),
 
               _actionTile(
-                context,
+                sheetContext,
                 icon: Icons.category,
                 title: "Add Category",
                 color: AppTheme.error,
                 onTap: () {
-                  Navigator.pop(context);
-                  AddCategoryDialog.show(context);
+                  Navigator.pop(sheetContext);
+                  AddCategoryDialog.show(sheetContext);
                 },
               ),
 

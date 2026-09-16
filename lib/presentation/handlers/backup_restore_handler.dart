@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/data/services/backup_service.dart';
+import 'package:kanakkan/data/services/drive_backup_service.dart';
 import 'package:kanakkan/data/database/database_helper.dart';
 import 'package:kanakkan/presentation/providers/analysis_provider.dart';
+import 'package:kanakkan/presentation/providers/backup_settings_provider.dart';
 import 'package:kanakkan/presentation/providers/budget_provider.dart';
 import 'package:kanakkan/presentation/providers/category_balance_provider.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
@@ -106,14 +108,20 @@ class BackupRestoreHandler {
 
   // ── RESTORE ─────────────────────────────────────────────────────────────────
 
-  static Future<void> runRestore(BuildContext context) async {
+  /// [source] is 'device' or 'drive', as returned by [confirmRestore].
+  static Future<void> runRestore(BuildContext context, String source) async {
     // Capture navigator and messenger before any async gaps —
     // context becomes deactivated after dialogs close
     final navigator = Navigator.of(context);
 
-    // Step 1 — show loading then pick file
-    _showLoading(context, 'Opening file picker…');
-    final pickResult = await BackupService.instance.pickAndRestore();
+    final BackupResult pickResult;
+    if (source == 'drive') {
+      _showLoading(context, 'Downloading backup from Google Drive…');
+      pickResult = await _restoreFromDrive();
+    } else {
+      _showLoading(context, 'Opening file picker…');
+      pickResult = await BackupService.instance.pickAndRestore();
+    }
     navigator.pop(); // close loading — use captured navigator, not context
 
     if (pickResult.isCancelled) return;
@@ -137,16 +145,41 @@ class BackupRestoreHandler {
     _showSuccessDialog(context);
   }
 
+  /// Downloads the Drive backup to a temp file, restores from it via the
+  /// same validate/replace/reopen path as a local file, then cleans up.
+  static Future<BackupResult> _restoreFromDrive() async {
+    try {
+      final file = await DriveBackupService.instance.downloadLatestBackup();
+      try {
+        return await BackupService.instance.restoreFromFile(file.path);
+      } finally {
+        if (await file.exists()) await file.delete();
+      }
+    } catch (e) {
+      return BackupResult.error('$e');
+    }
+  }
+
   // ── RESET ──────────────────────────────────────────────────────────────────
 
   static Future<void> runReset(BuildContext context) async {
     final navigator = Navigator.of(context);
+    final backupSettings = context.read<BackupSettingsProvider>();
 
     _showLoading(context, 'Deleting all data…');
     try {
       await DatabaseHelper.instance.resetDatabase();
       if (!context.mounted) return;
       await _reinitializeProviders(context);
+
+      // Turn off Drive auto-backup so the next scheduled run doesn't
+      // silently overwrite the last real backup with an empty DB. Best
+      // effort — a failure here shouldn't fail the reset itself.
+      if (backupSettings.autoBackupEnabled) {
+        try {
+          await backupSettings.setAutoBackupEnabled(false);
+        } catch (_) {}
+      }
     } catch (e) {
       if (!context.mounted) return;
       _showErrorDialog(context, 'Reset failed: $e');
@@ -162,126 +195,98 @@ class BackupRestoreHandler {
 
   // ── CONFIRM RESTORE DIALOG ───────────────────────────────────────────────────
 
-  /// Shows a confirmation dialog BEFORE picking the file.
-  /// Returns true if user confirms.
-  static Future<bool> confirmRestore(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (_) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                    child: Icon(
-                      Icons.cloud_download_outlined,
-                      color: Colors.orange,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Restore from Backup?',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.orange.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        _InfoPoint(
-                          icon: Icons.folder_open_outlined,
-                          color: Colors.orange,
-                          text:
-                              'You will be asked to pick a Kanakkan backup file (.db).',
-                        ),
-                        SizedBox(height: 8),
-                        _InfoPoint(
-                          icon: Icons.warning_amber_rounded,
-                          color: Colors.orange,
-                          text:
-                              'All current data will be replaced by the backup.',
-                        ),
-                        SizedBox(height: 8),
-                        _InfoPoint(
-                          icon: Icons.verified_outlined,
-                          color: AppTheme.success,
-                          text:
-                              'The file will be validated before anything is overwritten.',
-                        ),
-                        SizedBox(height: 8),
-                        _InfoPoint(
-                          icon: Icons.backup_outlined,
-                          color: AppTheme.accent,
-                          text: 'Consider backing up current data first.',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(color: AppTheme.divider),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'Cancel',
-                            style: TextStyle(color: AppTheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accent,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'Pick File',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+  /// Shows a dialog explaining what restoring does, then lets the user pick
+  /// where to restore from. Returns 'device', 'drive', or null if cancelled.
+  static Future<String?> confirmRestore(BuildContext context) async {
+    return await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                child: Icon(
+                  Icons.cloud_download_outlined,
+                  color: Colors.orange,
+                  size: 28,
+                ),
               ),
-            ),
+              const SizedBox(height: 14),
+              Text(
+                'Restore from Backup?',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.25)),
+                ),
+                child: Column(
+                  children: [
+                    _InfoPoint(
+                      icon: Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                      text: 'All current data will be replaced by the backup.',
+                    ),
+                    SizedBox(height: 8),
+                    _InfoPoint(
+                      icon: Icons.verified_outlined,
+                      color: AppTheme.success,
+                      text: 'The file will be validated before anything is overwritten.',
+                    ),
+                    SizedBox(height: 8),
+                    _InfoPoint(
+                      icon: Icons.backup_outlined,
+                      color: AppTheme.accent,
+                      text: 'Consider backing up current data first.',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Where is the backup?',
+                style: TextStyle(fontSize: 13, color: AppTheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              _BackupOptionTile(
+                icon: Icons.folder_open_outlined,
+                title: 'From Device File',
+                subtitle: 'Pick a Kanakkan backup file (.db)',
+                onTap: () => Navigator.pop(dialogContext, 'device'),
+              ),
+              const SizedBox(height: 12),
+              _BackupOptionTile(
+                icon: Icons.cloud_download_outlined,
+                title: 'From Google Drive',
+                subtitle: 'Use the latest auto-backup',
+                onTap: () => Navigator.pop(dialogContext, 'drive'),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppTheme.onSurfaceVariant),
+                ),
+              ),
+            ],
           ),
-        ) ??
-        false;
+        ),
+      ),
+    );
   }
 
   // ── BACKUP OPTIONS DIALOG ───────────────────────────────────────────────────
@@ -289,8 +294,8 @@ class BackupRestoreHandler {
   static Future<String?> _showBackupOptionsDialog(BuildContext context) async {
     return await showDialog<String>(
       context: context,
-      builder: (_) => Dialog(
-        backgroundColor: AppTheme.background,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: AppTheme.dialogSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -329,18 +334,18 @@ class BackupRestoreHandler {
                 icon: Icons.save_alt_rounded,
                 title: 'Save to Device Storage',
                 subtitle: 'Choose a folder on your phone',
-                onTap: () => Navigator.pop(context, 'storage'),
+                onTap: () => Navigator.pop(dialogContext, 'storage'),
               ),
               const SizedBox(height: 12),
               _BackupOptionTile(
                 icon: Icons.share_outlined,
                 title: 'Share / Send File',
                 subtitle: 'Send via WhatsApp, Drive, etc.',
-                onTap: () => Navigator.pop(context, 'share'),
+                onTap: () => Navigator.pop(dialogContext, 'share'),
               ),
               const SizedBox(height: 20),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: Text(
                   'Cancel',
                   style: TextStyle(color: AppTheme.onSurfaceVariant),
@@ -409,7 +414,7 @@ class BackupRestoreHandler {
   static void _showErrorDialog(BuildContext context, String message) {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -447,7 +452,7 @@ class BackupRestoreHandler {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     shape: RoundedRectangleBorder(
@@ -467,7 +472,7 @@ class BackupRestoreHandler {
   static void _showSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -505,7 +510,7 @@ class BackupRestoreHandler {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.success,
                     shape: RoundedRectangleBorder(
@@ -531,7 +536,7 @@ class BackupRestoreHandler {
   static void _showResetSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -569,7 +574,7 @@ class BackupRestoreHandler {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.success,
                     shape: RoundedRectangleBorder(
