@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:kanakkan/presentation/handlers/backup_restore_handler.dart';
 import 'package:kanakkan/presentation/handlers/export_handler.dart';
 import 'package:kanakkan/presentation/screens/root/root_scaffold.dart';
 import 'package:kanakkan/presentation/providers/theme_provider.dart';
 import 'package:kanakkan/presentation/widgets/animations/pressable_scale.dart';
 import 'package:kanakkan/presentation/widgets/animations/staggered_entrance.dart';
+import 'package:kanakkan/presentation/widgets/app_credit.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -156,7 +156,14 @@ class AppDrawer extends StatelessWidget {
                   const Spacer(),
 
                   // ── FOOTER ──
-                  StaggeredEntrance(index: 6, type: EntranceType.slideRight, child: _DrawerFooter()),
+                  StaggeredEntrance(
+                    index: 6,
+                    type: EntranceType.slideRight,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: AppCredit(alignment: CrossAxisAlignment.start),
+                    ),
+                  ),
 
                   const SizedBox(height: 12),
                 ],
@@ -397,57 +404,6 @@ class _DrawerTile extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FOOTER
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _DrawerFooter extends StatelessWidget {
-  static const _linkedInUrl = 'https://www.linkedin.com/in/nithinjk28/';
-
-  Future<void> _openLinkedIn() async {
-    final uri = Uri.parse(_linkedInUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Made with ♥ in Keralam",
-            style: TextStyle(
-              fontSize: 11,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white24
-                  : Colors.black26,
-            ),
-          ),
-          const SizedBox(height: 4),
-          GestureDetector(
-            onTap: _openLinkedIn,
-            child: Text(
-              "by Nithin JK",
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.accent,
-                fontWeight: FontWeight.w600,
-                decorationColor: AppTheme.accent,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CUSTOM THEME SWITCH

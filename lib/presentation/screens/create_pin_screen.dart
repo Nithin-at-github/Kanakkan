@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/security/security_service.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/app_state_provider.dart';
+import 'package:kanakkan/presentation/widgets/app_credit.dart';
 import 'package:provider/provider.dart';
 
 class CreatePinScreen extends StatefulWidget {
@@ -64,7 +65,7 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
       hintText: hint,
       counterText: "",
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppTheme.surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: AppTheme.accent.withValues(alpha: .4)),
@@ -78,6 +79,12 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Reading Theme.of(context) subscribes this screen to theme changes
+    // (including OS-level dark/light switches happening while this screen
+    // is already showing) so the AppTheme colors below don't get stuck on
+    // whatever brightness was active when the screen first mounted.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -96,9 +103,9 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                   ),
                 ),
 
-                const Text(
+                Text(
                   "Secure your finances with a PIN",
-                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                  style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 14),
                 ),
 
                 const SizedBox(height: 40),
@@ -107,13 +114,13 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                 Container(
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.surface,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.black12,
+                        color: isDark ? Colors.black54 : Colors.black12,
                         blurRadius: 12,
-                        offset: Offset(0, 6),
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -194,6 +201,10 @@ class _CreatePinScreenState extends State<CreatePinScreen> {
                   "Your PIN stays only on this device",
                   style: TextStyle(fontSize: 12, color: AppTheme.onSurfaceVariant),
                 ),
+
+                const SizedBox(height: 28),
+
+                const AppCredit(),
               ],
             ),
           ),

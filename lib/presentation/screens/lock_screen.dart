@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kanakkan/core/security/security_service.dart';
 import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/presentation/providers/app_state_provider.dart';
+import 'package:kanakkan/presentation/widgets/app_credit.dart';
 import 'package:provider/provider.dart';
 
 class LockScreen extends StatefulWidget {
@@ -117,6 +118,12 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Reading Theme.of(context) subscribes this screen to theme changes
+    // (including OS-level dark/light switches happening while this screen
+    // is already showing) so the AppTheme colors below don't get stuck on
+    // whatever brightness was active when the screen first mounted.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return PopScope(
       canPop: false,
 
@@ -156,7 +163,7 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.divider,
+                          color: isDark ? Colors.black54 : AppTheme.divider,
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -246,6 +253,10 @@ class _LockScreenState extends State<LockScreen> with WidgetsBindingObserver {
                     ),
                     textAlign: TextAlign.center,
                   ),
+
+                  const SizedBox(height: 28),
+
+                  const AppCredit(),
                 ],
               ),
             ),
