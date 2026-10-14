@@ -25,6 +25,8 @@ class LendPersonDetailsScreen extends StatefulWidget {
 
 class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
   late LendProvider _lendProvider;
+  bool _isSelectionMode = false;
+  final Set<int> _selectedTxIds = {};
 
   @override
   void initState() {
@@ -54,6 +56,64 @@ class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     }
+  }
+
+  Future<void> _confirmUnlinkBatch(List<int> txIds) async {
+    final count = txIds.length;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.dialogSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Unlink Transactions",
+          style: TextStyle(color: AppTheme.onSurface, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          "Unlink $count selected transaction${count > 1 ? 's' : ''} from ${widget.person.name}?\n\nThey will remain in your financial records, but will no longer be tracked under this contact.",
+          style: TextStyle(color: AppTheme.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text("Cancel", style: TextStyle(color: AppTheme.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.warning,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              "Unlink",
+              style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    final lendProvider = context.read<LendProvider>();
+    await lendProvider.unlinkTransactions(txIds);
+
+    if (!mounted) return;
+    setState(() {
+      _isSelectionMode = false;
+      _selectedTxIds.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          "Unlinked $count transaction${count > 1 ? 's' : ''} from ${widget.person.name}",
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: AppTheme.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showSettleDialog(BuildContext context, double balance) {
@@ -234,34 +294,88 @@ class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
       balanceText = "You owe";
     }
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.primary,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          "Contact Details",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.link, color: Colors.white),
-            tooltip: "Link existing transactions",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => LinkExistingTransactionsScreen(person: widget.person),
+    return PopScope(
+      canPop: !_isSelectionMode,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isSelectionMode) {
+          setState(() {
+            _isSelectionMode = false;
+            _selectedTxIds.clear();
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: _isSelectionMode
+            ? AppBar(
+                backgroundColor: AppTheme.primary,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => setState(() {
+                    _isSelectionMode = false;
+                    _selectedTxIds.clear();
+                  }),
                 ),
-              );
-            },
-          ),
-        ],
-      ),
+                title: Text(
+                  "${_selectedTxIds.length} Selected",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      final allIds = transactions.map((t) => t.id!).toSet();
+                      setState(() {
+                        if (_selectedTxIds.length == allIds.length) {
+                          _selectedTxIds.clear();
+                        } else {
+                          _selectedTxIds.addAll(allIds);
+                        }
+                      });
+                    },
+                    child: Text(
+                      _selectedTxIds.length == transactions.length ? "Deselect All" : "Select All",
+                      style: TextStyle(color: AppTheme.accent, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              )
+            : AppBar(
+                backgroundColor: AppTheme.primary,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                title: const Text(
+                  "Contact Details",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.link, color: Colors.white),
+                    tooltip: "Link existing transactions",
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LinkExistingTransactionsScreen(person: widget.person),
+                        ),
+                      );
+                    },
+                  ),
+                  if (transactions.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.checklist, color: Colors.white),
+                      tooltip: "Select multiple",
+                      onPressed: () {
+                        setState(() {
+                          _isSelectionMode = true;
+                        });
+                      },
+                    ),
+                ],
+              ),
       body: Column(
         children: [
           // CONTACT HEADER
@@ -409,18 +523,44 @@ class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
                           final accountName = ledger.resolvePrimaryAccountName(tx);
                           final categoryName = categories.resolveTransactionCategoryName(tx);
                           final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
+                          final isChecked = _selectedTxIds.contains(tx.id!);
 
                           return StaggeredEntrance(
                             index: index,
                             child: Card(
-                              color: AppTheme.surface,
+                              color: isChecked
+                                  ? AppTheme.accent.withValues(alpha: 0.08)
+                                  : AppTheme.surface,
                               margin: const EdgeInsets.symmetric(vertical: 4),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(color: AppTheme.divider),
+                                side: BorderSide(
+                                  color: isChecked ? AppTheme.accent : AppTheme.divider,
+                                  width: isChecked ? 1.5 : 1,
+                                ),
                               ),
                               child: ListTile(
-                                onTap: () => TransactionDetailSheet.show(context, tx: tx),
+                                onTap: () {
+                                  if (_isSelectionMode) {
+                                    setState(() {
+                                      if (isChecked) {
+                                        _selectedTxIds.remove(tx.id!);
+                                      } else {
+                                        _selectedTxIds.add(tx.id!);
+                                      }
+                                    });
+                                  } else {
+                                    TransactionDetailSheet.show(context, tx: tx);
+                                  }
+                                },
+                                onLongPress: () {
+                                  if (!_isSelectionMode) {
+                                    setState(() {
+                                      _isSelectionMode = true;
+                                      _selectedTxIds.add(tx.id!);
+                                    });
+                                  }
+                                },
                                 leading: CircleAvatar(
                                   radius: 18,
                                   backgroundColor: (isIncome ? AppTheme.success : AppTheme.error)
@@ -450,14 +590,29 @@ class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
                                     color: AppTheme.onSurfaceVariant,
                                   ),
                                 ),
-                                trailing: Text(
-                                  "₹${formatAmt(tx.amount)}",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: isIncome ? AppTheme.success : AppTheme.error,
-                                  ),
-                                ),
+                                trailing: _isSelectionMode
+                                    ? Checkbox(
+                                        value: isChecked,
+                                        activeColor: AppTheme.accent,
+                                        checkColor: AppTheme.primary,
+                                        onChanged: (val) {
+                                          setState(() {
+                                            if (val == true) {
+                                              _selectedTxIds.add(tx.id!);
+                                            } else {
+                                              _selectedTxIds.remove(tx.id!);
+                                            }
+                                          });
+                                        },
+                                      )
+                                    : Text(
+                                        "₹${formatAmt(tx.amount)}",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: isIncome ? AppTheme.success : AppTheme.error,
+                                        ),
+                                      ),
                               ),
                             ),
                           );
@@ -478,101 +633,126 @@ class _LendPersonDetailsScreenState extends State<LendPersonDetailsScreen> {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (balance != 0) ...[
-                  PressableScale(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.handshake_outlined),
-                        label: const Text(
-                          "Settle Account",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+            child: _isSelectionMode
+                ? SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.link_off),
+                      label: Text(
+                        _selectedTxIds.isEmpty
+                            ? "Select Transactions to Unlink"
+                            : "Unlink ${_selectedTxIds.length} Selected",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.warning,
+                        foregroundColor: AppTheme.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.accent,
-                          side: BorderSide(color: AppTheme.accent),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      ),
+                      onPressed: _selectedTxIds.isEmpty
+                          ? null
+                          : () => _confirmUnlinkBatch(_selectedTxIds.toList()),
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (balance != 0) ...[
+                        PressableScale(
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.handshake_outlined),
+                              label: const Text(
+                                "Settle Account",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.accent,
+                                side: BorderSide(color: AppTheme.accent),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () => _showSettleDialog(context, balance),
+                            ),
                           ),
                         ),
-                        onPressed: () => _showSettleDialog(context, balance),
+                        const SizedBox(height: 10),
+                      ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: PressableScale(
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.arrow_upward),
+                                label: const Text(
+                                  "Lend Money",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.error,
+                                  side: BorderSide(color: AppTheme.error.withValues(alpha: 0.3)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AddTransactionScreen(
+                                      preselectedLendPersonId: widget.person.id,
+                                      initialType: TransactionType.expense,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: PressableScale(
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.arrow_downward),
+                                label: const Text(
+                                  "Record Return",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.success,
+                                  foregroundColor: AppTheme.background,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AddTransactionScreen(
+                                      preselectedLendPersonId: widget.person.id,
+                                      initialType: TransactionType.income,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: PressableScale(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.arrow_upward),
-                          label: const Text(
-                            "Lend Money",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.error,
-                            side: BorderSide(color: AppTheme.error.withValues(alpha: 0.3)),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddTransactionScreen(
-                                preselectedLendPersonId: widget.person.id,
-                                initialType: TransactionType.expense,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PressableScale(
-                        child: ElevatedButton.icon(
-                          icon: const Icon(Icons.arrow_downward),
-                          label: const Text(
-                            "Record Return",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.success,
-                            foregroundColor: AppTheme.background,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddTransactionScreen(
-                                preselectedLendPersonId: widget.person.id,
-                                initialType: TransactionType.income,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _emptyHistory() {
     return Center(

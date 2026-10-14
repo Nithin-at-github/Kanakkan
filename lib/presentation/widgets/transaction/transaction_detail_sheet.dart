@@ -4,8 +4,10 @@ import 'package:kanakkan/core/utils/app_theme.dart';
 import 'package:kanakkan/core/widgets/confirm_delete_dialog.dart';
 import 'package:kanakkan/data/repositories/transaction_wallet_split_repository.dart';
 import 'package:kanakkan/domain/entities/transaction_entity.dart';
+import 'package:kanakkan/core/utils/safe_iterable.dart';
 import 'package:kanakkan/presentation/providers/category_provider.dart';
 import 'package:kanakkan/presentation/providers/ledger_provider.dart';
+import 'package:kanakkan/presentation/providers/lend_provider.dart';
 import 'package:kanakkan/presentation/screens/add_transaction_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -64,11 +66,17 @@ class _TransactionDetailSheetContentState
   Widget build(BuildContext context) {
     final ledger = context.read<LedgerProvider>();
     final categories = context.read<CategoryProvider>();
+    final lendProvider = context.read<LendProvider>();
 
     final tx = widget.tx;
     final accountName = ledger.resolvePrimaryAccountName(tx);
     final categoryName = categories.resolveTransactionCategoryName(tx);
     final date = DateTime.fromMillisecondsSinceEpoch(tx.timestamp);
+    final linkedPerson = tx.lendPersonId != null
+        ? lendProvider.people
+            .firstWhereOrNull((p) => p.person.id == tx.lendPersonId)
+            ?.person
+        : null;
 
     final typeColor = _isTransfer
         ? AppTheme.accent
@@ -152,6 +160,8 @@ class _TransactionDetailSheetContentState
           _detailRow("Account", accountName),
           _detailRow("Date", DateFormat("MMM d, yyyy").format(date)),
           _detailRow("Time", DateFormat("hh:mm a").format(date)),
+          if (linkedPerson != null)
+            _detailRow("Contact", linkedPerson.name),
           if (tx.note != null && tx.note!.trim().isNotEmpty)
             _detailRow("Note", tx.note!),
 
@@ -201,6 +211,12 @@ class _TransactionDetailSheetContentState
                 color: AppTheme.accent,
                 onTap: () => _handleEdit(context, ledger),
               ),
+              if (linkedPerson != null)
+                _iconActionButton(
+                  icon: Icons.link_off,
+                  color: AppTheme.warning,
+                  onTap: () => _handleUnlink(context, lendProvider, linkedPerson.name),
+                ),
               _iconActionButton(
                 icon: Icons.delete,
                 color: AppTheme.error,
@@ -213,6 +229,66 @@ class _TransactionDetailSheetContentState
         ],
       ),
     );
+  }
+
+  // ── UNLINK ──
+
+  Future<void> _handleUnlink(
+    BuildContext context,
+    LendProvider lendProvider,
+    String personName,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.dialogSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          "Unlink Transaction",
+          style: TextStyle(color: AppTheme.onSurface, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          "Unlink this transaction from $personName?\n\nThe transaction will remain in your financial records, but will no longer be tracked under this contact.",
+          style: TextStyle(color: AppTheme.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text("Cancel", style: TextStyle(color: AppTheme.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.warning,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              "Unlink",
+              style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await lendProvider.unlinkTransaction(widget.tx.id!);
+
+    if (context.mounted) {
+      Navigator.pop(context); // close detail sheet
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Transaction unlinked from $personName",
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          backgroundColor: AppTheme.success,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   // ── EDIT ──

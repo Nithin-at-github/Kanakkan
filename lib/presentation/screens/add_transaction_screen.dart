@@ -788,7 +788,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_drop_down, color: Colors.white38, size: 18),
+              if (hasValue)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    setState(() {
+                      _selectedLendPerson = null;
+                    });
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(4.0),
+                    child: Icon(Icons.close, color: Colors.white60, size: 18),
+                  ),
+                )
+              else
+                const Icon(Icons.arrow_drop_down, color: Colors.white38, size: 18),
             ],
           ),
         ),
@@ -861,54 +875,79 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ),
                       const SizedBox(height: 16),
                       Expanded(
-                        child: people.isEmpty
-                            ? Center(
-                                child: Text(
-                                  "No contacts added yet",
-                                  style: TextStyle(color: AppTheme.onSurfaceVariant),
+                        child: ListView.builder(
+                          controller: scrollController,
+                          itemCount: people.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              final isNoneSelected = _selectedLendPerson == null;
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: isNoneSelected
+                                      ? AppTheme.accent.withValues(alpha: 0.2)
+                                      : AppTheme.divider,
+                                  child: Icon(
+                                    Icons.person_off_outlined,
+                                    size: 20,
+                                    color: isNoneSelected ? AppTheme.accent : AppTheme.onSurface,
+                                  ),
                                 ),
-                              )
-                            : ListView.builder(
-                                controller: scrollController,
-                                itemCount: people.length,
-                                itemBuilder: (context, index) {
-                                  final item = people[index];
-                                  final person = item.person;
-                                  final isSelected = _selectedLendPerson?.id == person.id;
-
-                                  return ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: isSelected
-                                          ? AppTheme.accent.withValues(alpha: 0.2)
-                                          : AppTheme.divider,
-                                      child: Text(
-                                        person.name.substring(0, 1).toUpperCase(),
-                                        style: TextStyle(
-                                          color: isSelected ? AppTheme.accent : AppTheme.onSurface,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    title: Text(
-                                      person.name,
-                                      style: TextStyle(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: AppTheme.onSurface,
-                                      ),
-                                    ),
-                                    subtitle: person.phoneNumber != null ? Text(person.phoneNumber!) : null,
-                                    trailing: isSelected
-                                        ? Icon(Icons.check_circle, color: AppTheme.accent)
-                                        : null,
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedLendPerson = person;
-                                      });
-                                      Navigator.pop(context);
-                                    },
-                                  );
+                                title: Text(
+                                  "None (No Contact)",
+                                  style: TextStyle(
+                                    fontWeight: isNoneSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: AppTheme.onSurface,
+                                  ),
+                                ),
+                                trailing: isNoneSelected
+                                    ? Icon(Icons.check_circle, color: AppTheme.accent)
+                                    : null,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedLendPerson = null;
+                                  });
+                                  Navigator.pop(context);
                                 },
+                              );
+                            }
+
+                            final item = people[index - 1];
+                            final person = item.person;
+                            final isSelected = _selectedLendPerson?.id == person.id;
+
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: isSelected
+                                    ? AppTheme.accent.withValues(alpha: 0.2)
+                                    : AppTheme.divider,
+                                child: Text(
+                                  person.name.substring(0, 1).toUpperCase(),
+                                  style: TextStyle(
+                                    color: isSelected ? AppTheme.accent : AppTheme.onSurface,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
+                              title: Text(
+                                person.name,
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: AppTheme.onSurface,
+                                ),
+                              ),
+                              subtitle: person.phoneNumber != null ? Text(person.phoneNumber!) : null,
+                              trailing: isSelected
+                                  ? Icon(Icons.check_circle, color: AppTheme.accent)
+                                  : null,
+                              onTap: () {
+                                setState(() {
+                                  _selectedLendPerson = person;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ],
                   );

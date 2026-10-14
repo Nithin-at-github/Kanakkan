@@ -98,4 +98,29 @@ class LendRepository {
       }
     });
   }
+
+  Future<void> unlinkTransaction(int transactionId) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'transactions',
+      {'lendPersonId': null},
+      where: 'id = ?',
+      whereArgs: [transactionId],
+    );
+  }
+
+  Future<void> unlinkTransactions(List<int> transactionIds) async {
+    if (transactionIds.isEmpty) return;
+    final db = await _dbHelper.database;
+    await db.transaction((txn) async {
+      for (final txId in transactionIds) {
+        await txn.update(
+          'transactions',
+          {'lendPersonId': null},
+          where: 'id = ?',
+          whereArgs: [txId],
+        );
+      }
+    });
+  }
 }

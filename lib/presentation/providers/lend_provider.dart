@@ -91,6 +91,24 @@ class LendProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> unlinkTransaction(int transactionId) async {
+    await _lendRepository.unlinkTransaction(transactionId);
+    await _ledger.initialize();
+    await loadPeople();
+    if (_activePersonId != null) {
+      await loadTransactionsForPerson(_activePersonId!, showLoading: false);
+    }
+  }
+
+  Future<void> unlinkTransactions(List<int> transactionIds) async {
+    await _lendRepository.unlinkTransactions(transactionIds);
+    await _ledger.initialize();
+    await loadPeople();
+    if (_activePersonId != null) {
+      await loadTransactionsForPerson(_activePersonId!, showLoading: false);
+    }
+  }
+
   /// Finds or creates a default Lend subcategory under "Others".
   /// Returns the category ID.
   Future<int> getOrCreateLendCategoryId() async {

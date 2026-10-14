@@ -22,8 +22,17 @@ class UpdateNotesScreen extends StatelessWidget {
 
   static const List<UpdateNote> _updates = [
     UpdateNote(
-      version: '1.5.0',
+      version: '1.5.1',
       isLatest: true,
+      date: 'October 2026',
+      changes: [
+        'Unlink Transactions: Easily detach transactions from contacts in Lend Tracker directly from the transaction details sheet or using the new multi-selection batch mode.',
+        'Contact Detaching: Option to clear or remove linked contacts while creating or editing transactions in the transaction form.',
+      ],
+    ),
+    UpdateNote(
+      version: '1.5.0',
+      isLatest: false,
       date: 'September 2026',
       changes: [
         'Automatic Google Drive Backup: Turn on auto-backup in Settings to silently keep a single always-current backup of your data in Drive, refreshed on app open — no more remembering to back up manually.',

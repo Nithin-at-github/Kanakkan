@@ -35,6 +35,7 @@ class TransactionEntity {
     int? timestamp,
     String? transferGroupId,
     int? lendPersonId,
+    bool clearLendPerson = false,
   }) {
     return TransactionEntity(
       id: id ?? this.id,
@@ -46,7 +47,7 @@ class TransactionEntity {
       note: note ?? this.note,
       timestamp: timestamp ?? this.timestamp,
       transferGroupId: transferGroupId ?? this.transferGroupId,
-      lendPersonId: lendPersonId ?? this.lendPersonId,
+      lendPersonId: clearLendPerson ? null : (lendPersonId ?? this.lendPersonId),
     );
   }
 }
